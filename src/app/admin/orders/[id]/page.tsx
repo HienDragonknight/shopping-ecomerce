@@ -58,16 +58,16 @@ export default function AdminOrderDetailPage({ params }: PageProps) {
     }
   };
 
-  const handleShipGHN = async () => {
-    if (!confirm("Gửi đơn hàng này sang GHN để vận chuyển?")) return;
+  const handleShipOrder = async () => {
+    if (!confirm("Gửi đơn hàng này sang đơn vị vận chuyển?")) return;
     setShipping(true);
     try {
       const res = await api.post(`/admin/orders/${id}/ship`);
       setOrder(res.data.data);
       setNewStatus(res.data.data.status);
-      showToast("🚚 Đã gửi GHN thành công! Mã vận đơn: " + res.data.data.ghnOrderCode);
+      showToast("🚚 Đã gửi đơn vị vận chuyển thành công! Mã vận đơn: " + res.data.data.ghnOrderCode);
     } catch {
-      showToast("❌ Gửi GHN thất bại");
+      showToast("❌ Gửi đơn vị vận chuyển thất bại");
     } finally {
       setShipping(false);
     }
@@ -201,31 +201,23 @@ export default function AdminOrderDetailPage({ params }: PageProps) {
             </button>
           </div>
 
-          {/* GHN Dispatch */}
+          {/* Shipping Dispatch */}
           <div className="bg-white rounded-2xl shadow-sm p-6">
             <h2 className="font-bold text-[#1A1A1A] mb-3">🚚 Giao vận chuyển</h2>
             {order.ghnOrderCode ? (
               <div className="space-y-2">
                 <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
-                  <p className="text-xs text-emerald-600 font-bold mb-1">✅ Đã gửi GHN</p>
+                  <p className="text-xs text-emerald-600 font-bold mb-1">✅ Đã gửi đơn vị vận chuyển</p>
                   <p className="text-xs font-mono font-bold text-emerald-800">{order.ghnOrderCode}</p>
                 </div>
-                <a
-                  href={`https://ghn.vn/pages/khach-hang?code=${order.ghnOrderCode}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-center text-xs text-blue-600 font-semibold underline underline-offset-2"
-                >
-                  Theo dõi vận đơn →
-                </a>
               </div>
             ) : (
               <div className="space-y-3">
                 <p className="text-xs text-slate-500">
-                  Gửi đơn hàng sang Giao Hàng Nhanh để vận chuyển. Trạng thái sẽ chuyển sang <strong>Đang giao</strong>.
+                  Gửi đơn hàng sang đơn vị vận chuyển. Trạng thái sẽ chuyển sang <strong>Đang giao</strong>.
                 </p>
                 <button
-                  onClick={handleShipGHN}
+                  onClick={handleShipOrder}
                   disabled={shipping || order.status === "CANCELLED" || order.status === "DELIVERED"}
                   className="w-full h-11 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold rounded-full transition-colors flex items-center justify-center gap-2"
                 >
@@ -237,7 +229,7 @@ export default function AdminOrderDetailPage({ params }: PageProps) {
                       </svg>
                       Đang gửi...
                     </>
-                  ) : "🚚 Gửi GHN"}
+                  ) : "🚚 Giao vận chuyển"}
                 </button>
               </div>
             )}
@@ -256,7 +248,7 @@ export default function AdminOrderDetailPage({ params }: PageProps) {
             </div>
             {order.ghnOrderCode && (
               <div className="flex justify-between">
-                <span className="text-slate-500">Mã GHN</span>
+                <span className="text-slate-500">Mã vận đơn</span>
                 <span className="font-mono text-xs font-bold text-purple-700">{order.ghnOrderCode}</span>
               </div>
             )}

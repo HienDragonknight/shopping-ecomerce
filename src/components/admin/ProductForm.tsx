@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
-import { ArrowLeft, Save, Plus, X, Tag, ShieldCheck, Box, RefreshCw } from "lucide-react";
+import { ArrowLeft, Save, Plus, X, Tag, Box, RefreshCw, Image as ImageIcon, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 
 interface ProductFormProps {
@@ -19,7 +19,19 @@ export function ProductForm({ productId }: ProductFormProps) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    name: string;
+    description: string;
+    basePrice: string;
+    salePrice: string;
+    thumbnailUrl: string;
+    isActive: boolean;
+    isFeatured: boolean;
+    weightGrams: number;
+    categoryId: string;
+    brandId: string;
+    imageUrls: string[];
+  }>({
     name: "",
     description: "",
     basePrice: "",
@@ -30,54 +42,128 @@ export function ProductForm({ productId }: ProductFormProps) {
     weightGrams: 300,
     categoryId: "",
     brandId: "",
+    imageUrls: [],
   });
 
   const [variants, setVariants] = useState<any[]>([
-    { size: "S", color: "Đen", colorHex: "#000000", sku: "", stockQty: 10, priceAdjustment: 0 }
+    { size: "S", color: "Đen", colorHex: "#000000", sku: "", stockQty: 10, priceAdjustment: 0, imageUrls: [] }
   ]);
 
-  // Load basic data
+  // Track which variant has its image editor expanded
+  const [expandedVariantIndex, setExpandedVariantIndex] = useState<number | null>(null);
+  
+  // Temp inputs for adding images
+  const [newProductImg, setNewProductImg] = useState("");
+  const [newVariantImg, setNewVariantImg] = useState<string[]>([]);
+
+  // Load all data in parallel — nhanh hơn gọi tuần tự
   useEffect(() => {
-    Promise.all([
-      api.get("/categories").then(r => setCategories(r.data.data || [])).catch(() => {}),
-      api.get("/brands").then(r => setBrands(r.data.data || [])).catch(() => {})
-    ]).then(() => {
-      if (productId) {
-        api.get(`/admin/products/${productId}`)
-          .then((r) => {
-            const p = r.data.data;
-            setForm({
-              name: p.name || "",
-              description: p.description || "",
-              basePrice: p.basePrice ? p.basePrice.toString() : "",
-              salePrice: p.salePrice ? p.salePrice.toString() : "",
-              thumbnailUrl: p.thumbnailUrl || "",
-              isActive: p.isActive !== false,
-              isFeatured: !!p.isFeatured,
-              weightGrams: p.weightGrams || 300,
-              categoryId: p.category?.id ? p.category.id.toString() : "",
-              brandId: p.brand?.id ? p.brand.id.toString() : "",
-            });
-            setVariants(p.variants && p.variants.length > 0 ? p.variants : [
-              { size: "S", color: "Đen", colorHex: "#000000", sku: "", stockQty: 10, priceAdjustment: 0 }
-            ]);
-          })
-          .catch(e => setError("Không thể tải thông tin sản phẩm"))
-          .finally(() => setLoading(false));
+    const requests: Promise<any>[] = [
+      api.get("/categories").catch(() => ({ data: { data: [] } })),
+      api.get("/brands").catch(() => ({ data: { data: [] } })),
+      ...(productId ? [api.get(`/admin/products/${productId}`).catch(() => null)] : []),
+    ];
+
+    Promise.all(requests).then(([catRes, brandRes, productRes]) => {
+      setCategories(catRes.data.data || []);
+      setBrands(brandRes.data.data || []);
+
+      if (productId && productRes) {
+        const p = productRes.data.data;
+        if (!p) { setError("Không thể tải thông tin sản phẩm"); setLoading(false); return; }
+        setForm({
+          name: p.name || "",
+          description: p.description || "",
+          basePrice: p.basePrice ? p.basePrice.toString() : "",
+          salePrice: p.salePrice ? p.salePrice.toString() : "",
+          thumbnailUrl: p.thumbnailUrl || "",
+          isActive: p.isActive !== false,
+          isFeatured: !!p.isFeatured,
+          weightGrams: p.weightGrams || 300,
+          categoryId: p.category?.id ? p.category.id.toString() : "",
+          brandId: p.brand?.id ? p.brand.id.toString() : "",
+          imageUrls: p.imageUrls || [],
+        });
+        const loadedVariants = p.variants && p.variants.length > 0
+          ? p.variants.map((v: any) => ({ ...v, imageUrls: v.imageUrls || [] }))
+          : [{ size: "S", color: "Đen", colorHex: "#000000", sku: "", stockQty: 10, priceAdjustment: 0, imageUrls: [] }];
+        setVariants(loadedVariants);
+        setNewVariantImg(new Array(loadedVariants.length).fill(""));
+        setLoading(false);
+      } else if (!productId) {
+        setNewVariantImg(new Array(1).fill(""));
       }
+    }).catch(() => {
+      setError("Lỗi kết nối. Vui lòng thử lại.");
+      setLoading(false);
     });
   }, [productId]);
 
+
   const addVariant = () => {
-    setVariants([...variants, { size: "M", color: "Đen", colorHex: "#000000", sku: "", stockQty: 10, priceAdjustment: 0 }]);
+    setVariants([...variants, { size: "M", color: "Đen", colorHex: "#000000", sku: "", stockQty: 10, priceAdjustment: 0, imageUrls: [] }]);
+    setNewVariantImg([...newVariantImg, ""]);
   };
 
   const removeVariant = (i: number) => {
     setVariants(variants.filter((_, idx) => idx !== i));
+    setNewVariantImg(newVariantImg.filter((_, idx) => idx !== i));
+    if (expandedVariantIndex === i) setExpandedVariantIndex(null);
   };
 
   const updateVariant = (i: number, field: string, value: any) => {
     setVariants(variants.map((v, idx) => idx === i ? { ...v, [field]: value } : v));
+  };
+
+  // Add image to product gallery
+  const addProductImage = () => {
+    if (!newProductImg.trim()) return;
+    setForm(prev => ({
+      ...prev,
+      imageUrls: [...prev.imageUrls, newProductImg.trim()]
+    }));
+    // Auto set thumbnail if currently empty
+    if (!form.thumbnailUrl) {
+      setForm(prev => ({ ...prev, thumbnailUrl: newProductImg.trim() }));
+    }
+    setNewProductImg("");
+  };
+
+  const removeProductImage = (idx: number) => {
+    setForm(prev => ({
+      ...prev,
+      imageUrls: prev.imageUrls.filter((_, i) => i !== idx)
+    }));
+  };
+
+  // Add image to a specific variant
+  const addVariantImage = (vIdx: number) => {
+    const url = newVariantImg[vIdx]?.trim();
+    if (!url) return;
+
+    setVariants(prev => prev.map((v, idx) => {
+      if (idx === vIdx) {
+        return {
+          ...v,
+          imageUrls: [...(v.imageUrls || []), url]
+        };
+      }
+      return v;
+    }));
+
+    setNewVariantImg(prev => prev.map((val, idx) => idx === vIdx ? "" : val));
+  };
+
+  const removeVariantImage = (vIdx: number, imgIdx: number) => {
+    setVariants(prev => prev.map((v, idx) => {
+      if (idx === vIdx) {
+        return {
+          ...v,
+          imageUrls: (v.imageUrls || []).filter((_: any, i: number) => i !== imgIdx)
+        };
+      }
+      return v;
+    }));
   };
 
   // Auto SKU generator helper
@@ -255,80 +341,153 @@ export function ProductForm({ productId }: ProductFormProps) {
               </div>
             </div>
 
-            <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
-              {variants.map((v, i) => (
-                <div key={i} className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center p-3 border border-slate-100 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-all">
-                  {/* Size */}
-                  <div className="w-full sm:w-16">
-                    <input
-                      required
-                      placeholder="Size"
-                      value={v.size}
-                      onChange={(e) => updateVariant(i, "size", e.target.value)}
-                      className="w-full h-9 px-2 text-center border border-slate-200 rounded-lg text-xs font-bold bg-white focus:outline-none"
-                    />
-                  </div>
+            <div className="space-y-4">
+              {variants.map((v, i) => {
+                const isExpanded = expandedVariantIndex === i;
+                const imagesCount = v.imageUrls?.length || 0;
 
-                  {/* Color */}
-                  <div className="w-full sm:flex-1">
-                    <input
-                      required
-                      placeholder="Màu (Ví dụ: Đen, Trắng)"
-                      value={v.color}
-                      onChange={(e) => updateVariant(i, "color", e.target.value)}
-                      className="w-full h-9 px-2.5 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none"
-                    />
-                  </div>
+                return (
+                  <div key={i} className="border border-slate-100 rounded-xl overflow-hidden bg-white shadow-xs">
+                    {/* Main Row */}
+                    <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center p-3 bg-slate-50/50 hover:bg-slate-50/80 transition-all border-b border-slate-100">
+                      {/* Size */}
+                      <div className="w-full sm:w-16 shrink-0">
+                        <input
+                          required
+                          placeholder="Size"
+                          value={v.size}
+                          onChange={(e) => updateVariant(i, "size", e.target.value)}
+                          className="w-full h-9 px-2 text-center border border-slate-200 rounded-lg text-xs font-bold bg-white focus:outline-none"
+                        />
+                      </div>
 
-                  {/* Color Hex */}
-                  <div className="w-full sm:w-20 flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-1.5 h-9">
-                    <input
-                      type="color"
-                      value={v.colorHex || "#000000"}
-                      onChange={(e) => updateVariant(i, "colorHex", e.target.value)}
-                      className="w-6 h-6 border-0 p-0 rounded-full cursor-pointer overflow-hidden shrink-0"
-                    />
-                    <input
-                      placeholder="#HEX"
-                      value={v.colorHex}
-                      onChange={(e) => updateVariant(i, "colorHex", e.target.value)}
-                      className="w-full border-0 text-[10px] uppercase font-mono p-0 focus:outline-none"
-                    />
-                  </div>
+                      {/* Color */}
+                      <div className="w-full sm:flex-1">
+                        <input
+                          required
+                          placeholder="Màu (Ví dụ: Đen, Trắng)"
+                          value={v.color}
+                          onChange={(e) => updateVariant(i, "color", e.target.value)}
+                          className="w-full h-9 px-2.5 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none"
+                        />
+                      </div>
 
-                  {/* SKU */}
-                  <div className="w-full sm:w-32">
-                    <input
-                      required
-                      placeholder="Mã SKU *"
-                      value={v.sku}
-                      onChange={(e) => updateVariant(i, "sku", e.target.value)}
-                      className="w-full h-9 px-2.5 border border-slate-200 rounded-lg text-xs font-mono bg-white focus:outline-none"
-                    />
-                  </div>
+                      {/* Color Hex */}
+                      <div className="w-full sm:w-20 flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-1.5 h-9 shrink-0">
+                        <input
+                          type="color"
+                          value={v.colorHex || "#000000"}
+                          onChange={(e) => updateVariant(i, "colorHex", e.target.value)}
+                          className="w-5 h-5 border-0 p-0 rounded-full cursor-pointer overflow-hidden shrink-0"
+                        />
+                        <input
+                          placeholder="#HEX"
+                          value={v.colorHex}
+                          onChange={(e) => updateVariant(i, "colorHex", e.target.value)}
+                          className="w-full border-0 text-[10px] uppercase font-mono p-0 focus:outline-none"
+                        />
+                      </div>
 
-                  {/* Stock */}
-                  <div className="w-full sm:w-20">
-                    <input
-                      type="number"
-                      required
-                      placeholder="Số lượng"
-                      value={v.stockQty}
-                      onChange={(e) => updateVariant(i, "stockQty", parseInt(e.target.value) || 0)}
-                      className="w-full h-9 px-2 border border-slate-200 rounded-lg text-xs text-center bg-white focus:outline-none"
-                    />
-                  </div>
+                      {/* SKU */}
+                      <div className="w-full sm:w-28 shrink-0">
+                        <input
+                          required
+                          placeholder="Mã SKU *"
+                          value={v.sku}
+                          onChange={(e) => updateVariant(i, "sku", e.target.value)}
+                          className="w-full h-9 px-2.5 border border-slate-200 rounded-lg text-xs font-mono bg-white focus:outline-none"
+                        />
+                      </div>
 
-                  {/* Remove */}
-                  <button
-                    type="button"
-                    onClick={() => removeVariant(i)}
-                    className="w-9 h-9 flex items-center justify-center text-red-500 hover:text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors shrink-0"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
+                      {/* Stock */}
+                      <div className="w-full sm:w-16 shrink-0">
+                        <input
+                          type="number"
+                          required
+                          placeholder="Kho"
+                          value={v.stockQty}
+                          onChange={(e) => updateVariant(i, "stockQty", parseInt(e.target.value) || 0)}
+                          className="w-full h-9 px-1 border border-slate-200 rounded-lg text-xs text-center bg-white focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Controls: Images Toggle & Delete */}
+                      <div className="flex items-center gap-1.5 justify-end shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setExpandedVariantIndex(isExpanded ? null : i)}
+                          className={`h-9 px-2 rounded-lg border text-xs font-semibold flex items-center gap-1 transition-all ${
+                            imagesCount > 0 
+                              ? "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100" 
+                              : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          <ImageIcon size={13} />
+                          <span>Ảnh ({imagesCount})</span>
+                          {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                        </button>
+                        
+                        <button
+                          type="button"
+                          onClick={() => removeVariant(i)}
+                          className="w-9 h-9 flex items-center justify-center text-red-500 hover:text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Variant Specific Images Collapse Sub-Form */}
+                    {isExpanded && (
+                      <div className="p-4 bg-slate-50/50 border-t border-slate-100 space-y-3 animate-in fade-in slide-in-from-top-1">
+                        <p className="text-[10px] uppercase font-bold text-slate-400">Hình ảnh riêng của biến thể này (Màu: {v.color || "chưa chọn"})</p>
+                        
+                        <div className="flex gap-2">
+                          <input
+                            placeholder="Nhập URL hình ảnh cho biến thể..."
+                            value={newVariantImg[i] || ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setNewVariantImg(prev => prev.map((item, idx) => idx === i ? val : item));
+                            }}
+                            className="flex-1 h-9 px-3 border border-slate-200 rounded-lg text-xs focus:outline-none bg-white"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => addVariantImage(i)}
+                            className="px-3 h-9 bg-slate-800 text-white font-bold rounded-lg text-xs hover:bg-slate-900 transition-colors"
+                          >
+                            + Thêm ảnh
+                          </button>
+                        </div>
+
+                        {v.imageUrls && v.imageUrls.length > 0 ? (
+                          <div className="grid grid-cols-5 gap-2 mt-2">
+                            {v.imageUrls.map((imgUrl: string, imgIdx: number) => (
+                              <div key={imgIdx} className="aspect-[3/4] rounded-lg overflow-hidden border border-slate-200 relative group bg-white">
+                                <img
+                                  src={imgUrl}
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeVariantImage(i, imgIdx)}
+                                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600/90 text-white flex items-center justify-center hover:bg-red-700 transition-colors"
+                                >
+                                  <X size={10} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-slate-400 italic">Biến thể này chưa có ảnh riêng (Sẽ sử dụng ảnh chung của sản phẩm).</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -383,12 +542,19 @@ export function ProductForm({ productId }: ProductFormProps) {
             </div>
           </div>
 
-          {/* Media & display settings */}
+          {/* Product Gallery Images Manager */}
           <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm space-y-4">
-            <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3">Hình ảnh & Hiển thị</h3>
+            <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3 flex items-center justify-between">
+              <span>Thư viện hình ảnh chung</span>
+              {form.imageUrls.length > 0 && (
+                <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">
+                  {form.imageUrls.length} ảnh
+                </span>
+              )}
+            </h3>
 
             <div className="space-y-1.5">
-              <label className={labelCls}>URL hình ảnh đại diện</label>
+              <label className={labelCls}>URL ảnh đại diện (Thumbnail)</label>
               <input
                 placeholder="https://..."
                 value={form.thumbnailUrl}
@@ -412,6 +578,62 @@ export function ProductForm({ productId }: ProductFormProps) {
                 </div>
               )}
             </div>
+
+            <div className="space-y-3 pt-2">
+              <label className={labelCls}>Thêm hình ảnh chung khác</label>
+              <div className="flex gap-2">
+                <input
+                  placeholder="https://..."
+                  value={newProductImg}
+                  onChange={(e) => setNewProductImg(e.target.value)}
+                  className="flex-1 h-9 px-3 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#FCCE00] bg-slate-50 focus:bg-white"
+                />
+                <button
+                  type="button"
+                  onClick={addProductImage}
+                  className="px-3 h-9 bg-[#FCCE00] hover:bg-[#E5B800] text-[#1A1A1A] font-bold rounded-lg text-xs transition-colors shrink-0"
+                >
+                  Thêm
+                </button>
+              </div>
+
+              {form.imageUrls.length > 0 && (
+                <div className="grid grid-cols-3 gap-2 mt-2">
+                  {form.imageUrls.map((url, idx) => (
+                    <div key={idx} className="aspect-[3/4] rounded-lg overflow-hidden border border-slate-200 relative group bg-slate-50">
+                      <img
+                        src={url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setForm({ ...form, thumbnailUrl: url })}
+                          className="text-[9px] font-bold text-white bg-slate-800 hover:bg-[#FCCE00] hover:text-[#1A1A1A] px-1.5 py-0.5 rounded transition-all"
+                          title="Đặt làm ảnh đại diện"
+                        >
+                          Chọn làm diện
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeProductImage(idx)}
+                          className="w-5 h-5 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition-colors"
+                          title="Xóa hình ảnh"
+                        >
+                          <X size={10} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Visibility and display */}
+          <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm space-y-4">
+            <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3">Hiển thị</h3>
 
             <div className="pt-2 space-y-3">
               <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-xl transition-all">

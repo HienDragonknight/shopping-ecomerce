@@ -47,7 +47,9 @@ api.interceptors.response.use(
         } catch {
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
+          localStorage.removeItem("auth-storage");
           document.cookie = "auth-token=; path=/; max-age=0; SameSite=Lax";
+          document.cookie = "auth-storage=; path=/; max-age=0; SameSite=Lax";
           window.location.href = "/account/login";
         }
       }

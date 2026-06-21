@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Fragment } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
 import { StatusBadge } from "@/components/admin/StatusBadge";
@@ -49,8 +49,19 @@ interface Product {
   totalStock?: number;
 }
 
-interface Category { id: number; name: string }
+interface Category { id: number; name: string; parentId?: number | null }
 interface Brand { id: number; name: string }
+
+const getCategoryEmoji = (name: string) => {
+  const lower = name.toLowerCase();
+  if (lower.includes("quần áo") || lower.includes("áo") || lower.includes("quần")) return "👕";
+  if (lower.includes("giày") || lower.includes("dép")) return "👟";
+  if (lower.includes("túi")) return "👜";
+  if (lower.includes("đồng hồ")) return "⌚";
+  if (lower.includes("kính")) return "🕶️";
+  if (lower.includes("phụ kiện")) return "🧣";
+  return "📦";
+};
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -68,11 +79,21 @@ export default function AdminProductsPage() {
 
   // Filters
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [brandId, setBrandId] = useState("");
   const [statusFilter, setStatusFilter] = useState(""); // "" | "active" | "inactive"
   const [stockFilter, setStockFilter] = useState(""); // "" | "out" | "low" | "in"
   const [showFilters, setShowFilters] = useState(false);
+
+  // Debounce search — chỉ gọi API sau 350ms kể từ lần gõ cuối cùng
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(0);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   // Quick stats
   const [stats, setStats] = useState({
@@ -84,6 +105,20 @@ export default function AdminProductsPage() {
 
   // Action loaders
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+
+  const toggleRow = (id: number) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const selectedCategoryObj = categories.find(c => String(c.id) === String(categoryId));
+  const selectedRootId = selectedCategoryObj 
+    ? (selectedCategoryObj.parentId || selectedCategoryObj.id) 
+    : null;
 
   // Load static categories & brands
   useEffect(() => {
@@ -104,16 +139,30 @@ export default function AdminProductsPage() {
     setSelected(new Set());
     try {
       const params: Record<string, any> = { page, size: 10 };
-      if (search) params.search = search;
+      if (debouncedSearch) params.search = debouncedSearch;
       if (categoryId) params.categoryId = categoryId;
       if (brandId) params.brandId = brandId;
       if (statusFilter) params.isActive = statusFilter === "active";
 
-      const res = await api.get("/admin/products", { params });
+      // DB-native sorting
+      if (sortField === "price") {
+        params.sort = sortOrder === "asc" ? "price_asc" : "price_desc";
+      } else if (sortField === "name") {
+        params.sort = sortOrder === "asc" ? "name_asc" : "name_desc";
+      } else {
+        params.sort = "newest";
+      }
+
+      // Gọi song song 2 API — nhanh hơn gọi tuần tự
+      const [res, statsRes] = await Promise.all([
+        api.get("/admin/products", { params }),
+        api.get("/admin/inventory"),
+      ]);
+
       let loaded: Product[] = res.data.data.content || [];
       loaded = processProducts(loaded);
 
-      // Client side filtering for stock status (since backend specs don't have it directly)
+      // Client side filtering for stock status
       if (stockFilter) {
         loaded = loaded.filter(p => {
           const stock = p.totalStock || 0;
@@ -124,37 +173,23 @@ export default function AdminProductsPage() {
         });
       }
 
-      // Client-side sorting for premium interactivity
-      loaded.sort((a, b) => {
-        let valA: any = a[sortField as keyof Product] ?? "";
-        let valB: any = b[sortField as keyof Product] ?? "";
-        
-        if (sortField === "price") {
-          valA = a.effectivePrice;
-          valB = b.effectivePrice;
-        } else if (sortField === "stock") {
-          valA = a.totalStock || 0;
-          valB = b.totalStock || 0;
-        } else if (sortField === "name") {
-          valA = a.name.toLowerCase();
-          valB = b.name.toLowerCase();
-        }
-
-        if (valA < valB) return sortOrder === "asc" ? -1 : 1;
-        if (valA > valB) return sortOrder === "asc" ? 1 : -1;
-        return 0;
-      });
+      // If sortField is stock, sort client-side
+      if (sortField === "stock") {
+        loaded.sort((a, b) => {
+          const valA = a.totalStock || 0;
+          const valB = b.totalStock || 0;
+          return sortOrder === "asc" ? valA - valB : valB - valA;
+        });
+      }
 
       setProducts(loaded);
       setTotalPages(res.data.data.totalPages || 1);
       setTotalElements(res.data.data.totalElements || 0);
 
-      // Compute simple stats for the KPI section
-      const statsRes = await api.get("/admin/inventory");
       const invData = statsRes.data.data || {};
       setStats({
         total: res.data.data.totalElements || 0,
-        active: loaded.filter(p => p.isActive).length, // approximate active
+        active: loaded.filter(p => p.isActive).length,
         lowStock: invData.lowStock || 0,
         outOfStock: invData.outOfStock || 0
       });
@@ -163,7 +198,7 @@ export default function AdminProductsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, categoryId, brandId, statusFilter, stockFilter, sortField, sortOrder]);
+  }, [page, debouncedSearch, categoryId, brandId, statusFilter, stockFilter, sortField, sortOrder]);
 
   useEffect(() => {
     fetchProducts();
@@ -305,6 +340,89 @@ export default function AdminProductsPage() {
         ))}
       </div>
 
+      {/* Root Category Tabs */}
+      <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Phân loại sản phẩm</h2>
+          {categoryId && (
+            <button
+              onClick={() => { setCategoryId(""); setPage(0); }}
+              className="text-xs font-bold text-[#FCCE00] hover:text-[#E5B800] transition-colors"
+            >
+              Xem tất cả sản phẩm
+            </button>
+          )}
+        </div>
+        
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+          <button
+            onClick={() => { setCategoryId(""); setPage(0); }}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shrink-0 ${
+              !selectedRootId
+                ? "bg-[#1A1A1A] text-white shadow-md shadow-slate-900/10 scale-95"
+                : "bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+            }`}
+          >
+            <span>📦</span>
+            <span>Tất cả</span>
+          </button>
+          
+          {categories
+            .filter(c => !c.parentId)
+            .map(rootCat => {
+              const isActive = selectedRootId === rootCat.id;
+              return (
+                <button
+                  key={rootCat.id}
+                  onClick={() => { setCategoryId(String(rootCat.id)); setPage(0); }}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shrink-0 ${
+                    isActive
+                      ? "bg-[#FCCE00] text-[#1A1A1A] shadow-md shadow-[#FCCE00]/10 scale-95"
+                      : "bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  }`}
+                >
+                  <span>{getCategoryEmoji(rootCat.name)}</span>
+                  <span>{rootCat.name}</span>
+                </button>
+              );
+            })}
+        </div>
+
+        {/* Subcategories pills */}
+        {selectedRootId && (
+          <div className="flex gap-1.5 overflow-x-auto pt-2 border-t border-slate-100/60 pb-1 scrollbar-none animate-in fade-in duration-200">
+            <button
+              onClick={() => { setCategoryId(String(selectedRootId)); setPage(0); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
+                String(categoryId) === String(selectedRootId)
+                  ? "bg-slate-800 text-white"
+                  : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700"
+              }`}
+            >
+              Tất cả {categories.find(c => c.id === selectedRootId)?.name}
+            </button>
+            {categories
+              .filter(c => c.parentId === selectedRootId)
+              .map(subCat => {
+                const isSubActive = String(categoryId) === String(subCat.id);
+                return (
+                  <button
+                    key={subCat.id}
+                    onClick={() => { setCategoryId(String(subCat.id)); setPage(0); }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
+                      isSubActive
+                        ? "bg-[#FCCE00]/25 text-[#735A00] border border-[#FCCE00]/40 font-black"
+                        : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 border border-transparent"
+                    }`}
+                  >
+                    {subCat.name}
+                  </button>
+                );
+              })}
+          </div>
+        )}
+      </div>
+
       {/* Search & filters panel */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 space-y-3">
         <div className="flex flex-col sm:flex-row gap-3">
@@ -406,6 +524,7 @@ export default function AdminProductsPage() {
                   <input type="checkbox" checked={selected.size === products.length && products.length > 0}
                     onChange={toggleAll} className="rounded border-slate-300 accent-[#FCCE00] w-4 h-4" />
                 </th>
+                <th className="w-8 px-2 py-3.5"></th>
                 <th 
                   onClick={() => handleSort("name")}
                   className="px-4 py-3.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider cursor-pointer hover:text-slate-700"
@@ -439,14 +558,14 @@ export default function AdminProductsPage() {
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
-                    <td colSpan={7} className="px-4 py-4">
+                    <td colSpan={8} className="px-4 py-4">
                       <div className="h-14 bg-slate-100 rounded-xl animate-pulse" />
                     </td>
                   </tr>
                 ))
               ) : products.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-16 text-center">
+                  <td colSpan={8} className="py-16 text-center">
                     <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-3">
                       <Package className="text-slate-300" size={24} />
                     </div>
@@ -460,88 +579,197 @@ export default function AdminProductsPage() {
                 if (stock === 0) stockColor = "text-red-600 bg-red-50";
                 else if (stock <= 10) stockColor = "text-amber-600 bg-amber-50";
 
+                const uniqueColors = Array.from(new Set(p.variants?.map(v => v.color).filter(Boolean)));
+                const uniqueSizes = Array.from(new Set(p.variants?.map(v => v.size).filter(Boolean)));
+
+                const isExpanded = expandedRows.has(p.id);
+
                 return (
-                  <tr key={p.id} className={`hover:bg-slate-50/50 transition-all ${selected.has(p.id) ? "bg-[#FFFDE7]/20" : ""}`}>
-                    <td className="px-4 py-4">
-                      <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleSelect(p.id)}
-                        className="rounded border-slate-300 accent-[#FCCE00] w-4 h-4" />
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={p.thumbnailUrl || "https://placehold.co/48x48/F5F5F5/999?text=Yody"}
-                          alt={p.name}
-                          className="w-11 h-11 rounded-xl object-cover bg-slate-50 border border-slate-100 shrink-0"
-                        />
-                        <div className="min-w-0">
-                          <p className="text-sm font-bold text-slate-900 line-clamp-1 hover:text-blue-600 transition-colors">
-                            {p.name}
-                          </p>
-                          <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[10px] text-slate-400 font-mono">/{p.slug}</span>
-                            {p.isFeatured && (
-                              <span className="text-[9px] bg-red-50 text-red-600 px-1 py-0.5 rounded font-black flex items-center gap-0.5">
-                                <Sparkles size={8} /> Nổi bật
-                              </span>
+                  <Fragment key={p.id}>
+                    <tr className={`hover:bg-slate-50/50 transition-all ${selected.has(p.id) ? "bg-[#FFFDE7]/20" : ""}`}>
+                      <td className="px-4 py-4">
+                        <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleSelect(p.id)}
+                          className="rounded border-slate-300 accent-[#FCCE00] w-4 h-4" />
+                      </td>
+                      <td className="px-2 py-4 text-center">
+                        <button 
+                          onClick={() => toggleRow(p.id)}
+                          className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+                        >
+                          {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                        </button>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={p.thumbnailUrl || "https://placehold.co/48x48/F5F5F5/999?text=Yody"}
+                            alt={p.name}
+                            className="w-11 h-11 rounded-xl object-cover bg-slate-50 border border-slate-100 shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-slate-900 line-clamp-1 hover:text-blue-600 transition-colors">
+                              {p.name}
+                            </p>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="text-[10px] text-slate-400 font-mono">/{p.slug}</span>
+                              {p.isFeatured && (
+                                <span className="text-[9px] bg-red-50 text-red-600 px-1 py-0.5 rounded font-black flex items-center gap-0.5">
+                                  <Sparkles size={8} /> Nổi bật
+                                </span>
+                              )}
+                            </div>
+                            {/* Visual color and size swatches */}
+                            {(uniqueColors.length > 0 || uniqueSizes.length > 0) && (
+                              <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                                {uniqueColors.map((color, cIdx) => (
+                                  <span 
+                                    key={cIdx} 
+                                    className="text-[9px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full border border-slate-200"
+                                    title={`Màu: ${color}`}
+                                  >
+                                    {color}
+                                  </span>
+                                ))}
+                                {uniqueSizes.map((size, sIdx) => (
+                                  <span 
+                                    key={sIdx} 
+                                    className="text-[9px] font-bold bg-slate-50 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200/60"
+                                    title={`Cỡ: ${size}`}
+                                  >
+                                    {size}
+                                  </span>
+                                ))}
+                              </div>
                             )}
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      <p className="text-xs font-semibold text-slate-700">{p.category?.name || "—"}</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">{p.brand?.name || "—"}</p>
-                    </td>
-                    <td className="px-4 py-4">
-                      <p className="text-sm font-black text-slate-900">{p.effectivePrice?.toLocaleString("vi-VN")}đ</p>
-                      {p.salePrice && (
-                        <p className="text-xs text-slate-400 line-through mt-0.5">{p.basePrice?.toLocaleString("vi-VN")}đ</p>
-                      )}
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs font-bold px-2 py-1 rounded-lg ${stockColor}`}>
-                          {stock} sp
-                        </span>
-                        <span className="text-[10px] text-slate-400">
-                          ({p.variants?.length || 0} biến thể)
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      <button 
-                        disabled={togglingId === p.id}
-                        onClick={() => handleToggleStatus(p)}
-                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold transition-all ${
-                          p.isActive 
-                            ? "bg-green-50 text-green-700 hover:bg-green-100" 
-                            : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                        }`}
-                        title={p.isActive ? "Nhấp để Ẩn sản phẩm" : "Nhấp để Hiển thị sản phẩm"}
-                      >
-                        {togglingId === p.id ? (
-                          <span className="animate-spin rounded-full h-3 w-3 border-b border-current" />
-                        ) : p.isActive ? (
-                          <Eye size={12} />
+                      </td>
+                      <td className="px-4 py-4">
+                        {p.category ? (
+                          <div className="space-y-0.5">
+                            {/* Parent category if exists */}
+                            {categories.find(c => c.id === p.category?.id)?.parentId ? (
+                              <div className="flex items-center gap-1 flex-wrap">
+                                <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">
+                                  {categories.find(c => c.id === categories.find(sub => sub.id === p.category?.id)?.parentId)?.name}
+                                </span>
+                                <span className="text-slate-400 text-[10px]">→</span>
+                                <span className="text-xs font-bold text-slate-700">
+                                  {p.category.name}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-xs font-bold text-slate-700 bg-[#FCCE00]/10 text-[#735A00] px-1.5 py-0.5 rounded">
+                                {p.category.name}
+                              </span>
+                            )}
+                            <p className="text-[10px] text-slate-400 mt-0.5">{p.brand?.name || "—"}</p>
+                          </div>
                         ) : (
-                          <EyeOff size={12} />
+                          <span className="text-xs text-slate-400">—</span>
                         )}
-                        {p.isActive ? "Hiển thị" : "Đang ẩn"}
-                      </button>
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Link href={`/admin/products/${p.id}/edit`}
-                          className="w-8 h-8 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 flex items-center justify-center transition-colors">
-                          <Edit2 size={13} />
-                        </Link>
-                        <button onClick={() => deleteProduct(p.id)}
-                          className="w-8 h-8 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 flex items-center justify-center transition-colors">
-                          <Trash2 size={13} />
+                      </td>
+                      <td className="px-4 py-4">
+                        <p className="text-sm font-black text-slate-900">{p.effectivePrice?.toLocaleString("vi-VN")}đ</p>
+                        {p.salePrice && (
+                          <p className="text-xs text-slate-400 line-through mt-0.5">{p.basePrice?.toLocaleString("vi-VN")}đ</p>
+                        )}
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs font-bold px-2 py-1 rounded-lg ${stockColor}`}>
+                            {stock} sp
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            ({p.variants?.length || 0} biến thể)
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <button 
+                          disabled={togglingId === p.id}
+                          onClick={() => handleToggleStatus(p)}
+                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                            p.isActive 
+                              ? "bg-green-50 text-green-700 hover:bg-green-100" 
+                              : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                          }`}
+                          title={p.isActive ? "Nhấp để Ẩn sản phẩm" : "Nhấp để Hiển thị sản phẩm"}
+                        >
+                          {togglingId === p.id ? (
+                            <span className="animate-spin rounded-full h-3 w-3 border-b border-current" />
+                          ) : p.isActive ? (
+                            <Eye size={12} />
+                          ) : (
+                            <EyeOff size={12} />
+                          )}
+                          {p.isActive ? "Hiển thị" : "Đang ẩn"}
                         </button>
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Link href={`/admin/products/${p.id}/edit`}
+                            className="w-8 h-8 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900 flex items-center justify-center transition-colors">
+                            <Edit2 size={13} />
+                          </Link>
+                          <button onClick={() => deleteProduct(p.id)}
+                            className="w-8 h-8 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-700 flex items-center justify-center transition-colors">
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {isExpanded && (
+                      <tr className="bg-slate-50/40">
+                        <td colSpan={8} className="px-4 sm:px-12 py-3 border-t border-slate-100">
+                          <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden p-4 space-y-3">
+                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                              <Layers size={12} />
+                              Chi tiết các biến thể ({p.variants?.length || 0})
+                            </h4>
+                            {p.variants && p.variants.length > 0 ? (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                {p.variants.map((v, vIdx) => {
+                                  const isLow = v.stockQty > 0 && v.stockQty <= 10;
+                                  const isOut = v.stockQty === 0;
+                                  let badgeColor = "border-slate-100 bg-slate-50 text-slate-600";
+                                  if (isOut) badgeColor = "border-red-100 bg-red-50 text-red-700";
+                                  else if (isLow) badgeColor = "border-amber-100 bg-amber-50 text-amber-700";
+
+                                  return (
+                                    <div key={v.id || vIdx} className={`border rounded-xl p-3 flex flex-col justify-between space-y-2 bg-white shadow-xs ${isOut ? 'border-red-200' : isLow ? 'border-amber-200' : 'border-slate-200'}`}>
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold text-slate-800">Biến thể #{vIdx + 1}</span>
+                                        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${badgeColor}`}>
+                                          {isOut ? 'Hết hàng' : isLow ? 'Sắp hết' : 'Còn hàng'}
+                                        </span>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-2 text-xs">
+                                        <div>
+                                          <p className="text-slate-400 font-medium">Màu sắc</p>
+                                          <p className="font-bold text-slate-700 mt-0.5">{v.color || "—"}</p>
+                                        </div>
+                                        <div>
+                                          <p className="text-slate-400 font-medium">Kích cỡ</p>
+                                          <p className="font-bold text-slate-700 mt-0.5">{v.size || "—"}</p>
+                                        </div>
+                                      </div>
+                                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                                        <span className="text-xs text-slate-400">Số lượng:</span>
+                                        <span className="text-sm font-black text-slate-800">{v.stockQty} sp</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-slate-400 italic">Sản phẩm này chưa được thiết lập biến thể.</p>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>

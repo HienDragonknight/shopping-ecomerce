@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "placehold.co" },
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "http", hostname: "localhost" },
+      { protocol: "https", hostname: "fashion-backend-production-8e3b.up.railway.app" },
     ],
     dangerouslyAllowSVG: true,
   },

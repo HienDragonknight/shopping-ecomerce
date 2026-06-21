@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { clearTokens, setTokens, setUser } from "@/lib/auth";
 import api from "@/lib/api";
+import { useCartStore } from "@/store/useCartStore";
 
 /**
  * Sync the Zustand auth-storage state to a cookie so that
@@ -74,14 +75,17 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
-        try {
-          await api.post("/auth/logout");
-        } catch {}
+        // Send logout request to backend in background so it doesn't block the client
+        api.post("/auth/logout").catch((err) => {
+          console.error("Backend logout failed:", err);
+        });
+
+        // Immediately clear client session
         clearTokens();
         syncAuthCookie(null, false);
         set({ user: null, isAuthenticated: false });
+        
         // Clear cart store to prevent data leaking between sessions
-        const { useCartStore } = await import("@/store/useCartStore");
         useCartStore.setState({ items: [], isOpen: false });
       },
 

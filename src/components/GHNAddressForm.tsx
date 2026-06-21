@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import api from "@/lib/api";
+import axios from "axios";
 
 interface GHNProvince { ProvinceID: number; ProvinceName: string; }
 interface GHNDistrict { DistrictID: number; DistrictName: string; }
@@ -46,10 +47,13 @@ export function GHNAddressForm({ onSave, onCancel, initialData, saving }: Props)
   // Load provinces on mount
   useEffect(() => {
     setLoadingProvinces(true);
-    api.get("/ghn/provinces")
+    axios.get("https://provinces.open-api.vn/api/p/")
       .then((r) => {
-        const data = r.data.data?.data || r.data.data || [];
-        setProvinces(Array.isArray(data) ? data : []);
+        const data = (r.data || []).map((p: any) => ({
+          ProvinceID: p.code,
+          ProvinceName: p.name,
+        }));
+        setProvinces(data);
       })
       .catch(() => setGhnFailed(true))
       .finally(() => setLoadingProvinces(false));
@@ -63,9 +67,12 @@ export function GHNAddressForm({ onSave, onCancel, initialData, saving }: Props)
     if (!provinceId) return;
     setLoadingDistricts(true);
     try {
-      const r = await api.post("/ghn/districts", { provinceId });
-      const data = r.data.data?.data || r.data.data || [];
-      setDistricts(Array.isArray(data) ? data : []);
+      const r = await axios.get(`https://provinces.open-api.vn/api/p/${provinceId}?depth=2`);
+      const data = (r.data?.districts || []).map((d: any) => ({
+        DistrictID: d.code,
+        DistrictName: d.name,
+      }));
+      setDistricts(data);
     } catch { setGhnFailed(true); }
     finally { setLoadingDistricts(false); }
   };
@@ -77,9 +84,12 @@ export function GHNAddressForm({ onSave, onCancel, initialData, saving }: Props)
     if (!districtId) return;
     setLoadingWards(true);
     try {
-      const r = await api.post("/ghn/wards", { districtId });
-      const data = r.data.data?.data || r.data.data || [];
-      setWards(Array.isArray(data) ? data : []);
+      const r = await axios.get(`https://provinces.open-api.vn/api/d/${districtId}?depth=2`);
+      const data = (r.data?.wards || []).map((w: any) => ({
+        WardCode: String(w.code),
+        WardName: w.name,
+      }));
+      setWards(data);
     } catch { setGhnFailed(true); }
     finally { setLoadingWards(false); }
   };
@@ -114,7 +124,7 @@ export function GHNAddressForm({ onSave, onCancel, initialData, saving }: Props)
     <form onSubmit={handleSubmit} className="space-y-4">
       {ghnFailed && (
         <div className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-          ⚠️ Không thể kết nối GHN API – vui lòng nhập tỉnh/huyện/xã thủ công
+          ⚠️ Không thể kết nối API địa chỉ – vui lòng nhập tỉnh/huyện/xã thủ công
         </div>
       )}
 

@@ -51,21 +51,18 @@ export default function CheckoutPage() {
     setLoadingFee(true);
     setShippingFee(null);
     try {
-      const totalWeight = items.reduce((s) => s + 300, 0);
-      const res = await api.post("/ghn/shipping-fee", {
-        districtId: address.districtId,
-        wardCode: address.wardCode,
-        weight: totalWeight,
-        value: Math.round(totalPrice()),
-      });
-      const fee = res.data.data?.data?.total || res.data.data?.total || 30000;
+      // Simulate network request delay for natural UX
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      const subtotal = totalPrice();
+      // Free shipping for orders >= 499,000đ, otherwise 30,000đ
+      const fee = subtotal >= 499000 ? 0 : 30000;
       setShippingFee(fee);
     } catch {
       setShippingFee(30000); // fallback
     } finally {
       setLoadingFee(false);
     }
-  }, [items, totalPrice]);
+  }, [totalPrice]);
 
   useEffect(() => {
     if (!isAuthenticated) return;

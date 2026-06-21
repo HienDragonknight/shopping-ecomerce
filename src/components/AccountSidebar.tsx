@@ -20,7 +20,6 @@ export function AccountSidebar() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
-    if (!confirm("Bạn có chắc muốn đăng xuất không?")) return;
     setIsLoggingOut(true);
     try {
       await logout();

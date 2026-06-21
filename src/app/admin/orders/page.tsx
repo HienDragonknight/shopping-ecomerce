@@ -19,7 +19,7 @@ export default function AdminOrdersPage() {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
-  const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -76,7 +76,7 @@ export default function AdminOrdersPage() {
         <div>
           <h1 className="text-2xl font-bold text-[#1A1A1A]">Quản lý đơn hàng</h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Cập nhật lúc {lastRefresh.toLocaleTimeString("vi-VN")} · Tự động refresh mỗi 30s
+            Cập nhật lúc {lastRefresh ? lastRefresh.toLocaleTimeString("vi-VN") : "..."} · Tự động refresh mỗi 30s
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
