@@ -30,7 +30,7 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (typeof window !== "undefined" && error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       const refreshToken = localStorage.getItem("refreshToken");
 
@@ -40,11 +40,14 @@ api.interceptors.response.use(
           const { accessToken, refreshToken: newRefresh } = res.data.data;
           localStorage.setItem("accessToken", accessToken);
           localStorage.setItem("refreshToken", newRefresh);
+          // Update auth-token cookie for middleware
+          document.cookie = `auth-token=${accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return api(originalRequest);
         } catch {
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
+          document.cookie = "auth-token=; path=/; max-age=0; SameSite=Lax";
           window.location.href = "/account/login";
         }
       }

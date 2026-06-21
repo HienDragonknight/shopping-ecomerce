@@ -5,6 +5,20 @@ import { persist } from "zustand/middleware";
 import { clearTokens, setTokens, setUser } from "@/lib/auth";
 import api from "@/lib/api";
 
+/**
+ * Sync the Zustand auth-storage state to a cookie so that
+ * Next.js middleware (runs server-side) can read auth state.
+ */
+function syncAuthCookie(user: { role: string } | null, isAuthenticated: boolean) {
+  if (typeof document === "undefined") return;
+  if (user && isAuthenticated) {
+    const payload = JSON.stringify({ state: { user, isAuthenticated } });
+    document.cookie = `auth-storage=${encodeURIComponent(payload)}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+  } else {
+    document.cookie = "auth-storage=; path=/; max-age=0; SameSite=Lax";
+  }
+}
+
 interface User {
   id: number;
   email: string | null;
@@ -39,6 +53,7 @@ export const useAuthStore = create<AuthState>()(
           setTokens(accessToken, refreshToken);
           setUser(user);
           set({ user, isAuthenticated: true });
+          syncAuthCookie(user, true);
         } finally {
           set({ isLoading: false });
         }
@@ -52,6 +67,7 @@ export const useAuthStore = create<AuthState>()(
           setTokens(accessToken, refreshToken);
           setUser(user);
           set({ user, isAuthenticated: true });
+          syncAuthCookie(user, true);
         } finally {
           set({ isLoading: false });
         }
@@ -62,10 +78,7 @@ export const useAuthStore = create<AuthState>()(
           await api.post("/auth/logout");
         } catch {}
         clearTokens();
-        // Also clear auth-storage cookie used by middleware
-        if (typeof document !== "undefined") {
-          document.cookie = "auth-storage=; path=/; max-age=0; SameSite=Lax";
-        }
+        syncAuthCookie(null, false);
         set({ user: null, isAuthenticated: false });
         // Clear cart store to prevent data leaking between sessions
         const { useCartStore } = await import("@/store/useCartStore");

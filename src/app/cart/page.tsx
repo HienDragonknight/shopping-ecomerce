@@ -13,6 +13,7 @@ export default function CartPage() {
 
   useEffect(() => {
     if (isAuthenticated) fetchCart();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
   if (!isAuthenticated) {
@@ -23,6 +24,38 @@ export default function CartPage() {
         <Link href="/account/login" className="px-6 py-3 bg-[#FCCE00] text-[#1A1A1A] font-bold rounded-full">
           Đăng nhập
         </Link>
+      </div>
+    );
+  }
+
+  // Show loading skeleton while fetching cart (prevents flash of empty state)
+  if (isLoading && items.length === 0) {
+    return (
+      <div className="bg-[#F5F5F5] min-h-screen py-8">
+        <div className="yody-container max-w-5xl">
+          <div className="h-8 w-48 bg-slate-200 rounded animate-pulse mb-6" />
+          <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex-1 space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-white rounded-2xl p-4 shadow-sm flex gap-4 animate-pulse">
+                  <div className="w-20 h-24 rounded-xl bg-slate-200 shrink-0" />
+                  <div className="flex-1 space-y-2 pt-2">
+                    <div className="h-4 bg-slate-200 rounded w-3/4" />
+                    <div className="h-3 bg-slate-100 rounded w-1/2" />
+                    <div className="h-4 bg-slate-200 rounded w-1/4 mt-2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="lg:w-72 shrink-0">
+              <div className="bg-white rounded-2xl p-6 shadow-sm animate-pulse space-y-3">
+                <div className="h-5 bg-slate-200 rounded w-2/3" />
+                <div className="h-4 bg-slate-100 rounded" />
+                <div className="h-12 bg-slate-200 rounded-full mt-4" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -38,6 +71,7 @@ export default function CartPage() {
       </div>
     );
   }
+
 
   return (
     <div className="bg-[#F5F5F5] min-h-screen py-8">

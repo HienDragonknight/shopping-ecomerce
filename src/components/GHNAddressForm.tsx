@@ -88,10 +88,24 @@ export function GHNAddressForm({ onSave, onCancel, initialData, saving }: Props)
     setForm((f) => ({ ...f, wardCode, ward: wardName }));
   };
 
+  const [formError, setFormError] = useState("");
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSave(form);
+    setFormError("");
+    if (!form.fullName.trim()) { setFormError("Vui lòng nhập họ tên"); return; }
+    if (!form.phone.trim()) { setFormError("Vui lòng nhập số điện thoại"); return; }
+    if (!form.province.trim()) { setFormError("Vui lòng chọn tỉnh/thành phố"); return; }
+    if (!form.district.trim()) { setFormError("Vui lòng chọn quận/huyện"); return; }
+    if (!form.ward.trim()) { setFormError("Vui lòng chọn phường/xã"); return; }
+    if (!form.detail.trim()) { setFormError("Vui lòng nhập địa chỉ cụ thể"); return; }
+    try {
+      await onSave(form);
+    } catch {
+      setFormError("Lưu địa chỉ thất bại. Vui lòng thử lại.");
+    }
   };
+
 
   const inputCls = "w-full h-11 px-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#FCCE00] focus:border-transparent bg-white transition-all";
   const selectCls = `${inputCls} cursor-pointer disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed`;
@@ -196,25 +210,42 @@ export function GHNAddressForm({ onSave, onCancel, initialData, saving }: Props)
           </div>
         </div>
       ) : (
-        /* Fallback text inputs if GHN API fails */
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {[
-            { label: "Tỉnh/Thành phố *", key: "province", placeholder: "TP. Hồ Chí Minh" },
-            { label: "Quận/Huyện *", key: "district", placeholder: "Quận 1" },
-            { label: "Phường/Xã *", key: "ward", placeholder: "Phường Bến Nghé" },
-          ].map(({ label, key, placeholder }) => (
-            <div key={key}>
-              <label className="text-xs font-semibold text-slate-600 mb-1 block">{label}</label>
+      /* Fallback text inputs if GHN API fails */
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-slate-600 mb-1 block">Tỉnh/Thành phố *</label>
               <input
                 required
-                placeholder={placeholder}
-                value={(form as unknown as Record<string, string>)[key]}
-                onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                placeholder="TP. Hồ Chí Minh"
+                value={form.province}
+                onChange={(e) => setForm({ ...form, province: e.target.value, provinceId: 999 })}
                 className={inputCls}
               />
             </div>
-          ))}
+            <div>
+              <label className="text-xs font-semibold text-slate-600 mb-1 block">Quận/Huyện *</label>
+              <input
+                required
+                placeholder="Quận 1"
+                value={form.district}
+                onChange={(e) => setForm({ ...form, district: e.target.value, districtId: 9999 })}
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 mb-1 block">Phường/Xã *</label>
+              <input
+                required
+                placeholder="Phường Bến Nghé"
+                value={form.ward}
+                onChange={(e) => setForm({ ...form, ward: e.target.value, wardCode: e.target.value.replace(/\s+/g, "_").substring(0, 20) || "MANUAL" })}
+                className={inputCls}
+              />
+            </div>
+          </div>
         </div>
+
       )}
 
       {/* Địa chỉ cụ thể */}
@@ -240,7 +271,15 @@ export function GHNAddressForm({ onSave, onCancel, initialData, saving }: Props)
         <span className="text-sm text-slate-600">Đặt làm địa chỉ mặc định</span>
       </label>
 
+      {/* Error */}
+      {formError && (
+        <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+          ❌ {formError}
+        </div>
+      )}
+
       {/* Actions */}
+
       <div className="flex gap-3 pt-1">
         <button
           type="submit"

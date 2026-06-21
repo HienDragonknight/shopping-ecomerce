@@ -31,7 +31,7 @@ export function middleware(request: NextRequest) {
       try {
         const parsed = JSON.parse(decodeURIComponent(authStorage.value));
         const role = parsed?.state?.user?.role;
-        if (role !== "ADMIN") {
+        if (role !== "ROLE_ADMIN" && role !== "ADMIN") {
           return NextResponse.redirect(new URL("/", request.url));
         }
       } catch {

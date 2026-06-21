@@ -81,9 +81,14 @@ export default function ProductDetailPage({ params }: PageProps) {
     if (!selectedVariant) { setAddError("Vui lòng chọn phân loại sản phẩm"); return; }
     if (selectedVariant.stockQty < quantity) { setAddError("Không đủ hàng"); return; }
     setAddError("");
-    await addItem(selectedVariant.id, quantity);
-    setAddedToCart(true);
-    setTimeout(() => setAddedToCart(false), 2500);
+    try {
+      await addItem(selectedVariant.id, quantity);
+      setAddedToCart(true);
+      setTimeout(() => setAddedToCart(false), 2500);
+    } catch (err) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setAddError(axiosErr?.response?.data?.message || "Không thể thêm vào giỏ hàng. Vui lòng thử lại.");
+    }
   };
 
   const handleBuyNow = async () => {
@@ -239,9 +244,13 @@ export default function ProductDetailPage({ params }: PageProps) {
             )}
 
             {/* Stock info */}
-            {selectedVariant && (
+            {selectedVariant ? (
               <p className={`text-xs font-semibold ${inStock ? "text-emerald-600" : "text-red-500"}`}>
                 {inStock ? `✓ Còn ${selectedVariant.stockQty} sản phẩm` : "✗ Hết hàng"}
+              </p>
+            ) : (
+              <p className="text-xs font-semibold text-red-500">
+                ✗ Sản phẩm hiện tại chưa có phân loại hàng hoặc đã hết hàng.
               </p>
             )}
 

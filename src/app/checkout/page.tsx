@@ -90,7 +90,9 @@ export default function CheckoutPage() {
   const handleSaveAddress = async (data: AddressFormData) => {
     setSavingAddress(true);
     try {
-      const res = await api.post("/addresses", data);
+      // Strip any spaces/dashes from phone number before sending
+      const cleanData = { ...data, phone: data.phone.replace(/[\s\-().]/g, "") };
+      const res = await api.post("/addresses", cleanData);
       const newAddr: Address = res.data.data;
       const updatedRes = await api.get("/addresses");
       const addrs: Address[] = updatedRes.data.data || [];
@@ -98,10 +100,18 @@ export default function CheckoutPage() {
       setShowAddressForm(false);
       setSelectedAddress(newAddr.id);
       fetchShippingFee(newAddr);
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string; errors?: Record<string, string> } } };
+      const errMsg = err.response?.data?.errors
+        ? Object.values(err.response.data.errors).join(", ")
+        : err.response?.data?.message || "Lưu địa chỉ thất bại";
+      // Re-throw with message so GHNAddressForm can catch it
+      throw new Error(errMsg);
     } finally {
       setSavingAddress(false);
     }
   };
+
 
   const handlePlaceOrder = async () => {
     if (!selectedAddress) { setError("Vui lòng chọn địa chỉ giao hàng"); return; }

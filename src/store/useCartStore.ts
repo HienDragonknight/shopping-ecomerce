@@ -24,6 +24,7 @@ interface CartState {
   items: CartItem[];
   isOpen: boolean;
   isLoading: boolean;
+  error: string | null;
   fetchCart: () => Promise<void>;
   addItem: (variantId: number, quantity?: number) => Promise<void>;
   updateItem: (id: number, quantity: number) => Promise<void>;
@@ -31,6 +32,7 @@ interface CartState {
   clearCart: () => Promise<void>;
   openCart: () => void;
   closeCart: () => void;
+  clearError: () => void;
   totalItems: () => number;
   totalPrice: () => number;
 }
@@ -41,20 +43,31 @@ export const useCartStore = create<CartState>()(
       items: [],
       isOpen: false,
       isLoading: false,
+      error: null,
 
       fetchCart: async () => {
         try {
           const res = await api.get("/cart");
-          set({ items: res.data.data });
-        } catch {}
+          set({ items: res.data.data, error: null });
+        } catch (err) {
+          const axiosErr = err as { response?: { status?: number } };
+          // Don't surface 401 errors (handled by interceptor)
+          if (axiosErr?.response?.status !== 401) {
+            set({ error: "Không thể tải giỏ hàng" });
+          }
+        }
       },
 
       addItem: async (variantId, quantity = 1) => {
-        set({ isLoading: true });
+        set({ isLoading: true, error: null });
         try {
-          const res = await api.post("/cart", { variantId, quantity });
+          await api.post("/cart", { variantId, quantity });
           await get().fetchCart();
           set({ isOpen: true });
+        } catch (err) {
+          const axiosErr = err as { response?: { data?: { message?: string } } };
+          set({ error: axiosErr?.response?.data?.message || "Không thể thêm vào giỏ hàng" });
+          throw err; // Re-throw so product page can handle it too
         } finally {
           set({ isLoading: false });
         }
@@ -91,6 +104,7 @@ export const useCartStore = create<CartState>()(
 
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
+      clearError: () => set({ error: null }),
 
       totalItems: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
       totalPrice: () => get().items.reduce((sum, i) => sum + i.subtotal, 0),

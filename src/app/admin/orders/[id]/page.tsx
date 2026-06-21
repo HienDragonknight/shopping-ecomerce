@@ -19,13 +19,29 @@ export default function AdminOrderDetailPage({ params }: PageProps) {
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [shipping, setShipping] = useState(false);
   const [newStatus, setNewStatus] = useState("");
+  const [toast, setToast] = useState("");
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(""), 3000);
+  };
 
   useEffect(() => {
-    api.get(`/admin/orders?size=1000`).then((r) => {
-      const found = (r.data.data.content || []).find((o: any) => String(o.id) === id);
-      if (found) { setOrder(found); setNewStatus(found.status); }
-    }).finally(() => setLoading(false));
+    api.get(`/admin/orders/${id}`)
+      .then((r) => {
+        setOrder(r.data.data);
+        setNewStatus(r.data.data.status);
+      })
+      .catch(() => {
+        // Fallback: search in list
+        api.get(`/admin/orders`, { params: { size: 1000 } }).then((r) => {
+          const found = (r.data.data.content || []).find((o: any) => String(o.id) === id);
+          if (found) { setOrder(found); setNewStatus(found.status); }
+        });
+      })
+      .finally(() => setLoading(false));
   }, [id]);
 
   const handleUpdateStatus = async () => {
@@ -34,7 +50,27 @@ export default function AdminOrderDetailPage({ params }: PageProps) {
     try {
       const res = await api.put(`/admin/orders/${id}/status`, { status: newStatus });
       setOrder(res.data.data);
-    } finally { setUpdating(false); }
+      showToast("✅ Đã cập nhật trạng thái đơn hàng");
+    } catch {
+      showToast("❌ Cập nhật thất bại");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleShipGHN = async () => {
+    if (!confirm("Gửi đơn hàng này sang GHN để vận chuyển?")) return;
+    setShipping(true);
+    try {
+      const res = await api.post(`/admin/orders/${id}/ship`);
+      setOrder(res.data.data);
+      setNewStatus(res.data.data.status);
+      showToast("🚚 Đã gửi GHN thành công! Mã vận đơn: " + res.data.data.ghnOrderCode);
+    } catch {
+      showToast("❌ Gửi GHN thất bại");
+    } finally {
+      setShipping(false);
+    }
   };
 
   if (loading) return (
@@ -57,6 +93,13 @@ export default function AdminOrderDetailPage({ params }: PageProps) {
 
   return (
     <div className="p-6 max-w-4xl">
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-6 right-6 z-50 bg-[#1A1A1A] text-white px-5 py-3 rounded-2xl shadow-xl text-sm font-semibold animate-in slide-in-from-top-2">
+          {toast}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <Link href="/admin/orders" className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors">
@@ -158,6 +201,48 @@ export default function AdminOrderDetailPage({ params }: PageProps) {
             </button>
           </div>
 
+          {/* GHN Dispatch */}
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <h2 className="font-bold text-[#1A1A1A] mb-3">🚚 Giao vận chuyển</h2>
+            {order.ghnOrderCode ? (
+              <div className="space-y-2">
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
+                  <p className="text-xs text-emerald-600 font-bold mb-1">✅ Đã gửi GHN</p>
+                  <p className="text-xs font-mono font-bold text-emerald-800">{order.ghnOrderCode}</p>
+                </div>
+                <a
+                  href={`https://ghn.vn/pages/khach-hang?code=${order.ghnOrderCode}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-center text-xs text-blue-600 font-semibold underline underline-offset-2"
+                >
+                  Theo dõi vận đơn →
+                </a>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs text-slate-500">
+                  Gửi đơn hàng sang Giao Hàng Nhanh để vận chuyển. Trạng thái sẽ chuyển sang <strong>Đang giao</strong>.
+                </p>
+                <button
+                  onClick={handleShipGHN}
+                  disabled={shipping || order.status === "CANCELLED" || order.status === "DELIVERED"}
+                  className="w-full h-11 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold rounded-full transition-colors flex items-center justify-center gap-2"
+                >
+                  {shipping ? (
+                    <>
+                      <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Đang gửi...
+                    </>
+                  ) : "🚚 Gửi GHN"}
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Order meta */}
           <div className="bg-white rounded-2xl shadow-sm p-6 text-sm space-y-3">
             <h2 className="font-bold text-[#1A1A1A] mb-2">Thông tin đơn</h2>
@@ -172,7 +257,7 @@ export default function AdminOrderDetailPage({ params }: PageProps) {
             {order.ghnOrderCode && (
               <div className="flex justify-between">
                 <span className="text-slate-500">Mã GHN</span>
-                <span className="font-mono text-xs font-bold">{order.ghnOrderCode}</span>
+                <span className="font-mono text-xs font-bold text-purple-700">{order.ghnOrderCode}</span>
               </div>
             )}
           </div>

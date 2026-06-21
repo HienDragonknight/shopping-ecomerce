@@ -145,7 +145,9 @@ export function Header() {
     }
   };
 
-  const cartCount = totalItems();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  const cartCount = mounted ? totalItems() : 0;
 
   const topLinks = [
     { name: "Mới về", href: "/collection/hang-moi-ve-thang-qua", className: "" },
@@ -305,9 +307,10 @@ export function Header() {
                   className="relative flex items-center justify-center w-10 h-10 text-slate-700 hover:text-[#1A1A1A] hover:bg-slate-100 rounded-full transition-all"
                   title="Giỏ hàng"
                   aria-label={`Giỏ hàng (${cartCount} sản phẩm)`}
+                  suppressHydrationWarning
                 >
                   <CartIcon className="w-6 h-6" />
-                  {cartCount > 0 && (
+                  {mounted && cartCount > 0 && (
                     <span className="absolute top-1 right-0 min-w-[18px] h-[18px] bg-[#FCCE00] text-[#1A1A1A] text-[10px] font-black rounded-full flex items-center justify-center px-1 border-2 border-white shadow-sm transition-transform animate-in zoom-in">
                       {cartCount > 99 ? "99+" : cartCount}
                     </span>

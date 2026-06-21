@@ -32,15 +32,22 @@ function VNPaySandboxContent() {
     await new Promise((r) => setTimeout(r, 2000));
 
     try {
-      // Mark order as PAID via backend callback simulation
-      await api.put(`/admin/orders/${orderId}/status`, { status: "CONFIRMED" });
+      // Mark order as CONFIRMED + PAID via admin payment update endpoint
+      await api.put(`/admin/orders/${orderId}/payment`, {
+        status: "CONFIRMED",
+        paymentStatus: "PAID",
+      });
     } catch {
-      // If admin update fails, try to mark as at least ordered
+      // Fallback to status update only
+      try {
+        await api.put(`/admin/orders/${orderId}/status`, { status: "CONFIRMED" });
+      } catch { /* ignore */ }
     }
 
     await clearCart();
     router.push(`/checkout/success?orderId=${orderId}&payment=vnpay`);
   };
+
 
   const handleCancel = () => {
     router.push(`/checkout`);
