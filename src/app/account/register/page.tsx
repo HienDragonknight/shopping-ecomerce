@@ -7,6 +7,7 @@ import { EyeIcon, EyeOffIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useT } from "@/hooks/useT";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -20,13 +21,14 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const t = useT();
 
   const validate = () => {
-    if (!fullName.trim()) return "Vui lòng nhập họ và tên";
-    if (!email && !phone) return "Vui lòng nhập email hoặc số điện thoại";
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Email không hợp lệ";
-    if (password.length < 6) return "Mật khẩu phải có ít nhất 6 ký tự";
-    if (password !== confirmPassword) return "Mật khẩu xác nhận không khớp";
+    if (!fullName.trim()) return t.auth.fullName + " " + t.common.error;
+    if (!email && !phone) return t.auth.emailOrPhone + " " + t.common.error;
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return t.auth.email + " không hợp lệ";
+    if (password.length < 6) return t.auth.passwordTooShort;
+    if (password !== confirmPassword) return t.auth.passwordMismatch;
     return null;
   };
 
@@ -41,7 +43,7 @@ export default function RegisterPage() {
       setTimeout(() => router.push("/"), 1500);
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
-      setError(axiosErr?.response?.data?.message || "Đăng ký thất bại. Vui lòng thử lại.");
+      setError(axiosErr?.response?.data?.message || t.common.error);
     }
   };
 
@@ -54,8 +56,8 @@ export default function RegisterPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-[#1A1A1A] mb-2">Đăng ký thành công! 🎉</h2>
-          <p className="text-slate-500 text-sm">Chào mừng bạn đến với Yody! Đang chuyển hướng...</p>
+          <h2 className="text-2xl font-bold text-[#1A1A1A] mb-2">{t.auth.registerSuccess} 🎉</h2>
+          <p className="text-slate-500 text-sm">{t.common.loading}</p>
         </div>
       </div>
     );
@@ -64,8 +66,8 @@ export default function RegisterPage() {
   return (
     <div className="flex justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[#F5F5F5] min-h-[80vh]">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-sm p-8">
-        <h1 className="text-2xl font-bold text-[#1A1A1A] text-center mb-2">Tạo tài khoản</h1>
-        <p className="text-center text-slate-500 text-sm mb-6">Tham gia Yody để nhận ưu đãi độc quyền</p>
+        <h1 className="text-2xl font-bold text-[#1A1A1A] text-center mb-2">{t.auth.createAccount}</h1>
+        <p className="text-center text-slate-500 text-sm mb-6">{t.auth.createAccountSubtitle}</p>
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-start gap-2">
@@ -80,7 +82,7 @@ export default function RegisterPage() {
           {/* Full Name */}
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-              Họ và tên <span className="text-red-500">*</span>
+              {t.auth.fullName} <span className="text-red-500">*</span>
             </label>
             <Input
               type="text"
@@ -94,7 +96,7 @@ export default function RegisterPage() {
 
           {/* Email */}
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Email</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">{t.auth.email}</label>
             <Input
               type="email"
               placeholder="example@email.com"
@@ -106,7 +108,7 @@ export default function RegisterPage() {
 
           {/* Phone */}
           <div>
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Số điện thoại</label>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">{t.auth.phone}</label>
             <Input
               type="tel"
               placeholder="0901 234 567"
@@ -116,17 +118,17 @@ export default function RegisterPage() {
             />
           </div>
 
-          <p className="text-xs text-slate-400 -mt-2">* Nhập ít nhất email hoặc số điện thoại</p>
+          <p className="text-xs text-slate-400 -mt-2">* {t.auth.emailOrPhone}</p>
 
           {/* Password */}
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-              Mật khẩu <span className="text-red-500">*</span>
+              {t.auth.password} <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <Input
                 type={showPassword ? "text" : "password"}
-                placeholder="Ít nhất 6 ký tự"
+                placeholder="Min. 6 characters"
                 className="h-12 pr-10"
                 required
                 value={password}
@@ -157,12 +159,12 @@ export default function RegisterPage() {
           {/* Confirm Password */}
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">
-              Xác nhận mật khẩu <span className="text-red-500">*</span>
+              {t.auth.confirmNewPassword} <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <Input
                 type={showConfirm ? "text" : "password"}
-                placeholder="Nhập lại mật khẩu"
+                placeholder={t.auth.confirmNewPassword}
                 className={`h-12 pr-10 ${confirmPassword && confirmPassword !== password ? "border-red-300 focus:ring-red-200" : confirmPassword && confirmPassword === password ? "border-emerald-300" : ""}`}
                 required
                 value={confirmPassword}
@@ -205,16 +207,16 @@ export default function RegisterPage() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                Đang đăng ký...
+                {t.auth.registering}
               </span>
-            ) : "Đăng ký ngay"}
+            ) : t.auth.registerNow}
           </Button>
         </form>
 
         <p className="mt-6 text-center text-sm text-[#555]">
-          Bạn đã có tài khoản?{" "}
+          {t.auth.hasAccount}{" "}
           <Link href="/account/login" className="font-bold text-[#1A1A1A] hover:text-[#FCCE00] transition-colors">
-            Đăng nhập
+            {t.auth.login}
           </Link>
         </p>
       </div>

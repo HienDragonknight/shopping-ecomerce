@@ -9,17 +9,27 @@ import type { NavCategory } from "@/types";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { CartDrawer } from "@/components/CartDrawer";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useT } from "@/hooks/useT";
+import { useLocale } from "@/context/LocaleContext";
 
 function YodyLogo() {
   return (
-    <Link href="/" className="flex-shrink-0 flex items-baseline gap-0 font-black text-2xl md:text-3xl tracking-tighter focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FCCE00] group">
-      <span className="text-[#1A1A1A] group-hover:text-[#333] transition-colors">yo</span>
-      <span className="text-[#FCCE00]">dy</span>
+    <Link href="/" className="flex-shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FCCE00]">
+      <img
+        src="/images/logo.webp"
+        alt="Logo"
+        className="h-10 md:h-12 w-auto object-contain transition-opacity duration-200 hover:opacity-80"
+      />
     </Link>
   );
 }
 
 function MegaMenuDropdown({ category }: { category: NavCategory }) {
+  const { locale } = useLocale();
+  const isEn = locale === "en";
+  const t = useT();
+
   return (
     <div className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-[850px] bg-white/95 backdrop-blur-xl border border-slate-100 shadow-[0_20px_40px_rgba(0,0,0,0.08)] z-50 p-8 rounded-b-2xl transition-all duration-300 opacity-0 animate-in fade-in slide-in-from-top-2">
       <div className="flex gap-8">
@@ -27,7 +37,7 @@ function MegaMenuDropdown({ category }: { category: NavCategory }) {
           {category.groups?.map((group) => (
             <div key={group.title}>
               <h4 className="text-[11px] font-black text-[#1A1A1A] uppercase mb-4 tracking-[0.15em] border-b border-slate-100 pb-2">
-                {group.title}
+                {isEn ? group.titleEn || group.title : group.title}
               </h4>
               <ul className="space-y-2.5">
                 {group.items.map((item) => (
@@ -36,7 +46,7 @@ function MegaMenuDropdown({ category }: { category: NavCategory }) {
                       href={item.href}
                       className="text-[13px] text-slate-500 hover:text-[#1A1A1A] hover:font-bold transition-all duration-200 block w-fit"
                     >
-                      {item.name}
+                      {isEn ? item.nameEn || item.name : item.name}
                     </Link>
                   </li>
                 ))}
@@ -54,12 +64,20 @@ function MegaMenuDropdown({ category }: { category: NavCategory }) {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <div className="absolute bottom-4 left-4 right-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 text-white">
-                <span className="text-[10px] font-bold uppercase tracking-wider mb-1 block text-[#FCCE00]">Khám phá</span>
-                <span className="font-bold text-sm">BST Mới Nhất</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider mb-1 block text-[#FCCE00]">
+                  {t.nav.discover}
+                </span>
+                <span className="font-bold text-sm">
+                  {t.nav.newCollection}
+                </span>
               </div>
             </div>
-            <h4 className="font-bold text-sm text-[#1A1A1A] group-hover:text-[#FCCE00] transition-colors">Bộ sưu tập tháng này</h4>
-            <p className="text-xs text-slate-500 mt-0.5">Cập nhật xu hướng mới nhất</p>
+            <h4 className="font-bold text-sm text-[#1A1A1A] group-hover:text-[#FCCE00] transition-colors">
+              {t.nav.monthlyCollection}
+            </h4>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {t.nav.latestTrends}
+            </p>
           </Link>
         </div>
       </div>
@@ -70,6 +88,8 @@ function MegaMenuDropdown({ category }: { category: NavCategory }) {
 function NavItem({ category }: { category: NavCategory }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLLIElement>(null);
+  const { locale } = useLocale();
+  const isEn = locale === "en";
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -90,7 +110,7 @@ function NavItem({ category }: { category: NavCategory }) {
         href={category.href}
         className="block py-5 text-[13px] font-bold text-[#1A1A1A] hover:text-[#FCCE00] transition-colors whitespace-nowrap tracking-wide relative after:absolute after:bottom-0 after:left-0 after:w-full after:h-[3px] after:bg-[#FCCE00] after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 after:origin-center"
       >
-        {category.name}
+        {isEn ? category.nameEn || category.name : category.name}
       </Link>
       {open && category.groups && <MegaMenuDropdown category={category} />}
     </li>
@@ -110,6 +130,9 @@ export function Header() {
   // Cart & auth state
   const { totalItems, openCart, isOpen, fetchCart } = useCartStore();
   const { isAuthenticated, user, logout } = useAuthStore();
+  const t = useT();
+  const { locale } = useLocale();
+  const isEn = locale === "en";
 
   useEffect(() => {
     const handleScroll = () => { setIsScrolled(window.scrollY > 20); };
@@ -149,9 +172,9 @@ export function Header() {
   const cartCount = mounted ? totalItems() : 0;
 
   const topLinks = [
-    { name: "Mới về", href: "/collection/hang-moi-ve-thang-qua", className: "" },
-    { name: "ƯU ĐÃI -50%", href: "/sale", className: "text-[#E53E3E] font-black" },
-    { name: "Đồng phục", href: "https://landing.yody.vn/dongphucyody", className: "" },
+    { name: t.nav.newArrivalsShort, href: "/collection/hang-moi-ve-thang-qua", className: "" },
+    { name: isEn ? "SALE -50%" : "ƯU ĐÃI -50%", href: "/sale", className: "text-[#E53E3E] font-black" },
+    { name: t.nav.uniformsShort, href: "https://landing.yody.vn/dongphucyody", className: "" },
   ];
 
   return (
@@ -211,7 +234,7 @@ export function Header() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setSearchFocused(true)}
                   onBlur={() => setSearchFocused(false)}
-                  placeholder="Tìm kiếm..."
+                  placeholder={t.nav.searchPlaceholder}
                   className={`w-[200px] lg:w-[240px] h-10 pl-4 pr-10 text-[13px] font-medium rounded-full transition-all duration-300 outline-none placeholder:text-slate-400 ${
                     searchFocused
                       ? "bg-white border-2 border-[#FCCE00] shadow-[0_0_10px_rgba(252,206,0,0.2)] w-[240px] lg:w-[280px]"
@@ -220,18 +243,21 @@ export function Header() {
                 />
                 <button
                   className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${searchFocused ? "text-[#1A1A1A]" : "text-slate-500 group-hover:text-[#1A1A1A]"}`}
-                  aria-label="Tìm kiếm"
+                  aria-label={t.common.search}
                 >
                   <SearchIcon className="w-4 h-4" />
                 </button>
               </div>
+
+              {/* Language Switcher */}
+              <LanguageSwitcher />
 
               {/* Icons */}
               <div className="flex items-center gap-1">
                 <Link
                   href="/he-thong-cua-hang"
                   className="hidden lg:flex items-center justify-center w-10 h-10 text-slate-700 hover:text-[#1A1A1A] hover:bg-slate-100 rounded-full transition-all"
-                  title="Cửa hàng"
+                  title={t.nav.store}
                 >
                   <StoreIcon className="w-[22px] h-[22px]" />
                 </Link>
@@ -242,7 +268,7 @@ export function Header() {
                     <>
                       <button
                         onClick={() => setUserMenuOpen((o) => !o)}
-                        title="Tài khoản"
+                        title={t.nav.account}
                         className="flex items-center justify-center w-10 h-10 text-slate-700 hover:text-[#1A1A1A] hover:bg-slate-100 rounded-full transition-all"
                       >
                         <div className="w-7 h-7 rounded-full bg-[#FCCE00] flex items-center justify-center text-[#1A1A1A] font-black text-xs">
@@ -261,21 +287,21 @@ export function Header() {
                               onClick={() => setUserMenuOpen(false)}
                               className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#1A1A1A] rounded-xl transition-colors font-medium"
                             >
-                              <span>👤</span> Tài khoản của tôi
+                              <span>👤</span> {t.account.profile}
                             </Link>
                             <Link
                               href="/account/orders"
                               onClick={() => setUserMenuOpen(false)}
                               className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#1A1A1A] rounded-xl transition-colors font-medium"
                             >
-                              <span>📦</span> Đơn hàng
+                              <span>📦</span> {t.account.orders}
                             </Link>
                             <Link
                               href="/wishlist"
                               onClick={() => setUserMenuOpen(false)}
                               className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-[#1A1A1A] rounded-xl transition-colors font-medium"
                             >
-                              <span>❤️</span> Yêu thích
+                              <span>❤️</span> {t.account.wishlist}
                             </Link>
                             <button
                               onClick={handleLogout}
@@ -283,7 +309,7 @@ export function Header() {
                               className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-red-500 hover:bg-red-50 rounded-xl transition-colors font-medium disabled:opacity-50"
                             >
                               <span>{isLoggingOut ? "⏳" : "🚪"}</span>
-                              {isLoggingOut ? "Đang đăng xuất..." : "Đăng xuất"}
+                              {isLoggingOut ? t.auth.loggingOut : t.auth.logout}
                             </button>
                           </div>
                         </div>
@@ -293,7 +319,7 @@ export function Header() {
                     <Link
                       href="/account/login"
                       className="flex items-center justify-center w-10 h-10 text-slate-700 hover:text-[#1A1A1A] hover:bg-slate-100 rounded-full transition-all"
-                      title="Tài khoản"
+                      title={t.nav.account}
                     >
                       <UserIcon className="w-6 h-6" />
                     </Link>
@@ -304,8 +330,8 @@ export function Header() {
                 <button
                   onClick={openCart}
                   className="relative flex items-center justify-center w-10 h-10 text-slate-700 hover:text-[#1A1A1A] hover:bg-slate-100 rounded-full transition-all"
-                  title="Giỏ hàng"
-                  aria-label={`Giỏ hàng (${cartCount} sản phẩm)`}
+                  title={t.nav.cart}
+                  aria-label={`${t.nav.cart} (${cartCount})`}
                   suppressHydrationWarning
                 >
                   <CartIcon className="w-6 h-6" />
@@ -325,10 +351,10 @@ export function Header() {
           <div className="relative">
             <input
               type="text"
-              placeholder="Tìm kiếm sản phẩm..."
+              placeholder={t.nav.searchPlaceholderFull}
               className="w-full h-11 pl-4 pr-10 text-sm border-none rounded-xl bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#FCCE00]"
             />
-            <button className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" aria-label="Tìm kiếm">
+            <button className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" aria-label={t.common.search}>
               <SearchIcon className="w-5 h-5" />
             </button>
           </div>
@@ -345,7 +371,7 @@ export function Header() {
                     className="flex items-center justify-between py-4 text-sm font-bold text-[#1A1A1A] border-b border-slate-100"
                     onClick={() => setMobileOpen(false)}
                   >
-                    {cat.name}
+                    {isEn ? cat.nameEn || cat.name : cat.name}
                     <ChevronRightIcon className="w-4 h-4 text-slate-300" />
                   </Link>
                 </li>
@@ -369,7 +395,7 @@ export function Header() {
                   className="flex items-center justify-between py-4 text-sm font-bold text-[#1A1A1A] border-b border-slate-100"
                   onClick={() => setMobileOpen(false)}
                 >
-                  {isAuthenticated ? "Tài khoản của tôi" : "Đăng nhập / Đăng ký"}
+                  {isAuthenticated ? t.auth.myAccount : `${t.auth.login} / ${t.auth.register}`}
                   <ChevronRightIcon className="w-4 h-4 text-slate-300" />
                 </Link>
               </li>

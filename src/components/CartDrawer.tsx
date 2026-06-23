@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useCartStore } from "@/store/useCartStore";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useT } from "@/hooks/useT";
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, updateItem, removeItem, totalPrice, totalItems, isLoading } = useCartStore();
   const router = useRouter();
+  const t = useT();
 
   // Prevent body scroll when drawer open
   useEffect(() => {
@@ -37,7 +39,7 @@ export function CartDrawer() {
             <svg className="w-5 h-5 text-[#1A1A1A]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
-            <h2 className="font-bold text-[#1A1A1A] text-lg">Giỏ hàng</h2>
+            <h2 className="font-bold text-[#1A1A1A] text-lg">{t.cart.title}</h2>
             {totalItems() > 0 && (
               <span className="min-w-[22px] h-[22px] bg-[#FCCE00] text-[#1A1A1A] text-xs font-black rounded-full flex items-center justify-center px-1.5">
                 {totalItems()}
@@ -64,14 +66,14 @@ export function CartDrawer() {
                 </svg>
               </div>
               <div>
-                <p className="font-bold text-[#1A1A1A] text-lg">Giỏ hàng trống</p>
-                <p className="text-slate-400 text-sm mt-1">Hãy thêm sản phẩm vào giỏ hàng</p>
+                <p className="font-bold text-[#1A1A1A] text-lg">{t.cart.empty}</p>
+                <p className="text-slate-400 text-sm mt-1">{t.cart.emptyHint}</p>
               </div>
               <button
                 onClick={() => { closeCart(); router.push("/products"); }}
                 className="px-6 py-3 bg-[#FCCE00] text-[#1A1A1A] font-bold rounded-full text-sm hover:bg-[#E5B800] transition-colors"
               >
-                Mua sắm ngay
+                {t.cart.continueShopping}
               </button>
             </div>
           ) : (
@@ -135,7 +137,7 @@ export function CartDrawer() {
                           onClick={() => removeItem(item.id)}
                           disabled={isLoading}
                           className="text-slate-300 hover:text-red-400 transition-colors"
-                          title="Xóa"
+                          title={t.cart.remove}
                         >
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -154,24 +156,24 @@ export function CartDrawer() {
         {items.length > 0 && (
           <div className="border-t border-slate-100 px-6 py-5 space-y-3 bg-white">
             <div className="flex items-center justify-between">
-              <span className="text-slate-500 text-sm">Tạm tính ({totalItems()} sản phẩm)</span>
+              <span className="text-slate-500 text-sm">{t.cart.subtotal} ({t.cart.items(totalItems())})</span>
               <span className="font-black text-[#1A1A1A] text-lg">
                 {totalPrice().toLocaleString("vi-VN")}đ
               </span>
             </div>
-            <p className="text-xs text-slate-400">Phí vận chuyển sẽ được tính khi thanh toán</p>
+            <p className="text-xs text-slate-400">{t.checkout.shippingInfo}</p>
 
             <button
               onClick={() => { closeCart(); router.push("/checkout"); }}
               className="w-full h-12 bg-[#FCCE00] hover:bg-[#E5B800] text-[#1A1A1A] font-bold rounded-full transition-colors text-sm"
             >
-              Tiến hành đặt hàng →
+              {t.cart.checkout} →
             </button>
             <button
               onClick={() => { closeCart(); router.push("/cart"); }}
               className="w-full h-10 border border-slate-200 hover:border-[#1A1A1A] text-[#1A1A1A] font-semibold rounded-full transition-colors text-sm"
             >
-              Xem giỏ hàng
+              {t.cart.title}
             </button>
           </div>
         )}

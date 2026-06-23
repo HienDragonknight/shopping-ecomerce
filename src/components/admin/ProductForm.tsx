@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
-import { ArrowLeft, Save, Plus, X, Tag, Box, RefreshCw, Image as ImageIcon, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Save, Plus, X, Tag, Box, RefreshCw, Image as ImageIcon, Trash2, ChevronDown, ChevronUp, Languages, Loader2, CheckCircle } from "lucide-react";
 import Link from "next/link";
 
 interface ProductFormProps {
@@ -21,7 +21,9 @@ export function ProductForm({ productId }: ProductFormProps) {
 
   const [form, setForm] = useState<{
     name: string;
+    nameEn: string;
     description: string;
+    descriptionEn: string;
     basePrice: string;
     salePrice: string;
     thumbnailUrl: string;
@@ -33,7 +35,9 @@ export function ProductForm({ productId }: ProductFormProps) {
     imageUrls: string[];
   }>({
     name: "",
+    nameEn: "",
     description: "",
+    descriptionEn: "",
     basePrice: "",
     salePrice: "",
     thumbnailUrl: "",
@@ -44,6 +48,13 @@ export function ProductForm({ productId }: ProductFormProps) {
     brandId: "",
     imageUrls: [],
   });
+
+  // Bilingual editor state
+  const [bilingualTab, setBilingualTab] = useState<"vi" | "en">("vi");
+  const [translatingName, setTranslatingName] = useState(false);
+  const [translatingDesc, setTranslatingDesc] = useState(false);
+  const [translateNameDone, setTranslateNameDone] = useState(false);
+  const [translateDescDone, setTranslateDescDone] = useState(false);
 
   const [variants, setVariants] = useState<any[]>([
     { size: "S", color: "Đen", colorHex: "#000000", sku: "", stockQty: 10, priceAdjustment: 0, imageUrls: [] }
@@ -56,24 +67,47 @@ export function ProductForm({ productId }: ProductFormProps) {
   const [newProductImg, setNewProductImg] = useState("");
   const [newVariantImg, setNewVariantImg] = useState<string[]>([]);
 
-  // Load all data in parallel — nhanh hơn gọi tuần tự
+  // Load categories + brands with sessionStorage cache (faster on revisit)
   useEffect(() => {
-    const requests: Promise<any>[] = [
-      api.get("/categories").catch(() => ({ data: { data: [] } })),
-      api.get("/brands").catch(() => ({ data: { data: [] } })),
-      ...(productId ? [api.get(`/admin/products/${productId}`).catch(() => null)] : []),
-    ];
+    const cachedCats = sessionStorage.getItem("admin_categories");
+    const cachedBrands = sessionStorage.getItem("admin_brands");
 
-    Promise.all(requests).then(([catRes, brandRes, productRes]) => {
-      setCategories(catRes.data.data || []);
-      setBrands(brandRes.data.data || []);
+    const catPromise = cachedCats
+      ? Promise.resolve(JSON.parse(cachedCats))
+      : api.get("/categories").then(r => {
+          const data = r.data.data || [];
+          sessionStorage.setItem("admin_categories", JSON.stringify(data));
+          return data;
+        }).catch(() => []);
 
-      if (productId && productRes) {
-        const p = productRes.data.data;
-        if (!p) { setError("Không thể tải thông tin sản phẩm"); setLoading(false); return; }
+    const brandPromise = cachedBrands
+      ? Promise.resolve(JSON.parse(cachedBrands))
+      : api.get("/brands").then(r => {
+          const data = r.data.data || [];
+          sessionStorage.setItem("admin_brands", JSON.stringify(data));
+          return data;
+        }).catch(() => []);
+
+    Promise.all([catPromise, brandPromise]).then(([cats, brands]) => {
+      setCategories(cats);
+      setBrands(brands);
+      if (!productId) setNewVariantImg(new Array(1).fill(""));
+    });
+  }, [productId]);
+
+  // Load product data separately — avoids blocking on cat/brand fetch
+  useEffect(() => {
+    if (!productId) return;
+    setLoading(true);
+    api.get(`/admin/products/${productId}`)
+      .then(res => {
+        const p = res.data.data;
+        if (!p) { setError("Không thể tải thông tin sản phẩm"); return; }
         setForm({
-          name: p.name || "",
-          description: p.description || "",
+          name: p.nameVi || p.name || "",
+          nameEn: p.nameEn || "",
+          description: p.descriptionVi || p.description || "",
+          descriptionEn: p.descriptionEn || "",
           basePrice: p.basePrice ? p.basePrice.toString() : "",
           salePrice: p.salePrice ? p.salePrice.toString() : "",
           thumbnailUrl: p.thumbnailUrl || "",
@@ -85,18 +119,16 @@ export function ProductForm({ productId }: ProductFormProps) {
           imageUrls: p.imageUrls || [],
         });
         const loadedVariants = p.variants && p.variants.length > 0
-          ? p.variants.map((v: any) => ({ ...v, imageUrls: v.imageUrls || [] }))
+          ? p.variants.map((v: { imageUrls?: string | string[] | null; [key: string]: unknown }) => ({
+              ...v,
+              imageUrls: Array.isArray(v.imageUrls) ? v.imageUrls : (v.imageUrls ? [v.imageUrls] : [])
+            }))
           : [{ size: "S", color: "Đen", colorHex: "#000000", sku: "", stockQty: 10, priceAdjustment: 0, imageUrls: [] }];
         setVariants(loadedVariants);
         setNewVariantImg(new Array(loadedVariants.length).fill(""));
-        setLoading(false);
-      } else if (!productId) {
-        setNewVariantImg(new Array(1).fill(""));
-      }
-    }).catch(() => {
-      setError("Lỗi kết nối. Vui lòng thử lại.");
-      setLoading(false);
-    });
+      })
+      .catch(() => setError("Lỗi kết nối. Vui lòng thử lại."))
+      .finally(() => setLoading(false));
   }, [productId]);
 
 
@@ -164,6 +196,54 @@ export function ProductForm({ productId }: ProductFormProps) {
       }
       return v;
     }));
+  };
+
+  // Auto-translate name VI → EN
+  const translateName = async () => {
+    if (!form.name.trim()) return;
+    setTranslatingName(true);
+    setTranslateNameDone(false);
+    try {
+      const res = await api.post("/admin/ai/translate", {
+        text: form.name,
+        targetLang: "en",
+        context: "product name for a Vietnamese fashion brand",
+      });
+      const translated: string = res.data.data?.translation || "";
+      if (translated) {
+        setForm(prev => ({ ...prev, nameEn: translated }));
+        setTranslateNameDone(true);
+        setTimeout(() => setTranslateNameDone(false), 3000);
+      }
+    } catch {
+      setError("Không thể dịch tên sản phẩm. Vui lòng thử lại.");
+    } finally {
+      setTranslatingName(false);
+    }
+  };
+
+  // Auto-translate description VI → EN
+  const translateDesc = async () => {
+    if (!form.description.trim()) return;
+    setTranslatingDesc(true);
+    setTranslateDescDone(false);
+    try {
+      const res = await api.post("/admin/ai/translate", {
+        text: form.description,
+        targetLang: "en",
+        context: "product description for a Vietnamese fashion brand",
+      });
+      const translated: string = res.data.data?.translation || "";
+      if (translated) {
+        setForm(prev => ({ ...prev, descriptionEn: translated }));
+        setTranslateDescDone(true);
+        setTimeout(() => setTranslateDescDone(false), 3000);
+      }
+    } catch {
+      setError("Không thể dịch mô tả sản phẩm. Vui lòng thử lại.");
+    } finally {
+      setTranslatingDesc(false);
+    }
   };
 
   // Auto SKU generator helper
@@ -315,6 +395,139 @@ export function ProductForm({ productId }: ProductFormProps) {
                 className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#FCCE00]/30 focus:border-[#FCCE00] bg-slate-50 focus:bg-white resize-none transition-all"
               />
             </div>
+          </div>
+
+          {/* ─── BILINGUAL CONTENT ─────────────────────────────── */}
+          <div className="bg-white rounded-2xl border border-[#FCCE00]/30 p-6 shadow-sm space-y-4">
+            {/* Header with tab switcher */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <Languages size={16} className="text-[#FCCE00]" />
+                Nội dung song ngữ
+                <span className="text-[10px] font-normal text-slate-400">— dùng cho khách quốc tế</span>
+              </h2>
+              {/* VI / EN tabs */}
+              <div className="flex items-center bg-slate-100 rounded-lg p-0.5 gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => setBilingualTab("vi")}
+                  className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                    bilingualTab === "vi" ? "bg-white text-[#1A1A1A] shadow-sm" : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  🇻🇳 Tiếng Việt
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBilingualTab("en")}
+                  className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                    bilingualTab === "en" ? "bg-white text-[#1A1A1A] shadow-sm" : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  🇬🇧 English
+                </button>
+              </div>
+            </div>
+
+            {bilingualTab === "vi" ? (
+              /* VI tab — read-only preview linked to main form above */
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className={labelCls}>Tên sản phẩm (VI)</label>
+                  <div className="w-full h-11 px-4 flex items-center border border-slate-100 rounded-xl bg-slate-50 text-sm text-slate-700">
+                    {form.name || <span className="text-slate-300 italic">Chưa nhập tên ở phần trên...</span>}
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className={labelCls}>Mô tả (VI)</label>
+                  <div className="w-full min-h-[80px] px-4 py-3 border border-slate-100 rounded-xl bg-slate-50 text-sm text-slate-600 whitespace-pre-wrap">
+                    {form.description || <span className="text-slate-300 italic">Chưa nhập mô tả ở phần trên...</span>}
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  💡 Chỉnh sửa nội dung tiếng Việt trong card <strong>Thông tin cơ bản</strong> ở trên.
+                </p>
+              </div>
+            ) : (
+              /* EN tab — editable fields + AI translate buttons */
+              <div className="space-y-4">
+                {/* Name EN */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className={labelCls}>Product name (EN)</label>
+                    <button
+                      type="button"
+                      onClick={translateName}
+                      disabled={translatingName || !form.name.trim()}
+                      className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1 rounded-lg bg-violet-50 text-violet-700 hover:bg-violet-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    >
+                      {translatingName ? (
+                        <><Loader2 size={11} className="animate-spin" /> Đang dịch...</>
+                      ) : translateNameDone ? (
+                        <><CheckCircle size={11} className="text-emerald-500" /> Đã dịch!</>
+                      ) : (
+                        <><Languages size={11} /> AI Dịch tự động</>
+                      )}
+                    </button>
+                  </div>
+                  <input
+                    placeholder="Enter product name in English..."
+                    value={form.nameEn}
+                    onChange={(e) => setForm({ ...form, nameEn: e.target.value })}
+                    className={inputCls}
+                  />
+                  {form.name && (
+                    <p className="text-[10px] text-slate-400">
+                      <span className="font-semibold text-slate-500">VI:</span> {form.name}
+                    </p>
+                  )}
+                </div>
+
+                {/* Description EN */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className={labelCls}>Description (EN)</label>
+                    <button
+                      type="button"
+                      onClick={translateDesc}
+                      disabled={translatingDesc || !form.description.trim()}
+                      className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1 rounded-lg bg-violet-50 text-violet-700 hover:bg-violet-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    >
+                      {translatingDesc ? (
+                        <><Loader2 size={11} className="animate-spin" /> Đang dịch...</>
+                      ) : translateDescDone ? (
+                        <><CheckCircle size={11} className="text-emerald-500" /> Đã dịch!</>
+                      ) : (
+                        <><Languages size={11} /> AI Dịch tự động</>
+                      )}
+                    </button>
+                  </div>
+                  <textarea
+                    placeholder="Enter product description in English..."
+                    value={form.descriptionEn}
+                    onChange={(e) => setForm({ ...form, descriptionEn: e.target.value })}
+                    rows={5}
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#FCCE00]/30 focus:border-[#FCCE00] bg-slate-50 focus:bg-white resize-none transition-all"
+                  />
+                </div>
+
+                {/* Status indicator */}
+                <div className={`flex items-center gap-3 p-3 rounded-xl border ${
+                  form.nameEn && form.descriptionEn
+                    ? "bg-emerald-50 border-emerald-100"
+                    : "bg-amber-50 border-amber-100"
+                }`}>
+                  <div className={`w-2 h-2 rounded-full shrink-0 ${form.nameEn && form.descriptionEn ? "bg-emerald-400" : "bg-amber-400"}`} />
+                  <p className="text-[11px] text-slate-600">
+                    {form.nameEn && form.descriptionEn
+                      ? "✅ Đã có bản dịch tiếng Anh đầy đủ — sẵn sàng cho khách quốc tế."
+                      : form.nameEn
+                      ? "⚠️ Đã có tên EN, chưa có mô tả EN."
+                      : "⚠️ Chưa có bản dịch tiếng Anh — khách quốc tế sẽ thấy nội dung tiếng Việt."}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Variants and stock */}

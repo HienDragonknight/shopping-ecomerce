@@ -42,16 +42,19 @@ export interface BlogPost {
 
 export interface NavSubcategory {
   name: string;
+  nameEn?: string;
   href: string;
 }
 
 export interface NavGroup {
   title: string;
+  titleEn?: string;
   items: NavSubcategory[];
 }
 
 export interface NavCategory {
   name: string;
+  nameEn?: string;
   href: string;
   groups?: NavGroup[];
 }

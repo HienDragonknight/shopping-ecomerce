@@ -3,29 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { PhoneIcon, MailIcon, MapPinIcon } from "@/components/icons";
-
-const shopLinks = [
-  { name: "Nam", href: "/category/nam" },
-  { name: "Nữ", href: "/category/nu" },
-  { name: "Trẻ em", href: "/category/tre-em" },
-  { name: "Đồng phục", href: "https://landing.yody.vn/dongphucyody" },
-  { name: "Tin tức", href: "/blog" },
-];
-
-const serviceLinks = [
-  { name: "Chính sách khách hàng thân thiết", href: "/page/chinh-sach-khach-hang-than-thiet" },
-  { name: "Chính sách đổi trả", href: "/page/chinh-sach-bao-hanh-doi-tra" },
-  { name: "Chính sách bảo vệ dữ liệu cá nhân", href: "/page/chinh-sach-bao-mat" },
-  { name: "Chính sách thanh toán, giao nhận", href: "/page/chinh-sach-giao-nhan-hang-online" },
-  { name: "Chính sách đơn đồng phục", href: "/page/chinh-sach-dong-phuc-yody" },
-  { name: "Hướng dẫn chọn kích thước", href: "/page/bang-size-chuan" },
-];
-
-const aboutLinks = [
-  { name: "Giới thiệu", href: "/page/gioi-thieu" },
-  { name: "Tuyển dụng", href: "https://careers.yody.vn/" },
-  { name: "Hệ thống cửa hàng", href: "/he-thong-cua-hang" },
-];
+import { useT } from "@/hooks/useT";
 
 const socialLinks = [
   { name: "Facebook", href: "https://www.facebook.com/yodyvn", icon: "f" },
@@ -44,15 +22,37 @@ function SocialIcon({ letter }: { letter: string }) {
 }
 
 export function Footer() {
+  const t = useT();
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim()) {
-      setSubscribed(true);
-    }
+    if (email.trim()) setSubscribed(true);
   };
+
+  const shopLinks = [
+    { name: t.shopLinks.men, href: "/category/nam" },
+    { name: t.shopLinks.women, href: "/category/nu" },
+    { name: t.shopLinks.kids, href: "/category/tre-em" },
+    { name: t.shopLinks.uniform, href: "https://landing.yody.vn/dongphucyody" },
+    { name: t.shopLinks.blog, href: "/blog" },
+  ];
+
+  const serviceLinks = [
+    { name: t.serviceLinks.loyalty, href: "/page/chinh-sach-khach-hang-than-thiet" },
+    { name: t.serviceLinks.returnPolicy, href: "/page/chinh-sach-bao-hanh-doi-tra" },
+    { name: t.serviceLinks.privacy, href: "/page/chinh-sach-bao-mat" },
+    { name: t.serviceLinks.payment, href: "/page/chinh-sach-giao-nhan-hang-online" },
+    { name: t.serviceLinks.uniform, href: "/page/chinh-sach-dong-phuc-yody" },
+    { name: t.serviceLinks.sizeGuide, href: "/page/bang-size-chuan" },
+  ];
+
+  const aboutLinks = [
+    { name: t.aboutLinks.intro, href: "/page/gioi-thieu" },
+    { name: t.aboutLinks.careers, href: "https://careers.yody.vn/" },
+    { name: t.aboutLinks.stores, href: "/he-thong-cua-hang" },
+  ];
 
   return (
     <footer className="bg-[#1A1A1A] text-white">
@@ -61,18 +61,18 @@ export function Footer() {
         <div className="yody-container py-6">
           <div className="flex flex-col md:flex-row items-center gap-4 justify-between">
             <div>
-              <p className="font-extrabold text-lg text-white">Đăng ký nhận ưu đãi độc quyền 🎁</p>
-              <p className="text-sm text-[#888] mt-0.5">Nhận ngay voucher 50K cho đơn hàng đầu tiên</p>
+              <p className="font-extrabold text-lg text-white">{t.footer.newsletter}</p>
+              <p className="text-sm text-[#888] mt-0.5">{t.footer.newsletterSub}</p>
             </div>
             {subscribed ? (
-              <div className="text-[#FCCE00] font-bold text-sm">✅ Đã đăng ký thành công!</div>
+              <div className="text-[#FCCE00] font-bold text-sm">{t.footer.newsletterDone}</div>
             ) : (
               <form onSubmit={handleSubscribe} className="flex gap-2 w-full md:w-auto">
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Nhập email của bạn..."
+                  placeholder={t.footer.newsletterPlaceholder}
                   required
                   className="flex-1 md:w-72 h-10 px-4 text-sm bg-[#2A2A2A] border border-[#3A3A3A] rounded-full text-white placeholder:text-[#666] focus:outline-none focus:border-[#FCCE00] transition-colors"
                 />
@@ -80,7 +80,7 @@ export function Footer() {
                   type="submit"
                   className="h-10 px-6 bg-[#FCCE00] text-[#1A1A1A] text-sm font-bold rounded-full hover:bg-[#f0c200] transition-colors whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 >
-                  Gửi
+                  {t.footer.newsletterSend}
                 </button>
               </form>
             )}
@@ -97,10 +97,8 @@ export function Footer() {
               <span className="text-white">yo</span>
               <span className="text-[#FCCE00]">dy</span>
             </Link>
-            <p className="text-sm text-[#aaa] mb-1 font-semibold">YODY XIN CHÀO 💖</p>
-            <p className="text-xs text-[#666] mb-5 leading-relaxed">
-              Chúng tôi luôn quý trọng và tiếp thu mọi ý kiến đóng góp từ khách hàng, nhằm không ngừng cải thiện và nâng tầm trải nghiệm dịch vụ cũng như chất lượng sản phẩm.
-            </p>
+            <p className="text-sm text-[#aaa] mb-1 font-semibold">{t.footer.greeting}</p>
+            <p className="text-xs text-[#666] mb-5 leading-relaxed">{t.footer.greetingDesc}</p>
 
             {/* Social links */}
             <div className="flex gap-2 mb-5">
@@ -123,7 +121,7 @@ export function Footer() {
                 <PhoneIcon className="w-4 h-4 shrink-0 text-[#FCCE00]" />
                 <span>
                   <strong className="text-white">1800 2086</strong>
-                  <span className="block text-[10px] text-[#666]">Phím 1 – Tư vấn | Phím 2 – Góp ý</span>
+                  <span className="block text-[10px] text-[#666]">{t.footer.phone1}</span>
                 </span>
               </a>
               <a href="mailto:cskh@yody.vn" className="flex items-center gap-2 text-sm text-[#ccc] hover:text-[#FCCE00] transition-colors">
@@ -132,14 +130,14 @@ export function Footer() {
               </a>
               <div className="flex items-start gap-2 text-sm text-[#666]">
                 <MapPinIcon className="w-4 h-4 shrink-0 mt-0.5 text-[#FCCE00]" />
-                <span>Đường An Định – Phường Việt Hoà – TP Hải Phòng</span>
+                <span>{t.footer.address}</span>
               </div>
             </div>
           </div>
 
           {/* Shopping */}
           <div>
-            <h4 className="text-xs font-extrabold text-white uppercase tracking-widest mb-4 border-b border-[#2E2E2E] pb-2">MUA SẮM</h4>
+            <h4 className="text-xs font-extrabold text-white uppercase tracking-widest mb-4 border-b border-[#2E2E2E] pb-2">{t.footer.shopSection}</h4>
             <ul className="space-y-2.5">
               {shopLinks.map((link) => (
                 <li key={link.name}>
@@ -153,7 +151,7 @@ export function Footer() {
 
           {/* Services */}
           <div>
-            <h4 className="text-xs font-extrabold text-white uppercase tracking-widest mb-4 border-b border-[#2E2E2E] pb-2">DỊCH VỤ KHÁCH HÀNG</h4>
+            <h4 className="text-xs font-extrabold text-white uppercase tracking-widest mb-4 border-b border-[#2E2E2E] pb-2">{t.footer.serviceSection}</h4>
             <ul className="space-y-2.5">
               {serviceLinks.map((link) => (
                 <li key={link.name}>
@@ -167,7 +165,7 @@ export function Footer() {
 
           {/* About */}
           <div>
-            <h4 className="text-xs font-extrabold text-white uppercase tracking-widest mb-4 border-b border-[#2E2E2E] pb-2">VỀ YODY</h4>
+            <h4 className="text-xs font-extrabold text-white uppercase tracking-widest mb-4 border-b border-[#2E2E2E] pb-2">{t.footer.aboutSection}</h4>
             <ul className="space-y-2.5">
               {aboutLinks.map((link) => (
                 <li key={link.name}>
@@ -180,7 +178,7 @@ export function Footer() {
 
             {/* Payment icons */}
             <div className="mt-6">
-              <p className="text-xs text-[#555] mb-2 font-semibold uppercase tracking-wide">Phương thức thanh toán</p>
+              <p className="text-xs text-[#555] mb-2 font-semibold uppercase tracking-wide">{t.footer.paymentMethods}</p>
               <div className="flex flex-wrap gap-1.5">
                 {["VISA", "MasterCard", "ATM", "COD", "MoMo", "ZaloPay"].map((m) => (
                   <span key={m} className="px-2 py-1 text-[10px] font-bold bg-[#2A2A2A] text-[#aaa] rounded-md border border-[#3A3A3A]">
@@ -196,17 +194,14 @@ export function Footer() {
       {/* Bottom bar */}
       <div className="border-t border-[#2A2A2A] py-5">
         <div className="yody-container text-center">
-          <p className="text-xs text-[#555]">
-            © CÔNG TY CỔ PHẦN THỜI TRANG YODY — Mã số doanh nghiệp: 0801206940
-          </p>
+          <p className="text-xs text-[#555]">{t.footer.copyrightFull}</p>
+          <p className="text-xs text-[#444] mt-1">{t.footer.copyrightLicense}</p>
           <p className="text-xs text-[#444] mt-1">
-            Giấy chứng nhận đăng ký doanh nghiệp do Sở Kế hoạch và Đầu tư TP Hải Dương cấp lần đầu ngày 04/03/2017
-          </p>
-          <p className="text-xs text-[#444] mt-1">
-            Trang web này được bảo vệ bởi reCAPTCHA của Google.{" "}
-            <Link href="https://policies.google.com/privacy" className="underline hover:text-[#FCCE00]">Chính sách quyền riêng tư</Link>{" "}
+            {t.footer.recaptcha}{" "}
+            <Link href="https://policies.google.com/privacy" className="underline hover:text-[#FCCE00]">{t.footer.privacyPolicy}</Link>{" "}
             và{" "}
-            <Link href="https://policies.google.com/terms" className="underline hover:text-[#FCCE00]">Điều khoản dịch vụ</Link> của Google được áp dụng.
+            <Link href="https://policies.google.com/terms" className="underline hover:text-[#FCCE00]">{t.footer.terms}</Link>{" "}
+            {t.footer.googleApply}
           </p>
         </div>
       </div>

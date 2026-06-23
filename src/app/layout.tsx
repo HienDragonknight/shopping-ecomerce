@@ -4,6 +4,8 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { TopBar } from "@/components/TopBar";
 import { Footer } from "@/components/Footer";
+import { LocaleProvider } from "@/context/LocaleContext";
+import { TranslationBanner } from "@/components/TranslationBanner";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -30,15 +32,21 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
+    // lang attribute is "vi" statically for SEO (Vietnamese is the primary indexed language).
+    // The LocaleProvider client component switches UI strings without changing this attribute.
+    // Phase 2 (URL-based routing) will make this dynamic.
     <html lang="vi" className={`h-full ${manrope.variable}`}>
       <body
         className="min-h-full flex flex-col bg-white antialiased"
         style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
       >
-        <TopBar />
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <LocaleProvider>
+          <TopBar />
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+          <TranslationBanner />
+        </LocaleProvider>
       </body>
     </html>
   );

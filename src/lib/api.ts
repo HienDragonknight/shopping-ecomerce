@@ -13,12 +13,22 @@ const api = axios.create({
   withCredentials: false,
 });
 
-// Request interceptor: attach token
+// Request interceptor: attach token + locale header
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("accessToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Set Accept-Language from NEXT_LOCALE cookie so backend resolves bilingual fields
+    const locale = document.cookie
+      .split("; ")
+      .find((c) => c.startsWith("NEXT_LOCALE="))
+      ?.split("=")[1];
+    if (locale === "en" || locale === "vi") {
+      config.headers["Accept-Language"] = locale;
+    } else {
+      config.headers["Accept-Language"] = "vi"; // default
     }
   }
   return config;

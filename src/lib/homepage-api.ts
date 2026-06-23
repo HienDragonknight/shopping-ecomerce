@@ -9,11 +9,17 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8081/api";
 
 /**
  * Generic fetcher — throws on HTTP error.
- * Uses `no-store` so homepage is always fresh (can switch to ISR with `revalidate`).
+ * Accepts an optional `lang` ("vi" | "en") to send as Accept-Language header,
+ * so the backend resolves bilingual fields (name_en, description_en, etc.)
  */
-async function apiFetch<T>(path: string): Promise<T> {
+async function apiFetch<T>(path: string, lang = "vi"): Promise<T> {
   const url = `${API_BASE}${path}`;
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetch(url, {
+    cache: "no-store",
+    headers: {
+      "Accept-Language": lang === "en" ? "en" : "vi",
+    },
+  });
   if (!res.ok) {
     throw new Error(`API ${url} returned ${res.status}`);
   }
@@ -24,33 +30,33 @@ async function apiFetch<T>(path: string): Promise<T> {
 
 // ─── Homepage endpoints ───────────────────────────────────────────────────────
 
-export async function getHomepageBanners(): Promise<ApiBannerSlide[]> {
+export async function getHomepageBanners(lang = "vi"): Promise<ApiBannerSlide[]> {
   try {
-    return await apiFetch<ApiBannerSlide[]>("/homepage/banners");
+    return await apiFetch<ApiBannerSlide[]>("/homepage/banners", lang);
   } catch {
     return [];
   }
 }
 
-export async function getHomepageCollections(): Promise<ApiCollection[]> {
+export async function getHomepageCollections(lang = "vi"): Promise<ApiCollection[]> {
   try {
-    return await apiFetch<ApiCollection[]>("/homepage/collections");
+    return await apiFetch<ApiCollection[]>("/homepage/collections", lang);
   } catch {
     return [];
   }
 }
 
-export async function getHomepageSections(): Promise<ApiProductSection[]> {
+export async function getHomepageSections(lang = "vi"): Promise<ApiProductSection[]> {
   try {
-    return await apiFetch<ApiProductSection[]>("/homepage/sections");
+    return await apiFetch<ApiProductSection[]>("/homepage/sections", lang);
   } catch {
     return [];
   }
 }
 
-export async function getHomepageBlogPosts(): Promise<ApiBlogPost[]> {
+export async function getHomepageBlogPosts(lang = "vi"): Promise<ApiBlogPost[]> {
   try {
-    return await apiFetch<ApiBlogPost[]>("/homepage/blog-posts");
+    return await apiFetch<ApiBlogPost[]>("/homepage/blog-posts", lang);
   } catch {
     return [];
   }

@@ -1,38 +1,22 @@
-import Link from "next/link";
+"use client";
 
-const trustItems = [
-  {
-    icon: "🔄",
-    text: "Đổi, trả miễn phí tại nhà nếu không hài lòng",
-    link: "/page/chinh-sach-bao-hanh-doi-tra",
-    linkText: "Xem chính sách",
-  },
-  {
-    icon: "🚚",
-    text: "Miễn phí vận chuyển đơn từ 299K",
-    link: "/page/chinh-sach-giao-nhan-hang-online",
-    linkText: "Xem chi tiết",
-  },
-  {
-    icon: "✅",
-    text: "Hàng chính hãng – Chất lượng đảm bảo",
-    link: "/page/gioi-thieu",
-    linkText: null,
-  },
-  {
-    icon: "📞",
-    text: "Hotline tư vấn: 1800 2086",
-    link: "tel:18002086",
-    linkText: null,
-  },
-];
+import Link from "next/link";
+import { useT } from "@/hooks/useT";
 
 export function TrustBanner() {
+  const t = useT();
+  const items = [
+    { icon: "🔄", text: t.trust.freeReturn, link: "/page/chinh-sach-bao-hanh-doi-tra", linkText: t.trust.freeReturnLink },
+    { icon: "🚚", text: t.trust.freeShip, link: "/page/chinh-sach-giao-nhan-hang-online", linkText: t.trust.freeShipLink },
+    { icon: "✅", text: t.trust.authentic, link: "/page/gioi-thieu", linkText: null },
+    { icon: "📞", text: t.trust.hotline, link: "tel:18002086", linkText: null },
+  ];
+
   return (
     <div className="bg-[#FFF9E6] border-b border-[#F0E8C8]">
       <div className="yody-container">
         <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 py-3">
-          {trustItems.map((item, i) => (
+          {items.map((item, i) => (
             <div key={i} className="flex items-center gap-1.5 text-xs text-[#4A3F2F]">
               <span className="text-sm">{item.icon}</span>
               <span className="font-medium">{item.text}</span>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
+import { useT } from "@/hooks/useT";
 
 export default function ForgotPasswordPage() {
   const [identifier, setIdentifier] = useState("");
@@ -12,6 +13,7 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [countdown, setCountdown] = useState(0);
+  const t = useT();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +22,6 @@ export default function ForgotPasswordPage() {
     try {
       await api.post("/auth/forgot-password", { identifier });
       setSent(true);
-      // Countdown 60s before allowing resend
       setCountdown(60);
       const timer = setInterval(() => {
         setCountdown((c) => {
@@ -30,7 +31,7 @@ export default function ForgotPasswordPage() {
       }, 1000);
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
-      setError(axiosErr?.response?.data?.message || "Không thể gửi email đặt lại mật khẩu");
+      setError(axiosErr?.response?.data?.message || t.common.error);
     } finally {
       setLoading(false);
     }
@@ -59,18 +60,18 @@ export default function ForgotPasswordPage() {
                 </svg>
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-[#1A1A1A] mb-2">Email đã được gửi!</h1>
+            <h1 className="text-2xl font-bold text-[#1A1A1A] mb-2">{t.forgotPassword.sentTitle}</h1>
             <p className="text-slate-500 text-sm max-w-xs mx-auto mb-1">
-              Chúng tôi đã gửi liên kết đặt lại mật khẩu đến:
+              {t.forgotPassword.sentDesc}
             </p>
             <p className="font-bold text-[#1A1A1A] mb-6">{identifier}</p>
 
             <div className="bg-[#FFFBEB] border border-[#FCCE00]/40 rounded-xl p-4 text-sm text-left mb-6">
-              <p className="font-semibold text-[#1A1A1A] mb-1">📬 Không nhận được email?</p>
+              <p className="font-semibold text-[#1A1A1A] mb-1">{t.forgotPassword.noEmail}</p>
               <ul className="text-slate-500 space-y-1 text-xs">
-                <li>• Kiểm tra thư mục Spam / Junk mail</li>
-                <li>• Email có thể mất vài phút để đến</li>
-                <li>• Đảm bảo địa chỉ email chính xác</li>
+                <li>{t.forgotPassword.checkSpam}</li>
+                <li>{t.forgotPassword.takesTime}</li>
+                <li>{t.forgotPassword.checkAddress}</li>
               </ul>
             </div>
 
@@ -79,12 +80,12 @@ export default function ForgotPasswordPage() {
               disabled={countdown > 0}
               className="text-sm font-semibold text-[#1A1A1A] hover:text-[#FCCE00] transition-colors disabled:text-slate-400 disabled:cursor-not-allowed"
             >
-              {countdown > 0 ? `Gửi lại sau ${countdown}s` : "Gửi lại email →"}
+              {countdown > 0 ? t.forgotPassword.resendAfter(countdown) : t.forgotPassword.resend}
             </button>
 
             <div className="mt-4 border-t border-slate-100 pt-4">
               <Link href="/account/login" className="text-sm text-slate-500 hover:text-[#1A1A1A] transition-colors">
-                ← Quay lại đăng nhập
+                {t.forgotPassword.backToLogin}
               </Link>
             </div>
           </div>
@@ -96,9 +97,9 @@ export default function ForgotPasswordPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold text-[#1A1A1A]">Quên mật khẩu?</h1>
+              <h1 className="text-2xl font-bold text-[#1A1A1A]">{t.forgotPassword.title}</h1>
               <p className="text-sm text-slate-500 mt-2">
-                Nhập email để nhận liên kết đặt lại mật khẩu
+                {t.forgotPassword.subtitle}
               </p>
             </div>
 
@@ -113,10 +114,10 @@ export default function ForgotPasswordPage() {
 
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Email / Số điện thoại</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">{t.forgotPassword.emailPhone}</label>
                 <Input
                   type="text"
-                  placeholder="Nhập email hoặc số điện thoại của bạn"
+                  placeholder={t.forgotPassword.placeholder}
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   className="h-12"
@@ -135,15 +136,15 @@ export default function ForgotPasswordPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    Đang gửi...
+                    {t.forgotPassword.sending}
                   </span>
-                ) : "Gửi liên kết đặt lại"}
+                ) : t.forgotPassword.sendLink}
               </Button>
             </form>
 
             <p className="mt-6 text-center text-sm">
               <Link href="/account/login" className="font-semibold text-[#1A1A1A] hover:text-[#FCCE00] transition-colors">
-                ← Quay lại đăng nhập
+                {t.forgotPassword.backToLogin}
               </Link>
             </p>
           </>

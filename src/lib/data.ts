@@ -118,32 +118,142 @@ export const blogPosts: BlogPost[] = [
 export const navCategories: NavCategory[] = [
   {
     name: "Nam",
+    nameEn: "Men",
     href: "/category/nam",
     groups: [
-      { title: "Áo khoác", items: [{ name: "Áo chống nắng nam", href: "#" }, { name: "Áo phao nam", href: "#" }, { name: "Áo gió nam", href: "#" }, { name: "Áo vest nam", href: "#" }] },
-      { title: "Áo nam", items: [{ name: "Áo polo nam", href: "#" }, { name: "Áo sơ mi nam", href: "#" }, { name: "Áo thun nam", href: "#" }, { name: "Áo len nam", href: "#" }, { name: "Áo hoodie - nỉ nam", href: "#" }] },
-      { title: "Quần nam", items: [{ name: "Quần âu nam", href: "#" }, { name: "Quần jeans nam", href: "#" }, { name: "Quần short nam", href: "#" }, { name: "Quần kaki nam", href: "#" }] },
-      { title: "Đồ thể thao nam", items: [{ name: "Áo polo thể thao nam", href: "#" }, { name: "Áo thun thể thao nam", href: "#" }, { name: "Quần thể thao nam", href: "#" }] },
+      { 
+        title: "Áo khoác", 
+        titleEn: "Jackets",
+        items: [
+          { name: "Áo chống nắng nam", nameEn: "Sunscreen Jackets", href: "#" }, 
+          { name: "Áo phao nam", nameEn: "Puffer Jackets", href: "#" }, 
+          { name: "Áo gió nam", nameEn: "Windbreakers", href: "#" }, 
+          { name: "Áo vest nam", nameEn: "Blazers & Vests", href: "#" }
+        ] 
+      },
+      { 
+        title: "Áo nam", 
+        titleEn: "Tops",
+        items: [
+          { name: "Áo polo nam", nameEn: "Polo Shirts", href: "#" }, 
+          { name: "Áo sơ mi nam", nameEn: "Button-downs", href: "#" }, 
+          { name: "Áo thun nam", nameEn: "T-Shirts", href: "#" }, 
+          { name: "Áo len nam", nameEn: "Sweaters", href: "#" }, 
+          { name: "Áo hoodie - nỉ nam", nameEn: "Hoodies & Sweats", href: "#" }
+        ] 
+      },
+      { 
+        title: "Quần nam", 
+        titleEn: "Bottoms",
+        items: [
+          { name: "Quần âu nam", nameEn: "Dress Pants", href: "#" }, 
+          { name: "Quần jeans nam", nameEn: "Jeans", href: "#" }, 
+          { name: "Quần short nam", nameEn: "Shorts", href: "#" }, 
+          { name: "Quần kaki nam", nameEn: "Khakis", href: "#" }
+        ] 
+      },
+      { 
+        title: "Đồ thể thao nam", 
+        titleEn: "Activewear",
+        items: [
+          { name: "Áo polo thể thao nam", nameEn: "Active Polos", href: "#" }, 
+          { name: "Áo thun thể thao nam", nameEn: "Active Tees", href: "#" }, 
+          { name: "Quần thể thao nam", nameEn: "Active Pants", href: "#" }
+        ] 
+      },
     ],
   },
   {
     name: "Nữ",
+    nameEn: "Women",
     href: "/category/nu",
     groups: [
-      { title: "Áo khoác", items: [{ name: "Áo chống nắng nữ", href: "#" }, { name: "Áo phao nữ", href: "#" }, { name: "Áo gió nữ", href: "#" }, { name: "Áo vest nữ", href: "#" }, { name: "Áo măng tô nữ", href: "#" }] },
-      { title: "Áo nữ", items: [{ name: "Áo polo nữ", href: "#" }, { name: "Áo thun nữ", href: "#" }, { name: "Áo sơ mi nữ", href: "#" }, { name: "Áo len nữ", href: "#" }, { name: "Áo hoodie - nỉ nữ", href: "#" }] },
-      { title: "Quần nữ", items: [{ name: "Quần âu nữ", href: "#" }, { name: "Quần jeans nữ", href: "#" }, { name: "Quần short nữ", href: "#" }, { name: "Chân váy nữ", href: "#" }, { name: "Đầm nữ", href: "#" }] },
-      { title: "Đồ bộ nữ", items: [{ name: "Đồ bộ dài tay nữ", href: "#" }, { name: "Đồ bộ ngắn tay nữ", href: "#" }, { name: "Bộ thể thao nữ", href: "#" }] },
+      { 
+        title: "Áo khoác", 
+        titleEn: "Jackets",
+        items: [
+          { name: "Áo chống nắng nữ", nameEn: "Sunscreen Jackets", href: "#" }, 
+          { name: "Áo phao nữ", nameEn: "Puffer Jackets", href: "#" }, 
+          { name: "Áo gió nữ", nameEn: "Windbreakers", href: "#" }, 
+          { name: "Áo vest nữ", nameEn: "Blazers", href: "#" }, 
+          { name: "Áo măng tô nữ", nameEn: "Trench Coats", href: "#" }
+        ] 
+      },
+      { 
+        title: "Áo nữ", 
+        titleEn: "Tops",
+        items: [
+          { name: "Áo polo nữ", nameEn: "Polo Shirts", href: "#" }, 
+          { name: "Áo thun nữ", nameEn: "T-Shirts", href: "#" }, 
+          { name: "Áo sơ mi nữ", nameEn: "Button-downs", href: "#" }, 
+          { name: "Áo len nữ", nameEn: "Sweaters", href: "#" }, 
+          { name: "Áo hoodie - nỉ nữ", nameEn: "Hoodies & Sweats", href: "#" }
+        ] 
+      },
+      { 
+        title: "Quần nữ", 
+        titleEn: "Bottoms",
+        items: [
+          { name: "Quần âu nữ", nameEn: "Dress Pants", href: "#" }, 
+          { name: "Quần jeans nữ", nameEn: "Jeans", href: "#" }, 
+          { name: "Quần short nữ", nameEn: "Shorts", href: "#" }, 
+          { name: "Chân váy nữ", nameEn: "Skirts", href: "#" }, 
+          { name: "Đầm nữ", nameEn: "Dresses", href: "#" }
+        ] 
+      },
+      { 
+        title: "Đồ bộ nữ", 
+        titleEn: "Matching Sets",
+        items: [
+          { name: "Đồ bộ dài tay nữ", nameEn: "Long Sleeve Sets", href: "#" }, 
+          { name: "Đồ bộ ngắn tay nữ", nameEn: "Short Sleeve Sets", href: "#" }, 
+          { name: "Bộ thể thao nữ", nameEn: "Activewear Sets", href: "#" }
+        ] 
+      },
     ],
   },
   {
     name: "Trẻ em",
+    nameEn: "Kids",
     href: "/category/tre-em",
     groups: [
-      { title: "Áo trẻ em", items: [{ name: "Áo sơ mi trẻ em", href: "#" }, { name: "Áo polo trẻ em", href: "#" }, { name: "Áo thun trẻ em", href: "#" }, { name: "Áo len trẻ em", href: "#" }, { name: "Áo hoodie trẻ em", href: "#" }] },
-      { title: "Quần trẻ em", items: [{ name: "Quần jeans trẻ em", href: "#" }, { name: "Quần short trẻ em", href: "#" }, { name: "Quần nỉ trẻ em", href: "#" }, { name: "Quần kaki trẻ em", href: "#" }] },
-      { title: "Đồ bộ trẻ em", items: [{ name: "Đồ bộ dài tay trẻ em", href: "#" }, { name: "Đồ bộ ngắn tay trẻ em", href: "#" }] },
-      { title: "Bé gái", items: [{ name: "Chân váy bé gái", href: "#" }, { name: "Đầm bé gái", href: "#" }] },
+      { 
+        title: "Áo trẻ em", 
+        titleEn: "Kids Tops",
+        items: [
+          { name: "Áo sơ mi trẻ em", nameEn: "Shirts", href: "#" }, 
+          { name: "Áo polo trẻ em", nameEn: "Polos", href: "#" }, 
+          { name: "Áo thun trẻ em", nameEn: "T-Shirts", href: "#" }, 
+          { name: "Áo len trẻ em", nameEn: "Sweaters", href: "#" }, 
+          { name: "Áo hoodie trẻ em", nameEn: "Hoodies", href: "#" }
+        ] 
+      },
+      { 
+        title: "Quần trẻ em", 
+        titleEn: "Kids Bottoms",
+        items: [
+          { name: "Quần jeans trẻ em", nameEn: "Jeans", href: "#" }, 
+          { name: "Quần short trẻ em", nameEn: "Shorts", href: "#" }, 
+          { name: "Quần nỉ trẻ em", nameEn: "Sweatpants", href: "#" }, 
+          { name: "Quần kaki trẻ em", nameEn: "Khakis", href: "#" }
+        ] 
+      },
+      { 
+        title: "Đồ bộ trẻ em", 
+        titleEn: "Kids Sets",
+        items: [
+          { name: "Đồ bộ dài tay trẻ em", nameEn: "Long Sleeve Sets", href: "#" }, 
+          { name: "Đồ bộ ngắn tay trẻ em", nameEn: "Short Sleeve Sets", href: "#" }
+        ] 
+      },
+      { 
+        title: "Bé gái", 
+        titleEn: "Girls Wear",
+        items: [
+          { name: "Chân váy bé gái", nameEn: "Skirts", href: "#" }, 
+          { name: "Đầm bé gái", nameEn: "Dresses", href: "#" }
+        ] 
+      },
     ],
   },
 ];

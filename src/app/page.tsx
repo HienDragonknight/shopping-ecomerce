@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { HeroBanner } from "@/components/HeroBanner";
 import { TrustBanner } from "@/components/TrustBanner";
 import { CollectionTabs } from "@/components/CollectionTabs";
@@ -13,12 +14,16 @@ import {
 import type { ProductSectionData } from "@/types";
 
 export default async function Home() {
-  // Fetch all homepage data in parallel from the backend
+  // Read locale from NEXT_LOCALE cookie set by LocaleContext client component
+  const cookieStore = await cookies();
+  const lang = cookieStore.get("NEXT_LOCALE")?.value === "en" ? "en" : "vi";
+
+  // Fetch all homepage data in parallel, forwarding locale to backend
   const [banners, collections, sections, blogPosts] = await Promise.all([
-    getHomepageBanners(),
-    getHomepageCollections(),
-    getHomepageSections(),
-    getHomepageBlogPosts(),
+    getHomepageBanners(lang),
+    getHomepageCollections(lang),
+    getHomepageSections(lang),
+    getHomepageBlogPosts(lang),
   ]);
 
   // Map API product sections → component ProductSectionData shape
@@ -39,6 +44,9 @@ export default async function Home() {
   // Section indices (order from backend: easyoffice, polo, sale, kids, sun, jeans)
   const [easyoffice, polo, sale, kids, sun, jeans] = productSections;
 
+  // Locale-aware promo banner text
+  const isEn = lang === "en";
+
   return (
     <>
       <HeroBanner slides={banners} />
@@ -50,8 +58,8 @@ export default async function Home() {
 
       {/* Polo All-in-One promo + section */}
       <PromoSectionBanner
-        title={"POLO ALL-IN-ONE\nMặc đẹp — Sống chất"}
-        subtitle="Bộ sưu tập áo polo đa dụng cho mọi dịp"
+        title={isEn ? "POLO ALL-IN-ONE\nWear well — Live well" : "POLO ALL-IN-ONE\nMặc đẹp — Sống chất"}
+        subtitle={isEn ? "Versatile polo collection for every occasion" : "Bộ sưu tập áo polo đa dụng cho mọi dịp"}
         href="/collection/POLO-ALL-IN-ONE"
         image="/images/promo-office.jpg"
         bgColor="#E8F4FD"
@@ -65,8 +73,12 @@ export default async function Home() {
         <div className="yody-container">
           <div className="rounded-2xl p-6 flex items-center gap-4" style={{ background: "linear-gradient(135deg, #E53E3E 0%, #c0392b 100%)" }}>
             <div>
-              <p className="text-white font-extrabold text-2xl md:text-3xl leading-tight">Giá cũ – Giá mới</p>
-              <p className="text-white/80 text-sm mt-1">Chỉ từ 49K – Thoải mái diện đồ, không lo về giá</p>
+              <p className="text-white font-extrabold text-2xl md:text-3xl leading-tight">
+                {isEn ? "Old price – New price" : "Giá cũ – Giá mới"}
+              </p>
+              <p className="text-white/80 text-sm mt-1">
+                {isEn ? "From only 49K – Dress comfortably, worry-free" : "Chỉ từ 49K – Thoải mái diện đồ, không lo về giá"}
+              </p>
             </div>
             <div className="ml-auto flex-shrink-0">
               <span className="inline-block bg-[#FCCE00] text-[#1A1A1A] font-extrabold text-3xl md:text-4xl px-6 py-3 rounded-xl">
@@ -80,8 +92,8 @@ export default async function Home() {
 
       {/* Kids promo + section */}
       <PromoSectionBanner
-        title={"GÓI CẢ MÙA HÈ\nVÀO TỦ ĐỒ CỦA BÉ"}
-        subtitle="Thế giới của con – ưu đãi cho mẹ"
+        title={isEn ? "PACK THE WHOLE SUMMER\nINTO KIDS' WARDROBE" : "GÓI CẢ MÙA HÈ\nVÀO TỦ ĐỒ CỦA BÉ"}
+        subtitle={isEn ? "Kids' world — mom's deal" : "Thế giới của con – ưu đãi cho mẹ"}
         href="/collection/kid-20"
         image="/images/promo-kids.jpg"
         bgColor="#E3F2FD"

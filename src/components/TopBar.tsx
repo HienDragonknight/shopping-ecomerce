@@ -3,16 +3,18 @@
 import { useState } from "react";
 import Link from "next/link";
 import { CloseIcon } from "@/components/icons";
-
-const messages = [
-  "🎉 ƯU ĐÃI LÊN ĐẾN 50% — Mua từ 2 sản phẩm giảm thêm 10%",
-  "🚚 MIỄN PHÍ VẬN CHUYỂN đơn từ 299K toàn quốc",
-  "🔄 ĐỔI TRẢ MIỄN PHÍ tại nhà nếu không hài lòng",
-  "📞 Hotline tư vấn: 1800 2086 (miễn phí)",
-];
+import { useT } from "@/hooks/useT";
 
 export function TopBar() {
   const [visible, setVisible] = useState(true);
+  const t = useT();
+
+  const messages = [
+    t.topBar.promo1,
+    t.topBar.promo2,
+    t.topBar.promo3,
+    t.topBar.promo4,
+  ];
 
   if (!visible) return null;
 
@@ -40,12 +42,12 @@ export function TopBar() {
           href="/sale"
           className="text-[11px] font-bold text-[#FCCE00] hover:text-white transition-colors whitespace-nowrap underline-offset-2 hover:underline"
         >
-          Xem ưu đãi ↗
+          {t.topBar.viewDeals}
         </Link>
         <button
           onClick={() => setVisible(false)}
           className="flex items-center justify-center w-5 h-5 rounded-full hover:bg-white/20 transition-colors flex-shrink-0 focus-visible:outline-2 focus-visible:outline-white"
-          aria-label="Đóng thông báo"
+          aria-label={t.topBar.close}
         >
           <CloseIcon className="w-3 h-3" />
         </button>

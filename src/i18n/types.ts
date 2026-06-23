@@ -1,0 +1,274 @@
+/**
+ * Shared type definitions for the i18n dictionary.
+ * This is separate from vi.ts to allow English overrides without `as const` conflicts.
+ */
+export interface Dict {
+  common: {
+    loading: string;
+    error: string;
+    retry: string;
+    save: string;
+    cancel: string;
+    delete: string;
+    edit: string;
+    create: string;
+    search: string;
+    noResults: string;
+    viewAll: string;
+    viewMore: string;
+    back: string;
+    next: string;
+    previous: string;
+    confirm: string;
+    success: string;
+    close: string;
+    or: string;
+  };
+  nav: {
+    home: string;
+    products: string;
+    collections: string;
+    sale: string;
+    newArrivals: string;
+    uniform: string;
+    store: string;
+    account: string;
+    cart: string;
+    wishlist: string;
+    searchPlaceholder: string;
+    searchPlaceholderFull: string;
+    discover: string;
+    newCollection: string;
+    monthlyCollection: string;
+    latestTrends: string;
+    newArrivalsShort: string;
+    uniformsShort: string;
+  };
+  auth: {
+    login: string;
+    logout: string;
+    register: string;
+    forgotPassword: string;
+    myAccount: string;
+    loggingOut: string;
+    email: string;
+    phone: string;
+    password: string;
+    fullName: string;
+    emailOrPhone: string;
+    rememberMe: string;
+    noAccount: string;
+    hasAccount: string;
+    loginSuccess: string;
+    registerSuccess: string;
+    loggingIn: string;
+    registering: string;
+    createAccount: string;
+    createAccountSubtitle: string;
+    registerNow: string;
+    currentPassword: string;
+    newPassword: string;
+    confirmNewPassword: string;
+    changePasswordSuccess: string;
+    changePasswordFail: string;
+    passwordMismatch: string;
+    passwordTooShort: string;
+    saving: string;
+    changePassword: string;
+  };
+  product: {
+    addToCart: string;
+    addedToCart: string;
+    adding: string;
+    buyNow: string;
+    outOfStock: string;
+    inStock: string;
+    stockCount: (n: number) => string;
+    outOfStockHint: string;
+    color: string;
+    chooseColor: string;
+    size: string;
+    chooseSize: string;
+    sizeGuide: string;
+    quantity: string;
+    description: string;
+    reviews: (n: number) => string;
+    noVariantError: string;
+    insufficientStock: string;
+    cartError: string;
+    viewInStore: string;
+    notFound: string;
+    viewOther: string;
+    showMoreImages: (n: number) => string;
+    collapse: string;
+    copySku: string;
+    faq: string;
+  };
+  promises: {
+    title: string;
+    freeReturn: string;
+    freeReturnDesc: string;
+    viewPolicy: string;
+    delivery: string;
+    deliveryDesc: string;
+    security: string;
+    securityDesc: string;
+    support: string;
+    supportDesc: string;
+    chatNow: string;
+  };
+  cart: {
+    title: string;
+    empty: string;
+    emptyHint: string;
+    total: string;
+    subtotal: string;
+    shipping: string;
+    checkout: string;
+    continueShopping: string;
+    remove: string;
+    quantity: string;
+    items: (n: number) => string;
+  };
+  checkout: {
+    title: string;
+    shippingInfo: string;
+    paymentMethod: string;
+    orderSummary: string;
+    placeOrder: string;
+    processing: string;
+    cod: string;
+    vnpay: string;
+    success: string;
+  };
+  account: {
+    profile: string;
+    orders: string;
+    addresses: string;
+    changePassword: string;
+    wishlist: string;
+    orderHistory: string;
+    fullName: string;
+    phone: string;
+    email: string;
+    birthDate: string;
+    gender: string;
+    genderMale: string;
+    genderFemale: string;
+    genderOther: string;
+    saveChanges: string;
+  };
+  footer: {
+    about: string;
+    policy: string;
+    support: string;
+    social: string;
+    followUs: string;
+    copyright: string;
+    hotline: string;
+    newsletter: string;
+    newsletterSub: string;
+    newsletterPlaceholder: string;
+    newsletterSend: string;
+    newsletterDone: string;
+    shopSection: string;
+    serviceSection: string;
+    aboutSection: string;
+    paymentMethods: string;
+    phone1: string;
+    address: string;
+    greeting: string;
+    greetingDesc: string;
+    copyrightFull: string;
+    copyrightLicense: string;
+    recaptcha: string;
+    privacyPolicy: string;
+    terms: string;
+    googleApply: string;
+  };
+  faq: {
+    returnPolicy: { q: string; a: string };
+    delivery: { q: string; a: string };
+    sizing: { q: string; a: string };
+  };
+  breadcrumb: {
+    home: string;
+  };
+  topBar: {
+    promo1: string;
+    promo2: string;
+    promo3: string;
+    promo4: string;
+    viewDeals: string;
+    close: string;
+  };
+  forgotPassword: {
+    title: string;
+    subtitle: string;
+    emailPhone: string;
+    placeholder: string;
+    sendLink: string;
+    sending: string;
+    sentTitle: string;
+    sentDesc: string;
+    noEmail: string;
+    checkSpam: string;
+    takesTime: string;
+    checkAddress: string;
+    resendAfter: (s: number) => string;
+    resend: string;
+    backToLogin: string;
+  };
+  admin: {
+    translate: string;
+    translating: string;
+    translationSuggestion: string;
+    nameVi: string;
+    nameEn: string;
+    descVi: string;
+    descEn: string;
+    bilingualTab: string;
+    viTab: string;
+    enTab: string;
+  };
+  trust: {
+    freeReturn: string;
+    freeReturnLink: string;
+    freeShip: string;
+    freeShipLink: string;
+    authentic: string;
+    hotline: string;
+  };
+  blog: {
+    title: string;
+    viewMore: string;
+    posted: string;
+  };
+  hero: {
+    loading: string;
+    prevSlide: string;
+    nextSlide: string;
+    goToSlide: (n: number) => string;
+    defaultCta: string;
+  };
+  shopLinks: {
+    men: string;
+    women: string;
+    kids: string;
+    uniform: string;
+    blog: string;
+  };
+  serviceLinks: {
+    loyalty: string;
+    returnPolicy: string;
+    privacy: string;
+    payment: string;
+    uniform: string;
+    sizeGuide: string;
+  };
+  aboutLinks: {
+    intro: string;
+    careers: string;
+    stores: string;
+  };
+}

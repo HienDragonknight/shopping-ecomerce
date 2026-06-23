@@ -4,12 +4,14 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
 import type { ApiBannerSlide } from "@/types";
+import { useT } from "@/hooks/useT";
 
 interface HeroBannerProps {
   slides: ApiBannerSlide[];
 }
 
 export function HeroBanner({ slides }: HeroBannerProps) {
+  const t = useT();
   const [current, setCurrent] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -63,7 +65,7 @@ export function HeroBanner({ slides }: HeroBannerProps) {
         className="relative w-full bg-[#1A1A1A] flex items-center justify-center"
         style={{ aspectRatio: "21/9", minHeight: "400px", maxHeight: "600px" }}
       >
-        <p className="text-white/40 text-xl">Đang tải banner...</p>
+        <p className="text-white/40 text-xl">{t.hero.loading}</p>
       </div>
     );
   }
@@ -145,7 +147,7 @@ export function HeroBanner({ slides }: HeroBannerProps) {
                       href={slide.linkUrl ?? "/"}
                       className="group/btn inline-flex items-center gap-3 px-8 py-3.5 text-base font-bold rounded-full transition-all duration-300 hover:shadow-[0_0_20px_rgba(252,206,0,0.4)] hover:scale-105 active:scale-95 bg-[#FCCE00] text-[#1A1A1A]"
                     >
-                      {slide.ctaText ?? "Khám phá ngay"}
+                      {slide.ctaText ?? t.hero.defaultCta}
                       <span className="w-6 h-6 rounded-full bg-[#1A1A1A] flex items-center justify-center text-[#FCCE00] group-hover/btn:translate-x-1 transition-transform">
                         <ChevronRightIcon className="w-3.5 h-3.5" />
                       </span>
@@ -162,7 +164,7 @@ export function HeroBanner({ slides }: HeroBannerProps) {
       <button
         onClick={prev}
         className="hidden md:flex absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 items-center justify-center text-white transition-all hover:bg-white hover:text-black opacity-0 group-hover:opacity-100 z-20"
-        aria-label="Slide trước"
+        aria-label={t.hero.prevSlide}
       >
         <ChevronLeftIcon className="w-6 h-6" />
       </button>
@@ -170,7 +172,7 @@ export function HeroBanner({ slides }: HeroBannerProps) {
       <button
         onClick={next}
         className="hidden md:flex absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 items-center justify-center text-white transition-all hover:bg-white hover:text-black opacity-0 group-hover:opacity-100 z-20"
-        aria-label="Slide tiếp theo"
+        aria-label={t.hero.nextSlide}
       >
         <ChevronRightIcon className="w-6 h-6" />
       </button>
@@ -185,7 +187,7 @@ export function HeroBanner({ slides }: HeroBannerProps) {
                 onClick={() => goTo(i)}
                 className="relative h-1.5 rounded-full overflow-hidden transition-all duration-300"
                 style={{ width: i === current ? "40px" : "16px", backgroundColor: "rgba(255,255,255,0.3)" }}
-                aria-label={`Chuyển đến slide ${i + 1}`}
+                aria-label={t.hero.goToSlide(i + 1)}
               >
                 {i === current && (
                   <div

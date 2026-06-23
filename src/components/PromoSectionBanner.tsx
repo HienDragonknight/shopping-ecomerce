@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useT } from "@/hooks/useT";
 
 interface PromoBannerProps {
   title: string;
@@ -22,6 +23,7 @@ export function PromoSectionBanner({
   textColor = "#fff",
   accentColor = "#FCCE00",
 }: PromoBannerProps) {
+  const t = useT();
   return (
     <div className="py-8 bg-white">
       <div className="yody-container max-w-7xl">
@@ -69,7 +71,7 @@ export function PromoSectionBanner({
                   color: accentColor === "#FCCE00" ? "#1A1A1A" : "#fff",
                 }}
               >
-                Khám phá ngay
+                {t.hero.defaultCta}
               </span>
               <div 
                 className="w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 group-hover:translate-x-2 shadow-md"

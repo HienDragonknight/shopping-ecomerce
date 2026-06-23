@@ -4,20 +4,22 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
-
-const navItems = [
-  { href: "/account/profile", label: "Thông tin cá nhân", icon: "👤" },
-  { href: "/account/orders", label: "Đơn hàng của tôi", icon: "📦" },
-  { href: "/wishlist", label: "Sản phẩm yêu thích", icon: "❤️" },
-  { href: "/account/addresses", label: "Sổ địa chỉ", icon: "📍" },
-  { href: "/account/change-password", label: "Đổi mật khẩu", icon: "🔒" },
-];
+import { useT } from "@/hooks/useT";
 
 export function AccountSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const t = useT();
+
+  const navItems = [
+    { href: "/account/profile", label: t.account.profile, icon: "👤" },
+    { href: "/account/orders", label: t.account.orders, icon: "📦" },
+    { href: "/wishlist", label: t.account.wishlist, icon: "❤️" },
+    { href: "/account/addresses", label: t.account.addresses, icon: "📍" },
+    { href: "/account/change-password", label: t.account.changePassword, icon: "🔒" },
+  ];
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -37,7 +39,7 @@ export function AccountSidebar() {
           {user?.fullName?.[0] || "U"}
         </div>
         <div className="min-w-0">
-          <p className="font-bold text-sm text-[#1A1A1A] truncate">{user?.fullName || "Tài khoản"}</p>
+          <p className="font-bold text-sm text-[#1A1A1A] truncate">{user?.fullName || t.auth.myAccount}</p>
           <p className="text-xs text-slate-400 truncate">{user?.email || user?.phone}</p>
         </div>
       </div>
@@ -67,7 +69,7 @@ export function AccountSidebar() {
           className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-50 hover:text-red-600 transition-all mt-1 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span>{isLoggingOut ? "⏳" : "🚪"}</span>
-          {isLoggingOut ? "Đang đăng xuất..." : "Đăng xuất"}
+          {isLoggingOut ? t.auth.loggingOut : t.auth.logout}
         </button>
       </nav>
     </div>

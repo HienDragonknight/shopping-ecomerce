@@ -4,12 +4,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { ChevronRightIcon } from "@/components/icons";
 import type { ApiBlogPost } from "@/types";
+import { useT } from "@/hooks/useT";
 
 interface BlogSectionProps {
   posts: ApiBlogPost[];
 }
 
 export function BlogSection({ posts }: BlogSectionProps) {
+  const t = useT();
   if (posts.length === 0) return null;
 
   return (
@@ -17,13 +19,13 @@ export function BlogSection({ posts }: BlogSectionProps) {
       <div className="yody-container">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xl md:text-2xl font-black text-[#1A1A1A] tracking-tight uppercase">
-            TIN TỨC &amp; PHONG CÁCH
+            {t.blog.title}
           </h2>
           <Link
             href="/blog"
             className="flex items-center gap-1 text-sm font-semibold text-[#1A1A1A] hover:text-[#FCCE00] transition-colors"
           >
-            Xem thêm
+            {t.blog.viewMore}
             <ChevronRightIcon className="w-4 h-4" />
           </Link>
         </div>
@@ -49,7 +51,7 @@ export function BlogSection({ posts }: BlogSectionProps) {
                 />
               </div>
               <div className="p-3">
-                <p className="text-[10px] text-[#999] mb-1">Ngày đăng: {post.date}</p>
+                <p className="text-[10px] text-[#999] mb-1">{t.blog.posted} {post.date}</p>
                 <h3 className="text-xs text-[#1A1A1A] font-medium line-clamp-2 leading-snug group-hover:text-[#333]">
                   {post.title}
                 </h3>

@@ -7,6 +7,7 @@ import { EyeIcon, EyeOffIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useT } from "@/hooks/useT";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const t = useT();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +31,7 @@ export default function LoginPage() {
       }
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
-      setError(axiosErr?.response?.data?.message || "Sai email/mật khẩu. Vui lòng thử lại.");
+      setError(axiosErr?.response?.data?.message || t.common.error);
     }
   };
 
@@ -41,7 +43,7 @@ export default function LoginPage() {
   return (
     <div className="flex justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[#F5F5F5] min-h-[80vh]">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-sm p-8">
-        <h1 className="text-2xl font-bold text-[#1A1A1A] text-center mb-4">Đăng nhập</h1>
+        <h1 className="text-2xl font-bold text-[#1A1A1A] text-center mb-4">{t.auth.login}</h1>
 
         {/* DEV QUICK-LOGIN */}
         <div className="mb-5 rounded-xl border border-dashed border-[#FCCE00] bg-[#FFFBEB] p-3">
@@ -79,7 +81,7 @@ export default function LoginPage() {
           <div>
             <Input
               type="text"
-              placeholder="Email / Số điện thoại"
+              placeholder={t.auth.emailOrPhone}
               className="h-12"
               required
               value={identifier}
@@ -90,7 +92,7 @@ export default function LoginPage() {
           <div className="relative">
             <Input
               type={showPassword ? "text" : "password"}
-              placeholder="Mật khẩu"
+              placeholder={t.auth.password}
               className="h-12 pr-10"
               required
               value={password}
@@ -107,7 +109,7 @@ export default function LoginPage() {
 
           <div className="flex justify-end">
             <Link href="/account/forgot-password" className="text-sm font-semibold text-[#1A1A1A] hover:text-[#FCCE00] transition-colors">
-              Quên mật khẩu?
+              {t.auth.forgotPassword}
             </Link>
           </div>
 
@@ -122,15 +124,15 @@ export default function LoginPage() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                Đang đăng nhập...
+                {t.auth.loggingIn}
               </span>
-            ) : "Đăng nhập"}
+            ) : t.auth.login}
           </Button>
         </form>
 
         <div className="mt-6 flex items-center justify-between">
           <span className="w-1/5 border-b border-[#E5E5E5] lg:w-1/4" />
-          <span className="text-xs text-center text-[#999] uppercase">hoặc đăng nhập bằng</span>
+          <span className="text-xs text-center text-[#999] uppercase">{t.common.or}</span>
           <span className="w-1/5 border-b border-[#E5E5E5] lg:w-1/4" />
         </div>
 
@@ -153,9 +155,9 @@ export default function LoginPage() {
         </div>
 
         <p className="mt-8 text-center text-sm text-[#555]">
-          Bạn chưa có tài khoản?{" "}
+          {t.auth.noAccount}{" "}
           <Link href="/account/register" className="font-bold text-[#1A1A1A] hover:text-[#FCCE00] transition-colors">
-            Đăng ký ngay
+            {t.auth.registerNow}
           </Link>
         </p>
       </div>

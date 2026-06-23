@@ -6,6 +6,8 @@ import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
+import { useT } from "@/hooks/useT";
+import { useLocale } from "@/context/LocaleContext";
 import { ShoppingBag, RefreshCw, Truck, ShieldCheck, MessageCircle, Store, ChevronRight, Star, Copy, Check } from "lucide-react";
 
 interface PageProps { params: Promise<{ slug: string }>; }
@@ -31,6 +33,8 @@ export default function ProductDetailPage({ params }: PageProps) {
   const { addItem, isLoading: cartLoading } = useCartStore();
   const { isAuthenticated } = useAuthStore();
   const router = useRouter();
+  const t = useT();
+  const { locale } = useLocale();
 
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,6 +46,7 @@ export default function ProductDetailPage({ params }: PageProps) {
   const [imgExpanded, setImgExpanded] = useState(false);
   const infoRef = useRef<HTMLDivElement>(null);
 
+  // Re-fetch when slug OR locale changes — axios interceptor sends Accept-Language automatically
   useEffect(() => {
     setLoading(true);
     api.get(`/products/${slug}`)
@@ -53,7 +58,7 @@ export default function ProductDetailPage({ params }: PageProps) {
       })
       .catch(() => setProduct(null))
       .finally(() => setLoading(false));
-  }, [slug]);
+  }, [slug, locale]);
 
   // All product images stacked (Yody style)
   const allImages = (() => {
@@ -96,8 +101,8 @@ export default function ProductDetailPage({ params }: PageProps) {
 
   const handleAddToCart = async () => {
     if (!isAuthenticated) { router.push("/account/login?redirect=/product/" + slug); return; }
-    if (!selectedVariant) { setAddError("Vui lòng chọn phân loại sản phẩm"); return; }
-    if (selectedVariant.stockQty < quantity) { setAddError("Không đủ hàng trong kho"); return; }
+    if (!selectedVariant) { setAddError(t.product.noVariantError); return; }
+    if (selectedVariant.stockQty < quantity) { setAddError(t.product.insufficientStock); return; }
     setAddError("");
     try {
       await addItem(selectedVariant.id, quantity);
@@ -105,7 +110,7 @@ export default function ProductDetailPage({ params }: PageProps) {
       setTimeout(() => setAddedToCart(false), 2500);
     } catch (err) {
       const axiosErr = err as { response?: { data?: { message?: string } } };
-      setAddError(axiosErr?.response?.data?.message || "Không thể thêm vào giỏ hàng. Vui lòng thử lại.");
+      setAddError(axiosErr?.response?.data?.message || t.product.cartError);
     }
   };
 
@@ -147,9 +152,9 @@ export default function ProductDetailPage({ params }: PageProps) {
   if (!product) return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 bg-[#F5F5F5]">
       <p className="text-4xl">😕</p>
-      <p className="font-bold text-lg text-[#1A3459]">Không tìm thấy sản phẩm</p>
+      <p className="font-bold text-lg text-[#1A3459]">{t.product.notFound}</p>
       <Link href="/products" className="px-6 py-2.5 bg-[#FCCE00] text-[#1A1A1A] font-bold rounded-full text-sm">
-        Xem sản phẩm khác
+        {t.product.viewOther}
       </Link>
     </div>
   );
@@ -161,7 +166,7 @@ export default function ProductDetailPage({ params }: PageProps) {
 
         {/* Breadcrumb */}
         <nav className="flex items-center gap-1 text-xs text-[#666] mb-4 font-medium">
-          <Link href="/" className="hover:text-[#1A3459] transition-colors">Trang chủ</Link>
+          <Link href="/" className="hover:text-[#1A3459] transition-colors">{t.breadcrumb.home}</Link>
           {product.category && (
             <>
               <ChevronRight size={12} className="shrink-0 text-[#999]" />
@@ -214,9 +219,9 @@ export default function ProductDetailPage({ params }: PageProps) {
                     className="w-full py-3 text-sm font-bold text-[#1A3459] bg-white rounded-2xl border border-slate-200 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
                   >
                     {imgExpanded ? (
-                      <><span>Thu gọn</span> <span className="text-xs">▲</span></>
+                      <><span>{t.product.collapse}</span> <span className="text-xs">▲</span></>
                     ) : (
-                      <><span>Xem thêm {allImages.length - 3} ảnh</span> <span className="text-xs">▼</span></>
+                      <><span>{t.product.showMoreImages(allImages.length - 3)}</span> <span className="text-xs">▼</span></>
                     )}
                   </button>
                 )}
@@ -274,7 +279,7 @@ export default function ProductDetailPage({ params }: PageProps) {
             {uniqueColors.length > 0 && (
               <div>
                 <p className="text-[13px] font-semibold text-[#1A1A1A] mb-2.5">
-                  Màu sắc: <span className="font-bold">{currentColor || "Chọn màu"}</span>
+                  {t.product.color}: <span className="font-bold">{currentColor || t.product.chooseColor}</span>
                 </p>
                 <div className="flex gap-2.5 flex-wrap">
                   {uniqueColors.map((v) => {
@@ -309,10 +314,10 @@ export default function ProductDetailPage({ params }: PageProps) {
               <div>
                 <div className="flex items-center justify-between mb-2.5">
                   <p className="text-[13px] font-semibold text-[#1A1A1A]">
-                    Kích thước: <span className="font-bold">{currentSize || "Chọn size"}</span>
+                    {t.product.size}: <span className="font-bold">{currentSize || t.product.chooseSize}</span>
                   </p>
                   <button className="text-xs text-[#1A3459] font-semibold hover:underline">
-                    Hướng dẫn chọn size
+                    {t.product.sizeGuide}
                   </button>
                 </div>
                 <div className="flex gap-2 flex-wrap">
@@ -374,7 +379,7 @@ export default function ProductDetailPage({ params }: PageProps) {
                 }`}
               >
                 <ShoppingBag size={17} strokeWidth={2.5} />
-                {cartLoading ? "Đang thêm..." : addedToCart ? "Đã thêm vào giỏ ✓" : "Thêm vào giỏ"}
+                {cartLoading ? t.product.adding : addedToCart ? t.product.addedToCart : t.product.addToCart}
               </button>
             </div>
 
@@ -384,7 +389,7 @@ export default function ProductDetailPage({ params }: PageProps) {
               disabled={!inStock || cartLoading}
               className="w-full h-12 bg-[#1A3459] hover:bg-[#142a47] text-white font-bold text-sm rounded-full transition-all active:scale-[0.98] disabled:opacity-40"
             >
-              Mua ngay
+              {t.product.buyNow}
             </button>
 
             {addError && (
@@ -394,40 +399,40 @@ export default function ProductDetailPage({ params }: PageProps) {
             {/* View in store */}
             <button className="flex items-center gap-2 text-[13px] text-[#1A3459] font-semibold hover:underline transition-colors w-full">
               <Store size={16} className="text-[#1A3459] shrink-0" />
-              Xem cửa hàng còn sản phẩm
+              {t.product.viewInStore}
             </button>
 
             {/* ── YODY cam kết ── */}
             <div>
               <p className="text-[13px] font-bold text-[#1A1A1A] mb-3 flex items-center gap-2">
-                YODY cam kết
+                {t.promises.title}
                 <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white text-xs">✓</span>
               </p>
               <div className="grid grid-cols-2 gap-2.5">
                 {[
                   {
                     icon: <RefreshCw size={18} className="text-[#1A3459] shrink-0" />,
-                    title: "Đổi, trả miễn phí",
-                    desc: "tại nhà nếu không hài lòng",
-                    link: "Xem chính sách ↗",
+                    title: t.promises.freeReturn,
+                    desc: t.promises.freeReturnDesc,
+                    link: t.promises.viewPolicy,
                   },
                   {
                     icon: <Truck size={18} className="text-[#1A3459] shrink-0" />,
-                    title: "Giao trong 3-5 ngày",
-                    desc: "và freeship đơn từ 498k",
+                    title: t.promises.delivery,
+                    desc: t.promises.deliveryDesc,
                     link: null,
                   },
                   {
                     icon: <ShieldCheck size={18} className="text-[#1A3459] shrink-0" />,
-                    title: "Cam kết bảo mật",
-                    desc: "thông tin khách hàng",
+                    title: t.promises.security,
+                    desc: t.promises.securityDesc,
                     link: null,
                   },
                   {
                     icon: <MessageCircle size={18} className="text-[#1A3459] shrink-0" />,
-                    title: "Cần tư vấn thêm?",
-                    desc: "Chat ngay!",
-                    link: "Chat ngay ↗",
+                    title: t.promises.support,
+                    desc: t.promises.supportDesc,
+                    link: t.promises.chatNow,
                     isChat: true,
                   },
                 ].map((item, i) => (
@@ -455,7 +460,7 @@ export default function ProductDetailPage({ params }: PageProps) {
             {/* Stock info subtle */}
             {selectedVariant && (
               <p className={`text-xs font-semibold text-center ${inStock ? "text-emerald-600" : "text-red-500"}`}>
-                {inStock ? `✓ Còn ${selectedVariant.stockQty} sản phẩm trong kho` : "✗ Hết hàng — Chọn màu/size khác"}
+                {inStock ? t.product.stockCount(selectedVariant.stockQty) : t.product.outOfStockHint}
               </p>
             )}
           </div>
@@ -465,7 +470,7 @@ export default function ProductDetailPage({ params }: PageProps) {
         {product.description && (
           <div className="mt-8 bg-white rounded-2xl p-6 border border-[#eee]">
             <h2 className="text-base font-bold text-[#1A3459] mb-4 pb-3 border-b border-[#f0f0f0]">
-              Mô tả sản phẩm
+              {t.product.description}
             </h2>
             <div className="text-sm text-[#444] leading-relaxed whitespace-pre-line">
               {product.description}
@@ -476,13 +481,13 @@ export default function ProductDetailPage({ params }: PageProps) {
         {/* ── FAQ / Câu hỏi thường gặp ── */}
         <div className="mt-4 bg-white rounded-2xl p-6 border border-[#eee]">
           <h2 className="text-base font-bold text-[#1A3459] mb-4 pb-3 border-b border-[#f0f0f0]">
-            Câu hỏi thường gặp
+            {t.product.faq}
           </h2>
           <div className="space-y-3">
             {[
-              { q: "Sản phẩm có đổi/trả không?", a: "YODY hỗ trợ đổi/trả trong vòng 30 ngày nếu sản phẩm còn nguyên tags, chưa qua sử dụng và có hóa đơn mua hàng." },
-              { q: "Thời gian giao hàng bao lâu?", a: "Thông thường 3-5 ngày làm việc với đơn hàng trong nước. Freeship cho đơn từ 498.000đ." },
-              { q: "Làm sao biết mình mặc size nào?", a: "Vui lòng tham khảo bảng hướng dẫn chọn size bên trên hoặc chat với tư vấn viên để được hỗ trợ nhanh nhất." },
+              { q: t.faq.returnPolicy.q, a: t.faq.returnPolicy.a },
+              { q: t.faq.delivery.q, a: t.faq.delivery.a },
+              { q: t.faq.sizing.q, a: t.faq.sizing.a },
             ].map((item, i) => (
               <FaqItem key={i} question={item.q} answer={item.a} />
             ))}
