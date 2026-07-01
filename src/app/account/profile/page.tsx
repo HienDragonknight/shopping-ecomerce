@@ -51,22 +51,22 @@ export default function ProfilePage() {
                   <label className="text-sm font-semibold text-[#1A1A1A] block">{t.account.gender}</label>
                   <div className="flex gap-6 mt-2">
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="gender" value="male" className="w-4 h-4 text-[#FCCE00] focus:ring-[#FCCE00]" />
+                      <input type="radio" name="gender" value="male" className="w-4 h-4 text-[#1A1A1A] focus:ring-[#1A1A1A]" />
                       <span className="text-sm text-[#1A1A1A]">{t.account.genderMale}</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="gender" value="female" className="w-4 h-4 text-[#FCCE00] focus:ring-[#FCCE00]" />
+                      <input type="radio" name="gender" value="female" className="w-4 h-4 text-[#1A1A1A] focus:ring-[#1A1A1A]" />
                       <span className="text-sm text-[#1A1A1A]">{t.account.genderFemale}</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="gender" value="other" className="w-4 h-4 text-[#FCCE00] focus:ring-[#FCCE00]" />
+                      <input type="radio" name="gender" value="other" className="w-4 h-4 text-[#1A1A1A] focus:ring-[#1A1A1A]" />
                       <span className="text-sm text-[#1A1A1A]">{t.account.genderOther}</span>
                     </label>
                   </div>
                 </div>
 
                 <div className="pt-4">
-                  <Button type="submit" className="w-full md:w-auto px-8 h-12 bg-[#FCCE00] hover:bg-[#E5B800] text-[#1A1A1A] font-bold text-base rounded-full transition-colors">
+                  <Button type="submit" className="w-full md:w-auto px-8 h-12 bg-[#1A1A1A] hover:bg-[#E5B800] text-white font-bold text-base rounded-full transition-colors">
                     {t.account.saveChanges}
                   </Button>
                 </div>

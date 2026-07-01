@@ -65,7 +65,7 @@ export default function OrdersPage() {
                     onClick={() => { setActiveTab(tab.key); setPage(0); }}
                     className={`px-4 py-3 text-sm font-semibold whitespace-nowrap transition-colors border-b-2 ${
                       activeTab === tab.key
-                        ? "border-[#FCCE00] text-[#1A1A1A]"
+                        ? "border-[#1A1A1A] text-[#1A1A1A]"
                         : "border-transparent text-slate-500 hover:text-slate-700"
                     }`}>
                     {tab.label}
@@ -82,7 +82,7 @@ export default function OrdersPage() {
                   <div className="text-center py-16 text-slate-400">
                     <p className="text-5xl mb-3">📦</p>
                     <p className="font-semibold text-base">Không có đơn hàng nào</p>
-                    <Link href="/products" className="mt-4 inline-block px-6 py-2.5 bg-[#FCCE00] text-[#1A1A1A] font-bold rounded-full text-sm">
+                    <Link href="/products" className="mt-4 inline-block px-6 py-2.5 bg-[#1A1A1A] text-white font-bold rounded-full text-sm">
                       Mua sắm ngay
                     </Link>
                   </div>
@@ -91,7 +91,7 @@ export default function OrdersPage() {
                     {filtered.map((order) => {
                       const st = STATUS_MAP[order.status] || { label: order.status, color: "bg-slate-100 text-slate-700", dot: "bg-slate-400" };
                       return (
-                        <div key={order.id} className="border border-slate-100 rounded-2xl hover:border-[#FCCE00] hover:shadow-sm transition-all">
+                        <div key={order.id} className="border border-slate-100 rounded-2xl hover:border-[#1A1A1A] hover:shadow-sm transition-all">
                           {/* Header */}
                           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
                             <div className="flex items-center gap-2">
@@ -156,7 +156,7 @@ export default function OrdersPage() {
                     {Array.from({ length: totalPages }).map((_, i) => (
                       <button key={i} onClick={() => setPage(i)}
                         className={`w-9 h-9 rounded-full font-bold text-sm transition-colors ${
-                          page === i ? "bg-[#FCCE00] text-[#1A1A1A]" : "bg-slate-100 hover:bg-slate-200"}`}>
+                          page === i ? "bg-[#1A1A1A] text-white" : "bg-slate-100 hover:bg-slate-200"}`}>
                         {i + 1}
                       </button>
                     ))}

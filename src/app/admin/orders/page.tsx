@@ -84,7 +84,7 @@ export default function AdminOrdersPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Tìm theo mã, tên, SĐT..."
-            className="h-10 px-3 border border-slate-200 rounded-xl bg-white text-sm w-52 focus:outline-none focus:ring-2 focus:ring-[#FCCE00]"
+            className="h-10 px-3 border border-slate-200 rounded-xl bg-white text-sm w-52 focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]"
           />
           <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(0); }}
             className="h-10 px-3 border border-slate-200 rounded-xl bg-white text-sm focus:outline-none">
@@ -94,7 +94,7 @@ export default function AdminOrdersPage() {
             ))}
           </select>
           <button onClick={fetchOrders}
-            className="h-10 px-4 bg-[#FCCE00] hover:bg-[#E5B800] text-[#1A1A1A] font-bold rounded-xl text-sm transition-colors">
+            className="h-10 px-4 bg-[#1A1A1A] hover:bg-[#E5B800] text-white font-bold rounded-xl text-sm transition-colors">
             🔄 Làm mới
           </button>
         </div>
@@ -107,7 +107,7 @@ export default function AdminOrdersPage() {
           return (
             <button key={k} onClick={() => { setStatus(status === k ? "" : k); setPage(0); }}
               className={`p-3 rounded-2xl border-2 text-left transition-all ${
-                status === k ? "border-[#FCCE00] bg-[#FFFDE7]" : "border-slate-100 bg-white hover:border-slate-200"
+                status === k ? "border-[#1A1A1A] bg-[#FFFDE7]" : "border-slate-100 bg-white hover:border-slate-200"
               }`}>
               <p className="text-2xl font-black text-[#1A1A1A]">{count}</p>
               <p className={`text-xs font-bold mt-0.5 px-2 py-0.5 rounded-full inline-block ${v.color}`}>{v.label}</p>
@@ -183,7 +183,7 @@ export default function AdminOrdersPage() {
                     </td>
                     <td className="px-4 py-3">
                       <Link href={`/admin/orders/${o.id}`}
-                        className="text-xs font-bold text-[#1A1A1A] hover:text-[#FCCE00] underline underline-offset-2">
+                        className="text-xs font-bold text-[#1A1A1A] hover:text-[#1A1A1A] underline underline-offset-2">
                         Chi tiết
                       </Link>
                     </td>
@@ -199,7 +199,7 @@ export default function AdminOrdersPage() {
             {Array.from({ length: totalPages }).map((_, i) => (
               <button key={i} onClick={() => setPage(i)}
                 className={`w-9 h-9 rounded-full text-sm font-bold transition-colors ${
-                  page === i ? "bg-[#FCCE00] text-[#1A1A1A]" : "bg-slate-100 hover:bg-slate-200"}`}>
+                  page === i ? "bg-[#1A1A1A] text-white" : "bg-slate-100 hover:bg-slate-200"}`}>
                 {i + 1}
               </button>
             ))}

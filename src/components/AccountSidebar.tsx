@@ -35,7 +35,7 @@ export function AccountSidebar() {
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
       {/* User info */}
       <div className="p-5 border-b border-slate-100 flex items-center gap-3">
-        <div className="w-11 h-11 rounded-full bg-[#FCCE00] flex items-center justify-center text-[#1A1A1A] font-black text-lg">
+        <div className="w-11 h-11 rounded-full bg-[#1A1A1A] flex items-center justify-center text-white font-black text-lg">
           {user?.fullName?.[0] || "U"}
         </div>
         <div className="min-w-0">
@@ -54,7 +54,7 @@ export function AccountSidebar() {
               href={item.href}
               className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium mb-0.5 transition-all ${
                 active
-                  ? "bg-[#FCCE00] text-[#1A1A1A] font-bold"
+                  ? "bg-[#1A1A1A] text-white font-bold"
                   : "text-slate-600 hover:bg-slate-50 hover:text-[#1A1A1A]"
               }`}
             >

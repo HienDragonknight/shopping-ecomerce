@@ -123,7 +123,7 @@ export function YodyLogo(props: IconProps) {
   return (
     <svg viewBox="0 0 120 40" fill="currentColor" {...props}>
       <text x="0" y="32" fontFamily="Arial Black, sans-serif" fontWeight="900" fontSize="36" letterSpacing="-1">
-        YODY
+        {"Vie'Co"}
       </text>
     </svg>
   );

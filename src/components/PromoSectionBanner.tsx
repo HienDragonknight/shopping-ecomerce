@@ -21,7 +21,7 @@ export function PromoSectionBanner({
   image,
   bgColor = "#000",
   textColor = "#fff",
-  accentColor = "#FCCE00",
+  accentColor = "#1A1A1A",
 }: PromoBannerProps) {
   const t = useT();
   return (
@@ -41,7 +41,7 @@ export function PromoSectionBanner({
             sizes="(max-width: 1280px) 100vw, 1280px"
             onError={(e) => {
               const t = e.target as HTMLImageElement;
-              t.src = `https://placehold.co/1200x400/333/555?text=YODY+PROMO`;
+              t.src = `https://placehold.co/1200x400/333/555?text=VIECO+PROMO`;
             }}
           />
 
@@ -68,7 +68,7 @@ export function PromoSectionBanner({
                 className="inline-flex items-center justify-center text-sm md:text-base font-bold px-6 py-3 rounded-full w-fit transition-all duration-300"
                 style={{ 
                   backgroundColor: accentColor, 
-                  color: accentColor === "#FCCE00" ? "#1A1A1A" : "#fff",
+                  color: accentColor === "#1A1A1A" ? "#1A1A1A" : "#fff",
                 }}
               >
                 {t.hero.defaultCta}

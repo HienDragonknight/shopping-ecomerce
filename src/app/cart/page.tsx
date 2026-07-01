@@ -21,7 +21,7 @@ export default function CartPage() {
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
         <p className="text-4xl">🛒</p>
         <p className="font-bold text-lg text-[#1A1A1A]">Vui lòng đăng nhập để xem giỏ hàng</p>
-        <Link href="/account/login" className="px-6 py-3 bg-[#FCCE00] text-[#1A1A1A] font-bold rounded-full">
+        <Link href="/account/login" className="px-6 py-3 bg-[#1A1A1A] text-white font-bold rounded-full">
           Đăng nhập
         </Link>
       </div>
@@ -65,7 +65,7 @@ export default function CartPage() {
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 bg-[#F5F5F5]">
         <p className="text-6xl">🛒</p>
         <p className="font-bold text-xl text-[#1A1A1A]">Giỏ hàng trống</p>
-        <Link href="/products" className="px-6 py-3 bg-[#FCCE00] text-[#1A1A1A] font-bold rounded-full">
+        <Link href="/products" className="px-6 py-3 bg-[#1A1A1A] text-white font-bold rounded-full">
           Tiếp tục mua sắm
         </Link>
       </div>
@@ -97,7 +97,7 @@ export default function CartPage() {
 
                 <div className="flex-1 min-w-0">
                   <Link href={`/product/${item.productSlug}`}>
-                    <p className="font-semibold text-sm text-[#1A1A1A] line-clamp-2 hover:text-[#FCCE00] transition-colors">
+                    <p className="font-semibold text-sm text-[#1A1A1A] line-clamp-2 hover:text-[#1A1A1A] transition-colors">
                       {item.productName}
                     </p>
                   </Link>
@@ -166,7 +166,7 @@ export default function CartPage() {
               </div>
               <button
                 onClick={() => router.push("/checkout")}
-                className="w-full mt-4 h-12 bg-[#FCCE00] hover:bg-[#E5B800] text-[#1A1A1A] font-bold rounded-full transition-colors"
+                className="w-full mt-4 h-12 bg-[#1A1A1A] hover:bg-[#E5B800] text-white font-bold rounded-full transition-colors"
               >
                 Tiến hành đặt hàng
               </button>

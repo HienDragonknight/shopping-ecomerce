@@ -72,7 +72,7 @@ function NavLink({ item, pathname, onClose }: { item: NavItem; pathname: string;
           onClick={() => setOpen(!open)}
           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
             isActive
-              ? "bg-[#FCCE00]/15 text-[#FCCE00]"
+              ? "bg-[#1A1A1A]/15 text-[#1A1A1A]"
               : "text-slate-400 hover:text-white hover:bg-white/8"
           }`}
         >
@@ -89,7 +89,7 @@ function NavLink({ item, pathname, onClose }: { item: NavItem; pathname: string;
                 onClick={onClose}
                 className={`block px-3 py-2 rounded-lg text-sm transition-colors ${
                   pathname === child.href
-                    ? "text-[#FCCE00] font-semibold bg-[#FCCE00]/10"
+                    ? "text-[#1A1A1A] font-semibold bg-[#1A1A1A]/10"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
@@ -108,7 +108,7 @@ function NavLink({ item, pathname, onClose }: { item: NavItem; pathname: string;
       onClick={onClose}
       className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
         isActive
-          ? "bg-[#FCCE00] text-[#1A1A1A] font-bold shadow-sm"
+          ? "bg-[#1A1A1A] text-white font-bold shadow-sm"
           : "text-slate-400 hover:text-white hover:bg-white/8"
       }`}
     >
@@ -143,10 +143,13 @@ export function AdminSidebar({ mobileOpen, onMobileClose }: AdminSidebarProps) {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center justify-between p-5 border-b border-white/10 shrink-0">
-        <Link href="/admin" className="flex items-baseline gap-0 font-black text-2xl">
-          <span className="text-white">yo</span>
-          <span className="text-[#FCCE00]">dy</span>
-          <span className="ml-2 text-[10px] font-bold bg-[#FCCE00] text-[#1A1A1A] px-1.5 py-0.5 rounded">ADMIN</span>
+        <Link href="/admin" className="flex items-center gap-2">
+          <img
+            src="https://res.cloudinary.com/dev4uz63q/image/upload/f_auto,q_auto/Asset_4_xd8oe6"
+            alt="Logo"
+            className="h-8 w-auto object-contain"
+          />
+          <span className="text-[10px] font-bold bg-[#1A1A1A] text-white px-1.5 py-0.5 rounded">ADMIN</span>
         </Link>
         {onClose && (
           <button onClick={onClose} className="text-slate-400 hover:text-white md:hidden">
@@ -176,7 +179,7 @@ export function AdminSidebar({ mobileOpen, onMobileClose }: AdminSidebarProps) {
       {/* Footer */}
       <div className="p-4 border-t border-white/10 shrink-0">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-9 h-9 rounded-xl bg-[#FCCE00] flex items-center justify-center text-[#1A1A1A] font-black text-sm shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-[#1A1A1A] flex items-center justify-center text-white font-black text-sm shrink-0">
             {user?.fullName?.[0]?.toUpperCase() || "A"}
           </div>
           <div className="min-w-0">

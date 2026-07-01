@@ -53,7 +53,7 @@ function ResetPasswordContent() {
         </div>
         <h2 className="text-xl font-bold text-[#1A1A1A] mb-2">Đặt lại mật khẩu thành công!</h2>
         <p className="text-slate-500 text-sm mb-4">Đang chuyển hướng về trang đăng nhập...</p>
-        <Link href="/account/login" className="text-sm font-semibold text-[#1A1A1A] hover:text-[#FCCE00]">
+        <Link href="/account/login" className="text-sm font-semibold text-[#1A1A1A] hover:text-[#1A1A1A]">
           Đăng nhập ngay →
         </Link>
       </div>
@@ -63,8 +63,8 @@ function ResetPasswordContent() {
   return (
     <>
       <div className="text-center mb-6">
-        <div className="w-14 h-14 bg-[#FFFBEB] rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-[#FCCE00]">
-          <svg className="w-7 h-7 text-[#FCCE00]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="w-14 h-14 bg-[#FFFBEB] rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-[#1A1A1A]">
+          <svg className="w-7 h-7 text-[#1A1A1A]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
         </div>
@@ -135,7 +135,7 @@ function ResetPasswordContent() {
           <Button
             type="submit"
             disabled={loading || !token}
-            className="w-full h-12 bg-[#FCCE00] hover:bg-[#E5B800] text-[#1A1A1A] font-bold rounded-full disabled:opacity-60"
+            className="w-full h-12 bg-[#1A1A1A] hover:bg-[#E5B800] text-white font-bold rounded-full disabled:opacity-60"
           >
             {loading ? (
               <span className="flex items-center gap-2">
@@ -151,7 +151,7 @@ function ResetPasswordContent() {
       ) : null}
 
       <p className="mt-6 text-center text-sm">
-        <Link href="/account/login" className="font-semibold text-[#1A1A1A] hover:text-[#FCCE00]">
+        <Link href="/account/login" className="font-semibold text-[#1A1A1A] hover:text-[#1A1A1A]">
           ← Quay lại đăng nhập
         </Link>
       </p>

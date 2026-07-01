@@ -1,5 +1,8 @@
 // ─── Frontend domain types ────────────────────────────────────────────────────
 
+/** Allowed gender tag values matching backend enum */
+export type GenderTag = "MALE" | "FEMALE" | "UNISEX" | "KIDS";
+
 export interface Product {
   id: string;
   name: string;
@@ -9,6 +12,7 @@ export interface Product {
   colors?: string[];
   badge?: string;
   slug: string;
+  genderTags?: GenderTag[];
 }
 
 export interface Collection {
@@ -75,6 +79,7 @@ export interface ApiProductCard {
   price: number;
   originalPrice?: number;
   image: string;
+  genderTags?: GenderTag[];
 }
 
 export interface ApiProductSection {

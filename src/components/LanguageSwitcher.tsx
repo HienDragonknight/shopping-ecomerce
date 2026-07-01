@@ -36,7 +36,7 @@ export function LanguageSwitcher({ className = "" }: LanguageSwitcherProps) {
             aria-label={`Switch to ${code === "vi" ? "Vietnamese" : "English"}`}
             className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-black tracking-wide transition-all duration-200 ${
               isActive
-                ? "bg-[#FCCE00] text-[#1A1A1A] shadow-sm"
+                ? "bg-[#1A1A1A] text-white shadow-sm"
                 : "text-slate-500 hover:text-[#1A1A1A]"
             }`}
           >

@@ -285,7 +285,7 @@ export default function AdminProductsPage() {
             <RefreshCw size={15} />
           </button>
           <Link href="/admin/products/new"
-            className="flex items-center gap-2 px-5 h-10 bg-[#FCCE00] hover:bg-[#E5B800] text-[#1A1A1A] font-bold rounded-xl text-sm transition-all shadow-sm active:scale-95">
+            className="flex items-center gap-2 px-5 h-10 bg-[#1A1A1A] hover:bg-[#E5B800] text-white font-bold rounded-xl text-sm transition-all shadow-sm active:scale-95">
             <Plus size={16} />
             Thêm sản phẩm mới
           </Link>
@@ -347,7 +347,7 @@ export default function AdminProductsPage() {
           {categoryId && (
             <button
               onClick={() => { setCategoryId(""); setPage(0); }}
-              className="text-xs font-bold text-[#FCCE00] hover:text-[#E5B800] transition-colors"
+              className="text-xs font-bold text-[#1A1A1A] hover:text-[#E5B800] transition-colors"
             >
               Xem tất cả sản phẩm
             </button>
@@ -377,7 +377,7 @@ export default function AdminProductsPage() {
                   onClick={() => { setCategoryId(String(rootCat.id)); setPage(0); }}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shrink-0 ${
                     isActive
-                      ? "bg-[#FCCE00] text-[#1A1A1A] shadow-md shadow-[#FCCE00]/10 scale-95"
+                      ? "bg-[#1A1A1A] text-white shadow-md shadow-[#1A1A1A]/10 scale-95"
                       : "bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
@@ -411,7 +411,7 @@ export default function AdminProductsPage() {
                     onClick={() => { setCategoryId(String(subCat.id)); setPage(0); }}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all shrink-0 ${
                       isSubActive
-                        ? "bg-[#FCCE00]/25 text-[#735A00] border border-[#FCCE00]/40 font-black"
+                        ? "bg-[#1A1A1A]/25 text-[#735A00] border border-[#1A1A1A]/40 font-black"
                         : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 border border-transparent"
                     }`}
                   >
@@ -432,20 +432,20 @@ export default function AdminProductsPage() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Tìm kiếm sản phẩm theo tên, mô tả..."
-              className="w-full h-10 pl-9 pr-4 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FCCE00]/30 focus:border-[#FCCE00]"
+              className="w-full h-10 pl-9 pr-4 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/30 focus:border-[#1A1A1A]"
             />
           </div>
           <div className="flex gap-2">
             <button 
               onClick={() => setShowFilters(!showFilters)}
               className={`h-10 px-4 text-sm font-semibold rounded-xl border transition-all flex items-center gap-2 ${
-                showFilters ? "bg-[#FFFDE7] border-[#FCCE00] text-[#1A1A1A]" : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                showFilters ? "bg-[#FFFDE7] border-[#1A1A1A] text-[#1A1A1A]" : "border-slate-200 text-slate-600 hover:bg-slate-50"
               }`}
             >
               <SlidersHorizontal size={15} />
               Bộ lọc nâng cao
               {(categoryId || brandId || statusFilter || stockFilter) && (
-                <span className="w-2 h-2 bg-[#FCCE00] rounded-full" />
+                <span className="w-2 h-2 bg-[#1A1A1A] rounded-full" />
               )}
             </button>
           </div>
@@ -522,7 +522,7 @@ export default function AdminProductsPage() {
               <tr className="border-b border-slate-100 bg-slate-50/50">
                 <th className="w-10 px-4 py-3.5">
                   <input type="checkbox" checked={selected.size === products.length && products.length > 0}
-                    onChange={toggleAll} className="rounded border-slate-300 accent-[#FCCE00] w-4 h-4" />
+                    onChange={toggleAll} className="rounded border-slate-300 accent-[#1A1A1A] w-4 h-4" />
                 </th>
                 <th className="w-8 px-2 py-3.5"></th>
                 <th 
@@ -589,7 +589,7 @@ export default function AdminProductsPage() {
                     <tr className={`hover:bg-slate-50/50 transition-all ${selected.has(p.id) ? "bg-[#FFFDE7]/20" : ""}`}>
                       <td className="px-4 py-4">
                         <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleSelect(p.id)}
-                          className="rounded border-slate-300 accent-[#FCCE00] w-4 h-4" />
+                          className="rounded border-slate-300 accent-[#1A1A1A] w-4 h-4" />
                       </td>
                       <td className="px-2 py-4 text-center">
                         <button 
@@ -602,7 +602,7 @@ export default function AdminProductsPage() {
                       <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
                           <img
-                            src={p.thumbnailUrl || "https://placehold.co/48x48/F5F5F5/999?text=Yody"}
+                            src={p.thumbnailUrl || "https://placehold.co/48x48/F5F5F5/999?text=VCo"}
                             alt={p.name}
                             className="w-11 h-11 rounded-xl object-cover bg-slate-50 border border-slate-100 shrink-0"
                           />
@@ -659,7 +659,7 @@ export default function AdminProductsPage() {
                                 </span>
                               </div>
                             ) : (
-                              <span className="text-xs font-bold text-slate-700 bg-[#FCCE00]/10 text-[#735A00] px-1.5 py-0.5 rounded">
+                              <span className="text-xs font-bold text-slate-700 bg-[#1A1A1A]/10 text-[#735A00] px-1.5 py-0.5 rounded">
                                 {p.category.name}
                               </span>
                             )}
@@ -795,7 +795,7 @@ export default function AdminProductsPage() {
                   key={i} 
                   onClick={() => setPage(i)}
                   className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
-                    page === i ? "bg-[#FCCE00] text-[#1A1A1A]" : "hover:bg-slate-100 text-slate-600 bg-white border border-slate-200"
+                    page === i ? "bg-[#1A1A1A] text-white" : "hover:bg-slate-100 text-slate-600 bg-white border border-slate-200"
                   }`}
                 >
                   {i + 1}

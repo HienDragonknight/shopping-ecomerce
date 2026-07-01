@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { GHNAddressForm, type AddressFormData } from "@/components/GHNAddressForm";
 import api from "@/lib/api";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
+
+// Lazy-load Stripe form to avoid SSR issues
+const StripePaymentForm = lazy(() => import("@/components/StripePaymentForm"));
 
 interface Address {
   id: number; fullName: string; phone: string; detail: string;
@@ -16,14 +18,23 @@ interface Address {
   isDefault: boolean;
 }
 
+type PaymentMethod = "COD" | "PAYOS" | "STRIPE";
+
+interface StripeState {
+  clientSecret: string;
+  paymentIntentId: string;
+  amountUsd: number;
+  amountVnd: number;
+}
+
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCartStore();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const router = useRouter();
 
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<number | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"COD" | "VNPAY">("COD");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("COD");
   const [note, setNote] = useState("");
   const [shippingFee, setShippingFee] = useState<number | null>(null);
   const [loadingFee, setLoadingFee] = useState(false);
@@ -33,32 +44,27 @@ export default function CheckoutPage() {
   const [savingAddress, setSavingAddress] = useState(false);
   const [loadingAddresses, setLoadingAddresses] = useState(true);
 
-  // Redirect if not authenticated
+  // Stripe state
+  const [stripeState, setStripeState] = useState<StripeState | null>(null);
+  const [pendingOrderId, setPendingOrderId] = useState<number | null>(null);
+
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/account/login?redirect=/checkout");
-    }
+    if (!isAuthenticated) router.push("/account/login?redirect=/checkout");
   }, [isAuthenticated, router]);
 
-  // Redirect if cart is empty
   useEffect(() => {
-    if (isAuthenticated && items.length === 0) {
-      router.push("/cart");
-    }
+    if (isAuthenticated && items.length === 0) router.push("/cart");
   }, [isAuthenticated, items.length, router]);
 
-  const fetchShippingFee = useCallback(async (address: Address) => {
+  const fetchShippingFee = useCallback(async () => {
     setLoadingFee(true);
     setShippingFee(null);
     try {
-      // Simulate network request delay for natural UX
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      const subtotal = totalPrice();
-      // Free shipping for orders >= 499,000đ, otherwise 30,000đ
-      const fee = subtotal >= 499000 ? 0 : 30000;
+      await new Promise((r) => setTimeout(r, 300));
+      const fee = totalPrice() >= 499000 ? 0 : 30000;
       setShippingFee(fee);
     } catch {
-      setShippingFee(30000); // fallback
+      setShippingFee(30000);
     } finally {
       setLoadingFee(false);
     }
@@ -73,21 +79,19 @@ export default function CheckoutPage() {
       const def = addrs.find((a) => a.isDefault) || addrs[0];
       if (def) {
         setSelectedAddress(def.id);
-        fetchShippingFee(def);
+        fetchShippingFee();
       }
     }).finally(() => setLoadingAddresses(false));
   }, [isAuthenticated, fetchShippingFee]);
 
   const handleAddressChange = (id: number) => {
     setSelectedAddress(id);
-    const addr = addresses.find((a) => a.id === id);
-    if (addr) fetchShippingFee(addr);
+    fetchShippingFee();
   };
 
   const handleSaveAddress = async (data: AddressFormData) => {
     setSavingAddress(true);
     try {
-      // Strip any spaces/dashes from phone number before sending
       const cleanData = { ...data, phone: data.phone.replace(/[\s\-().]/g, "") };
       const res = await api.post("/addresses", cleanData);
       const newAddr: Address = res.data.data;
@@ -96,19 +100,17 @@ export default function CheckoutPage() {
       setAddresses(addrs);
       setShowAddressForm(false);
       setSelectedAddress(newAddr.id);
-      fetchShippingFee(newAddr);
+      fetchShippingFee();
     } catch (e: unknown) {
       const err = e as { response?: { data?: { message?: string; errors?: Record<string, string> } } };
       const errMsg = err.response?.data?.errors
         ? Object.values(err.response.data.errors).join(", ")
         : err.response?.data?.message || "Lưu địa chỉ thất bại";
-      // Re-throw with message so GHNAddressForm can catch it
       throw new Error(errMsg);
     } finally {
       setSavingAddress(false);
     }
   };
-
 
   const handlePlaceOrder = async () => {
     if (!selectedAddress) { setError("Vui lòng chọn địa chỉ giao hàng"); return; }
@@ -129,12 +131,31 @@ export default function CheckoutPage() {
       );
       const order = res.data.data;
 
-      if (paymentMethod === "VNPAY") {
-        // Redirect to VNPay sandbox simulation page
-        router.push(`/checkout/vnpay-sandbox?orderId=${order.id}&amount=${order.total}`);
+      if (paymentMethod === "PAYOS") {
+        // Get PayOS checkout URL and redirect
+        const payRes = await api.post("/payments/payos/create", { orderId: order.id });
+        const checkoutUrl: string = payRes.data.data.checkoutUrl;
+        await clearCart();
+        window.location.href = checkoutUrl;
         return;
       }
 
+      if (paymentMethod === "STRIPE") {
+        // Get Stripe PaymentIntent clientSecret
+        const payRes = await api.post("/payments/stripe/create-intent", { orderId: order.id });
+        const { clientSecret, paymentIntentId, amountUsd, amountVnd } = payRes.data.data;
+        setPendingOrderId(order.id);
+        setStripeState({
+          clientSecret,
+          paymentIntentId,
+          amountUsd: Number(amountUsd),
+          amountVnd: Number(amountVnd),
+        });
+        setSubmitting(false);
+        return; // Show Stripe form inline
+      }
+
+      // COD
       await clearCart();
       router.push(`/checkout/success?orderId=${order.id}`);
     } catch (e: unknown) {
@@ -145,11 +166,41 @@ export default function CheckoutPage() {
     }
   };
 
+  const handleStripeSuccess = async () => {
+    await clearCart();
+    router.push(`/checkout/success?orderId=${pendingOrderId}&method=STRIPE`);
+  };
+
+  const handleStripeError = (msg: string) => setError(msg);
+
   const subtotal = totalPrice();
   const fee = shippingFee ?? 0;
   const total = subtotal + fee;
 
   if (!isAuthenticated) return null;
+
+  const PAYMENT_OPTIONS: { value: PaymentMethod; label: string; desc: string; icon: string; badge?: string }[] = [
+    {
+      value: "COD",
+      label: "Thanh toán khi nhận hàng (COD)",
+      desc: "Trả tiền mặt khi nhận hàng, an toàn và tiện lợi",
+      icon: "💵",
+    },
+    {
+      value: "PAYOS",
+      label: "PayOS — Chuyển khoản QR",
+      desc: "Quét mã QR VietQR, hỗ trợ 40+ ngân hàng Việt Nam",
+      icon: "🏦",
+      badge: "🇻🇳 Khách VN",
+    },
+    {
+      value: "STRIPE",
+      label: "Thẻ quốc tế — Stripe",
+      desc: "Visa, Mastercard, Amex, JCB, Apple Pay, Google Pay",
+      icon: "💳",
+      badge: "🌍 International",
+    },
+  ];
 
   return (
     <div className="bg-[#F5F5F5] min-h-screen py-8">
@@ -167,30 +218,25 @@ export default function CheckoutPage() {
           {/* ─── LEFT ─── */}
           <div className="flex-1 space-y-4">
 
-            {/* ── ADDRESS SECTION ── */}
+            {/* ── ADDRESS ── */}
             <div className="bg-white rounded-2xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-bold text-[#1A1A1A] flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-[#FCCE00] text-[#1A1A1A] text-xs font-black flex items-center justify-center">1</span>
+                  <span className="w-6 h-6 rounded-full bg-[#1A1A1A] text-white text-xs font-black flex items-center justify-center">1</span>
                   Địa chỉ giao hàng
                 </h2>
                 <button
                   onClick={() => setShowAddressForm(!showAddressForm)}
-                  className="text-xs text-[#1A1A1A] font-bold bg-[#FFFDE7] border border-[#FCCE00] px-3 py-1.5 rounded-full hover:bg-[#FCCE00] transition-colors"
+                  className="text-xs font-bold bg-[#1A1A1A] text-white px-3 py-1.5 rounded-full hover:bg-slate-700 transition-colors"
                 >
                   + Thêm địa chỉ mới
                 </button>
               </div>
 
-              {/* Inline new address form */}
               {showAddressForm && (
                 <div className="mb-5 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                   <p className="text-sm font-bold text-[#1A1A1A] mb-4">Địa chỉ mới</p>
-                  <GHNAddressForm
-                    onSave={handleSaveAddress}
-                    onCancel={() => setShowAddressForm(false)}
-                    saving={savingAddress}
-                  />
+                  <GHNAddressForm onSave={handleSaveAddress} onCancel={() => setShowAddressForm(false)} saving={savingAddress} />
                 </div>
               )}
 
@@ -202,10 +248,7 @@ export default function CheckoutPage() {
                 <div className="text-center py-8 text-slate-400">
                   <p className="text-3xl mb-2">📍</p>
                   <p className="text-sm font-semibold">Bạn chưa có địa chỉ nào</p>
-                  <button
-                    onClick={() => setShowAddressForm(true)}
-                    className="mt-3 text-sm font-bold text-[#1A1A1A] underline underline-offset-2"
-                  >
+                  <button onClick={() => setShowAddressForm(true)} className="mt-3 text-sm font-bold text-[#1A1A1A] underline underline-offset-2">
                     Thêm địa chỉ ngay
                   </button>
                 </div>
@@ -215,27 +258,19 @@ export default function CheckoutPage() {
                     <label
                       key={addr.id}
                       className={`flex items-start gap-3 p-3.5 border rounded-xl cursor-pointer transition-all ${
-                        selectedAddress === addr.id
-                          ? "border-[#FCCE00] bg-[#FFFDE7] shadow-sm"
-                          : "border-slate-200 hover:border-slate-300"
+                        selectedAddress === addr.id ? "border-[#1A1A1A] bg-[#FFFDE7] shadow-sm" : "border-slate-200 hover:border-slate-300"
                       }`}
                     >
-                      <input
-                        type="radio"
-                        name="address"
-                        value={addr.id}
+                      <input type="radio" name="address" value={addr.id}
                         checked={selectedAddress === addr.id}
                         onChange={() => handleAddressChange(addr.id)}
-                        className="mt-1 accent-[#FCCE00]"
-                      />
+                        className="mt-1 accent-[#1A1A1A]" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-semibold text-sm text-[#1A1A1A]">{addr.fullName}</p>
                           <p className="text-xs text-slate-500">• {addr.phone}</p>
                           {addr.isDefault && (
-                            <span className="text-[10px] bg-[#FCCE00] text-[#1A1A1A] px-1.5 py-0.5 rounded-full font-bold">
-                              Mặc định
-                            </span>
+                            <span className="text-[10px] bg-[#1A1A1A] text-white px-1.5 py-0.5 rounded-full font-bold">Mặc định</span>
                           )}
                         </div>
                         <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
@@ -251,54 +286,63 @@ export default function CheckoutPage() {
             {/* ── PAYMENT METHOD ── */}
             <div className="bg-white rounded-2xl p-6 shadow-sm">
               <h2 className="font-bold text-[#1A1A1A] flex items-center gap-2 mb-4">
-                <span className="w-6 h-6 rounded-full bg-[#FCCE00] text-[#1A1A1A] text-xs font-black flex items-center justify-center">2</span>
+                <span className="w-6 h-6 rounded-full bg-[#1A1A1A] text-white text-xs font-black flex items-center justify-center">2</span>
                 Phương thức thanh toán
               </h2>
               <div className="space-y-2">
-                {[
-                  {
-                    value: "COD",
-                    label: "Thanh toán khi nhận hàng (COD)",
-                    desc: "Trả tiền mặt khi nhận hàng, an toàn và tiện lợi",
-                    icon: "💵",
-                  },
-                  {
-                    value: "VNPAY",
-                    label: "Thanh toán qua VNPay",
-                    desc: "Thẻ ATM, Visa, MasterCard, QR Code",
-                    icon: "💳",
-                  },
-                ].map((m) => (
+                {PAYMENT_OPTIONS.map((m) => (
                   <label
                     key={m.value}
                     className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-all ${
-                      paymentMethod === m.value
-                        ? "border-[#FCCE00] bg-[#FFFDE7]"
-                        : "border-slate-200 hover:border-slate-300"
+                      paymentMethod === m.value ? "border-[#1A1A1A] bg-[#FFFDE7]" : "border-slate-200 hover:border-slate-300"
                     }`}
                   >
-                    <input
-                      type="radio"
-                      name="payment"
-                      value={m.value}
+                    <input type="radio" name="payment" value={m.value}
                       checked={paymentMethod === m.value}
-                      onChange={() => setPaymentMethod(m.value as "COD" | "VNPAY")}
-                      className="accent-[#FCCE00]"
-                    />
+                      onChange={() => { setPaymentMethod(m.value); setStripeState(null); setError(""); }}
+                      className="accent-[#1A1A1A]" />
                     <span className="text-2xl">{m.icon}</span>
-                    <div>
-                      <p className="font-semibold text-sm text-[#1A1A1A]">{m.label}</p>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold text-sm text-[#1A1A1A]">{m.label}</p>
+                        {m.badge && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold">{m.badge}</span>
+                        )}
+                      </div>
                       <p className="text-xs text-slate-500 mt-0.5">{m.desc}</p>
                     </div>
                   </label>
                 ))}
               </div>
+
+              {/* Stripe card form — shows inline after order created */}
+              {stripeState && paymentMethod === "STRIPE" && (
+                <div className="mt-4 p-4 bg-slate-50 rounded-2xl border border-[#635BFF]/30">
+                  <p className="text-sm font-bold text-[#1A1A1A] mb-3 flex items-center gap-1.5">
+                    <svg className="w-4 h-4 text-[#635BFF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                    Nhập thông tin thẻ
+                  </p>
+                  <Suspense fallback={<div className="h-24 bg-slate-100 animate-pulse rounded-xl" />}>
+                    <StripePaymentForm
+                      clientSecret={stripeState.clientSecret}
+                      orderId={pendingOrderId!}
+                      amountUsd={stripeState.amountUsd}
+                      amountVnd={stripeState.amountVnd}
+                      onSuccess={handleStripeSuccess}
+                      onError={handleStripeError}
+                    />
+                  </Suspense>
+                </div>
+              )}
             </div>
 
             {/* ── NOTE ── */}
             <div className="bg-white rounded-2xl p-6 shadow-sm">
               <h2 className="font-bold text-[#1A1A1A] flex items-center gap-2 mb-3">
-                <span className="w-6 h-6 rounded-full bg-[#FCCE00] text-[#1A1A1A] text-xs font-black flex items-center justify-center">3</span>
+                <span className="w-6 h-6 rounded-full bg-[#1A1A1A] text-white text-xs font-black flex items-center justify-center">3</span>
                 Ghi chú (tùy chọn)
               </h2>
               <textarea
@@ -306,7 +350,7 @@ export default function CheckoutPage() {
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Ghi chú thêm cho đơn hàng (ví dụ: giao buổi sáng, gọi trước khi giao...)"
                 rows={3}
-                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FCCE00] resize-none"
+                className="w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1A1A1A] resize-none"
               />
             </div>
           </div>
@@ -324,11 +368,7 @@ export default function CheckoutPage() {
                   <div key={item.id} className="flex items-center gap-3 text-sm">
                     <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-slate-100 shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={item.thumbnailUrl || "https://placehold.co/48x48/F5F5F5/999"}
-                        alt={item.productName}
-                        className="w-full h-full object-cover"
-                      />
+                      <img src={item.thumbnailUrl || "https://placehold.co/48x48/F5F5F5/999"} alt={item.productName} className="w-full h-full object-cover" />
                       <span className="absolute -top-1 -right-1 w-4 h-4 bg-slate-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
                         {item.quantity}
                       </span>
@@ -344,7 +384,7 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
-              {/* Pricing breakdown */}
+              {/* Pricing */}
               <div className="border-t pt-3 space-y-2 text-sm">
                 <div className="flex justify-between text-slate-500">
                   <span>Tạm tính</span>
@@ -372,7 +412,7 @@ export default function CheckoutPage() {
 
               <div className="border-t mt-3 pt-3 flex justify-between font-bold text-[#1A1A1A]">
                 <span>Tổng cộng</span>
-                <span className="text-xl text-[#1A1A1A]">{total.toLocaleString("vi-VN")}đ</span>
+                <span className="text-xl">{total.toLocaleString("vi-VN")}đ</span>
               </div>
 
               {error && (
@@ -381,25 +421,30 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              <button
-                onClick={handlePlaceOrder}
-                disabled={submitting || loadingFee || !selectedAddress}
-                className="w-full mt-4 h-12 bg-[#FCCE00] hover:bg-[#E5B800] disabled:opacity-50 disabled:cursor-not-allowed text-[#1A1A1A] font-bold rounded-full transition-all active:scale-95"
-              >
-                {submitting ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Đang xử lý...
-                  </span>
-                ) : paymentMethod === "VNPAY" ? "💳 Thanh toán VNPay" : "Đặt hàng ngay"}
-              </button>
+              {/* Place order button — hide when Stripe form is showing */}
+              {!stripeState && (
+                <button
+                  onClick={handlePlaceOrder}
+                  disabled={submitting || loadingFee || !selectedAddress}
+                  className="w-full mt-4 h-12 bg-[#1A1A1A] hover:bg-[#333] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-full transition-all active:scale-95"
+                >
+                  {submitting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Đang xử lý...
+                    </span>
+                  ) : paymentMethod === "PAYOS" ? "🏦 Thanh toán QR VietQR"
+                    : paymentMethod === "STRIPE" ? "💳 Tiếp tục với Stripe"
+                    : "Đặt hàng ngay"}
+                </button>
+              )}
 
               <p className="text-[10px] text-slate-400 text-center mt-3 leading-relaxed">
                 Bằng cách đặt hàng, bạn đồng ý với{" "}
-                <span className="underline cursor-pointer">Điều khoản sử dụng</span> của YODY
+                <span className="underline cursor-pointer">Điều khoản sử dụng</span> của Vie&apos;Co
               </p>
             </div>
           </div>

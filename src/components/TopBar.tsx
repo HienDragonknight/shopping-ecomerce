@@ -30,7 +30,7 @@ export function TopBar() {
           {[...messages, ...messages].map((msg, i) => (
             <span key={i} className="inline-flex items-center gap-6">
               {msg}
-              <span className="text-[#FCCE00]">·</span>
+              <span className="text-[#1A1A1A]">·</span>
             </span>
           ))}
         </div>
@@ -40,7 +40,7 @@ export function TopBar() {
       <div className="absolute right-0 top-0 h-full flex items-center gap-3 px-3 bg-gradient-to-l from-[#1A1A1A] via-[#1A1A1A] to-transparent pl-8">
         <Link
           href="/sale"
-          className="text-[11px] font-bold text-[#FCCE00] hover:text-white transition-colors whitespace-nowrap underline-offset-2 hover:underline"
+          className="text-[11px] font-bold text-[#1A1A1A] hover:text-white transition-colors whitespace-nowrap underline-offset-2 hover:underline"
         >
           {t.topBar.viewDeals}
         </Link>

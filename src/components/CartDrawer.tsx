@@ -41,7 +41,7 @@ export function CartDrawer() {
             </svg>
             <h2 className="font-bold text-[#1A1A1A] text-lg">{t.cart.title}</h2>
             {totalItems() > 0 && (
-              <span className="min-w-[22px] h-[22px] bg-[#FCCE00] text-[#1A1A1A] text-xs font-black rounded-full flex items-center justify-center px-1.5">
+              <span className="min-w-[22px] h-[22px] bg-[#1A1A1A] text-white text-xs font-black rounded-full flex items-center justify-center px-1.5">
                 {totalItems()}
               </span>
             )}
@@ -71,7 +71,7 @@ export function CartDrawer() {
               </div>
               <button
                 onClick={() => { closeCart(); router.push("/products"); }}
-                className="px-6 py-3 bg-[#FCCE00] text-[#1A1A1A] font-bold rounded-full text-sm hover:bg-[#E5B800] transition-colors"
+                className="px-6 py-3 bg-[#1A1A1A] text-white font-bold rounded-full text-sm hover:bg-[#E5B800] transition-colors"
               >
                 {t.cart.continueShopping}
               </button>
@@ -94,7 +94,7 @@ export function CartDrawer() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <Link href={`/product/${item.productSlug}`} onClick={closeCart}>
-                      <p className="font-semibold text-sm text-[#1A1A1A] line-clamp-2 hover:text-[#FCCE00] transition-colors leading-snug">
+                      <p className="font-semibold text-sm text-[#1A1A1A] line-clamp-2 hover:text-[#1A1A1A] transition-colors leading-snug">
                         {item.productName}
                       </p>
                     </Link>
@@ -165,7 +165,7 @@ export function CartDrawer() {
 
             <button
               onClick={() => { closeCart(); router.push("/checkout"); }}
-              className="w-full h-12 bg-[#FCCE00] hover:bg-[#E5B800] text-[#1A1A1A] font-bold rounded-full transition-colors text-sm"
+              className="w-full h-12 bg-[#1A1A1A] hover:bg-[#E5B800] text-white font-bold rounded-full transition-colors text-sm"
             >
               {t.cart.checkout} →
             </button>

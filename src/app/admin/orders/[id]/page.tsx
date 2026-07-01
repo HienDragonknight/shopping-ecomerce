@@ -83,7 +83,7 @@ export default function AdminOrderDetailPage({ params }: PageProps) {
     <div className="p-8 text-center text-slate-400">
       <p className="text-4xl mb-3">🔍</p>
       <p className="font-semibold">Không tìm thấy đơn hàng #{id}</p>
-      <Link href="/admin/orders" className="mt-4 inline-block px-5 py-2 bg-[#FCCE00] text-[#1A1A1A] font-bold rounded-full text-sm">
+      <Link href="/admin/orders" className="mt-4 inline-block px-5 py-2 bg-[#1A1A1A] text-white font-bold rounded-full text-sm">
         ← Quay lại
       </Link>
     </div>
@@ -190,13 +190,13 @@ export default function AdminOrderDetailPage({ params }: PageProps) {
                   newStatus === k ? `border-current ${v.color} font-semibold` : "border-slate-100 hover:border-slate-200"
                 }`}>
                   <input type="radio" name="status" value={k} checked={newStatus === k}
-                    onChange={() => setNewStatus(k)} className="accent-[#FCCE00]" />
+                    onChange={() => setNewStatus(k)} className="accent-[#1A1A1A]" />
                   <span className={`text-sm font-medium ${newStatus === k ? "" : "text-slate-600"}`}>{v.label}</span>
                 </label>
               ))}
             </div>
             <button onClick={handleUpdateStatus} disabled={updating || newStatus === order.status}
-              className="w-full mt-4 h-11 bg-[#FCCE00] hover:bg-[#E5B800] disabled:opacity-50 text-[#1A1A1A] font-bold rounded-full transition-colors">
+              className="w-full mt-4 h-11 bg-[#1A1A1A] hover:bg-[#E5B800] disabled:opacity-50 text-white font-bold rounded-full transition-colors">
               {updating ? "Đang cập nhật..." : "Lưu trạng thái"}
             </button>
           </div>

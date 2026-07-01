@@ -35,7 +35,7 @@ export default function AdminBannersPage() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-[#1A1A1A]">Quản lý Banner</h1>
-        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-[#FCCE00] text-[#1A1A1A] font-bold rounded-xl text-sm">
+        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-[#1A1A1A] text-white font-bold rounded-xl text-sm">
           + Thêm banner
         </button>
       </div>
@@ -62,7 +62,7 @@ export default function AdminBannersPage() {
             ))}
           </div>
           <div className="flex gap-3">
-            <button onClick={handleSave} className="px-6 h-10 bg-[#FCCE00] text-[#1A1A1A] font-bold rounded-xl text-sm">Lưu</button>
+            <button onClick={handleSave} className="px-6 h-10 bg-[#1A1A1A] text-white font-bold rounded-xl text-sm">Lưu</button>
             <button onClick={() => setShowForm(false)} className="px-4 h-10 border border-slate-200 text-sm rounded-xl">Hủy</button>
           </div>
         </div>

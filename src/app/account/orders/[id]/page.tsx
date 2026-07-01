@@ -87,12 +87,12 @@ export default function OrderDetailPage({ params }: PageProps) {
                           <div key={step.key} className="flex-1 flex flex-col items-center relative">
                             {/* Connector line */}
                             {i < STEPS.length - 1 && (
-                              <div className={`absolute top-5 left-1/2 w-full h-0.5 transition-colors ${done && i < currentStepIdx ? "bg-[#FCCE00]" : "bg-slate-200"}`} />
+                              <div className={`absolute top-5 left-1/2 w-full h-0.5 transition-colors ${done && i < currentStepIdx ? "bg-[#1A1A1A]" : "bg-slate-200"}`} />
                             )}
                             {/* Circle */}
                             <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center text-lg border-2 transition-all ${
-                              active ? "border-[#FCCE00] bg-[#FFFDE7] scale-110 shadow-md"
-                              : done ? "border-[#FCCE00] bg-[#FCCE00]"
+                              active ? "border-[#1A1A1A] bg-[#FFFDE7] scale-110 shadow-md"
+                              : done ? "border-[#1A1A1A] bg-[#1A1A1A]"
                               : "border-slate-200 bg-white text-slate-300"
                             }`}>
                               {done ? <span>{step.icon}</span> : <span className="text-slate-300 text-lg">○</span>}
@@ -184,7 +184,7 @@ export default function OrderDetailPage({ params }: PageProps) {
                     </button>
                   )}
                   <Link href="/products"
-                    className="px-5 py-2.5 bg-[#FCCE00] hover:bg-[#E5B800] text-[#1A1A1A] text-sm font-bold rounded-full transition-colors ml-auto">
+                    className="px-5 py-2.5 bg-[#1A1A1A] hover:bg-[#E5B800] text-white text-sm font-bold rounded-full transition-colors ml-auto">
                     Mua thêm
                   </Link>
                 </div>

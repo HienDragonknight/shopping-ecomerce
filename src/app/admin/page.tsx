@@ -187,7 +187,7 @@ export default function AdminDashboardPage() {
         </div>
         <Link
           href="/admin/reports"
-          className="hidden sm:flex items-center gap-2 text-sm font-semibold text-[#1A1A1A] bg-[#FCCE00] hover:bg-[#E5B800] px-4 py-2 rounded-xl transition-colors"
+          className="hidden sm:flex items-center gap-2 text-sm font-semibold text-white bg-[#1A1A1A] hover:bg-[#E5B800] px-4 py-2 rounded-xl transition-colors"
         >
           <TrendingUp size={15} />
           Xem báo cáo
@@ -279,7 +279,7 @@ export default function AdminDashboardPage() {
               {topProducts.map((p, i) => (
                 <div key={p.id} className="flex items-center gap-3">
                   <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
-                    i === 0 ? "bg-[#FCCE00] text-[#1A1A1A]" :
+                    i === 0 ? "bg-[#1A1A1A] text-white" :
                     i === 1 ? "bg-slate-200 text-slate-700" :
                     i === 2 ? "bg-orange-100 text-orange-700" :
                     "bg-slate-100 text-slate-500"

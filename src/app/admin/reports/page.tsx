@@ -174,7 +174,7 @@ function SalesTab() {
               {topProducts.map((p: any, i: number) => (
                 <div key={p.id} className="flex items-center gap-3">
                   <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
-                    i === 0 ? "bg-[#FCCE00] text-[#1A1A1A]" : i === 1 ? "bg-slate-200 text-slate-700" :
+                    i === 0 ? "bg-[#1A1A1A] text-white" : i === 1 ? "bg-slate-200 text-slate-700" :
                     i === 2 ? "bg-orange-100 text-orange-700" : "bg-slate-100 text-slate-500"
                   }`}>{i + 1}</span>
                   {p.thumbnailUrl && <img src={p.thumbnailUrl} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0" />}

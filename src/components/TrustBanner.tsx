@@ -23,7 +23,7 @@ export function TrustBanner() {
               {item.link && item.linkText && (
                 <Link
                   href={item.link}
-                  className="font-bold text-[#1A1A1A] underline underline-offset-2 hover:text-[#FCCE00] transition-colors ml-0.5"
+                  className="font-bold text-[#1A1A1A] underline underline-offset-2 hover:text-[#1A1A1A] transition-colors ml-0.5"
                 >
                   {item.linkText} ↗
                 </Link>

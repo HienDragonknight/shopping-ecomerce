@@ -152,7 +152,7 @@ export default function AdminPromotionsPage() {
             <RefreshCw size={15} />
           </button>
           <button onClick={openAdd}
-            className="flex items-center gap-2 px-4 py-2 bg-[#FCCE00] hover:bg-[#E5B800] text-[#1A1A1A] font-bold rounded-xl text-sm transition-colors">
+            className="flex items-center gap-2 px-4 py-2 bg-[#1A1A1A] hover:bg-[#E5B800] text-white font-bold rounded-xl text-sm transition-colors">
             <Plus size={16} /> Tạo coupon
           </button>
         </div>
@@ -359,7 +359,7 @@ export default function AdminPromotionsPage() {
                 Hủy
               </button>
               <button onClick={handleSave} disabled={saving}
-                className="flex-1 h-11 bg-[#FCCE00] hover:bg-[#E5B800] text-[#1A1A1A] font-bold rounded-xl disabled:opacity-60">
+                className="flex-1 h-11 bg-[#1A1A1A] hover:bg-[#E5B800] text-white font-bold rounded-xl disabled:opacity-60">
                 {saving ? "Đang lưu..." : editing ? "Lưu thay đổi" : "Tạo coupon"}
               </button>
             </div>

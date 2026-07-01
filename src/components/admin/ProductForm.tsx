@@ -308,13 +308,13 @@ export function ProductForm({ productId }: ProductFormProps) {
     }
   };
 
-  const inputCls = "w-full h-11 px-4 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#FCCE00]/30 focus:border-[#FCCE00] bg-slate-50 hover:bg-slate-50/50 focus:bg-white transition-all";
+  const inputCls = "w-full h-11 px-4 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/30 focus:border-[#1A1A1A] bg-slate-50 hover:bg-slate-50/50 focus:bg-white transition-all";
   const labelCls = "text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1.5";
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#FCCE00]" />
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1A1A1A]" />
         <p className="mt-4 text-sm text-slate-500">Đang tải thông tin sản phẩm...</p>
       </div>
     );
@@ -345,7 +345,7 @@ export function ProductForm({ productId }: ProductFormProps) {
           {/* Basic info card */}
           <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm space-y-4">
             <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
-              <Tag size={16} className="text-[#FCCE00]" /> Thông tin cơ bản
+              <Tag size={16} className="text-[#1A1A1A]" /> Thông tin cơ bản
             </h2>
 
             <div className="space-y-1.5">
@@ -392,17 +392,17 @@ export function ProductForm({ productId }: ProductFormProps) {
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 rows={5}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#FCCE00]/30 focus:border-[#FCCE00] bg-slate-50 focus:bg-white resize-none transition-all"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/30 focus:border-[#1A1A1A] bg-slate-50 focus:bg-white resize-none transition-all"
               />
             </div>
           </div>
 
           {/* ─── BILINGUAL CONTENT ─────────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-[#FCCE00]/30 p-6 shadow-sm space-y-4">
+          <div className="bg-white rounded-2xl border border-[#1A1A1A]/30 p-6 shadow-sm space-y-4">
             {/* Header with tab switcher */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                <Languages size={16} className="text-[#FCCE00]" />
+                <Languages size={16} className="text-[#1A1A1A]" />
                 Nội dung song ngữ
                 <span className="text-[10px] font-normal text-slate-400">— dùng cho khách quốc tế</span>
               </h2>
@@ -507,7 +507,7 @@ export function ProductForm({ productId }: ProductFormProps) {
                     value={form.descriptionEn}
                     onChange={(e) => setForm({ ...form, descriptionEn: e.target.value })}
                     rows={5}
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#FCCE00]/30 focus:border-[#FCCE00] bg-slate-50 focus:bg-white resize-none transition-all"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]/30 focus:border-[#1A1A1A] bg-slate-50 focus:bg-white resize-none transition-all"
                   />
                 </div>
 
@@ -534,7 +534,7 @@ export function ProductForm({ productId }: ProductFormProps) {
           <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                <Box size={16} className="text-[#FCCE00]" /> Biến thể & Tồn kho
+                <Box size={16} className="text-[#1A1A1A]" /> Biến thể & Tồn kho
               </h2>
               <div className="flex gap-2">
                 <button
@@ -547,7 +547,7 @@ export function ProductForm({ productId }: ProductFormProps) {
                 <button
                   type="button"
                   onClick={addVariant}
-                  className="text-xs font-bold text-[#1A1A1A] bg-[#FCCE00] hover:bg-[#E5B800] px-3 py-1.5 rounded-lg transition-colors"
+                  className="text-xs font-bold text-white bg-[#1A1A1A] hover:bg-[#E5B800] px-3 py-1.5 rounded-lg transition-colors"
                 >
                   + Thêm biến thể
                 </button>
@@ -799,12 +799,12 @@ export function ProductForm({ productId }: ProductFormProps) {
                   placeholder="https://..."
                   value={newProductImg}
                   onChange={(e) => setNewProductImg(e.target.value)}
-                  className="flex-1 h-9 px-3 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#FCCE00] bg-slate-50 focus:bg-white"
+                  className="flex-1 h-9 px-3 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#1A1A1A] bg-slate-50 focus:bg-white"
                 />
                 <button
                   type="button"
                   onClick={addProductImage}
-                  className="px-3 h-9 bg-[#FCCE00] hover:bg-[#E5B800] text-[#1A1A1A] font-bold rounded-lg text-xs transition-colors shrink-0"
+                  className="px-3 h-9 bg-[#1A1A1A] hover:bg-[#E5B800] text-white font-bold rounded-lg text-xs transition-colors shrink-0"
                 >
                   Thêm
                 </button>
@@ -823,7 +823,7 @@ export function ProductForm({ productId }: ProductFormProps) {
                         <button
                           type="button"
                           onClick={() => setForm({ ...form, thumbnailUrl: url })}
-                          className="text-[9px] font-bold text-white bg-slate-800 hover:bg-[#FCCE00] hover:text-[#1A1A1A] px-1.5 py-0.5 rounded transition-all"
+                          className="text-[9px] font-bold text-white bg-slate-800 hover:bg-[#1A1A1A] hover:text-white px-1.5 py-0.5 rounded transition-all"
                           title="Đặt làm ảnh đại diện"
                         >
                           Chọn làm diện
@@ -854,7 +854,7 @@ export function ProductForm({ productId }: ProductFormProps) {
                   type="checkbox"
                   checked={form.isActive}
                   onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-                  className="w-4 h-4 accent-[#FCCE00] rounded"
+                  className="w-4 h-4 accent-[#1A1A1A] rounded"
                 />
                 <div>
                   <p className="text-xs font-bold text-slate-800">Hiển thị sản phẩm</p>
@@ -867,7 +867,7 @@ export function ProductForm({ productId }: ProductFormProps) {
                   type="checkbox"
                   checked={form.isFeatured}
                   onChange={(e) => setForm({ ...form, isFeatured: e.target.checked })}
-                  className="w-4 h-4 accent-[#FCCE00] rounded"
+                  className="w-4 h-4 accent-[#1A1A1A] rounded"
                 />
                 <div>
                   <p className="text-xs font-bold text-slate-800">Đánh dấu nổi bật</p>
@@ -897,7 +897,7 @@ export function ProductForm({ productId }: ProductFormProps) {
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 h-12 bg-[#FCCE00] hover:bg-[#E5B800] disabled:opacity-50 text-[#1A1A1A] font-bold rounded-full text-sm transition-all flex items-center justify-center gap-2 shadow-sm"
+              className="flex-1 h-12 bg-[#1A1A1A] hover:bg-[#E5B800] disabled:opacity-50 text-white font-bold rounded-full text-sm transition-all flex items-center justify-center gap-2 shadow-sm"
             >
               <Save size={16} />
               {saving ? "Đang lưu..." : "Lưu thay đổi"}

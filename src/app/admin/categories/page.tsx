@@ -84,7 +84,7 @@ export default function AdminCategoriesPage() {
             <RefreshCw size={15} />
           </button>
           <button onClick={openAdd}
-            className="flex items-center gap-2 px-4 py-2 bg-[#FCCE00] hover:bg-[#E5B800] text-[#1A1A1A] font-bold rounded-xl text-sm">
+            className="flex items-center gap-2 px-4 py-2 bg-[#1A1A1A] hover:bg-[#E5B800] text-white font-bold rounded-xl text-sm">
             <Plus size={16} /> Thêm danh mục
           </button>
         </div>
@@ -196,7 +196,7 @@ export default function AdminCategoriesPage() {
                 <button type="button" onClick={() => setShowModal(false)}
                   className="flex-1 h-11 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50">Hủy</button>
                 <button type="submit" disabled={saving}
-                  className="flex-1 h-11 bg-[#FCCE00] hover:bg-[#E5B800] text-[#1A1A1A] font-bold rounded-xl disabled:opacity-60">
+                  className="flex-1 h-11 bg-[#1A1A1A] hover:bg-[#E5B800] text-white font-bold rounded-xl disabled:opacity-60">
                   {saving ? "Đang lưu..." : editing ? "Lưu thay đổi" : "Thêm danh mục"}
                 </button>
               </div>

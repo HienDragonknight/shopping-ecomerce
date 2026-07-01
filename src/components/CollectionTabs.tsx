@@ -27,14 +27,14 @@ export function CollectionTabs({ collections }: CollectionTabsProps) {
                 key={col.id}
                 href={`/collection/${col.slug}`}
                 onClick={() => setActive(col.id)}
-                className={`flex-shrink-0 flex flex-col items-center gap-2 group transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FCCE00]`}
+                className={`flex-shrink-0 flex flex-col items-center gap-2 group transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A1A1A]`}
               >
                 {/* Thumbnail circle */}
                 <div
                   className={`relative w-16 h-16 rounded-full overflow-hidden border-2 transition-all duration-200 ${
                     isActive
-                      ? "border-[#FCCE00] scale-105"
-                      : "border-[#E5E5E5] group-hover:border-[#FCCE00] group-hover:scale-105"
+                      ? "border-[#1A1A1A] scale-105"
+                      : "border-[#E5E5E5] group-hover:border-[#1A1A1A] group-hover:scale-105"
                   }`}
                 >
                   <Image

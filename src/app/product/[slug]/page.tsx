@@ -9,6 +9,7 @@ import api from "@/lib/api";
 import { useT } from "@/hooks/useT";
 import { useLocale } from "@/context/LocaleContext";
 import { ShoppingBag, RefreshCw, Truck, ShieldCheck, MessageCircle, Store, ChevronRight, Star, Copy, Check } from "lucide-react";
+import TryOnPanel from "@/components/TryOnPanel";
 
 interface PageProps { params: Promise<{ slug: string }>; }
 
@@ -44,6 +45,7 @@ export default function ProductDetailPage({ params }: PageProps) {
   const [addError, setAddError] = useState("");
   const [skuCopied, setSkuCopied] = useState(false);
   const [imgExpanded, setImgExpanded] = useState(false);
+  const tryOnRef = useRef<HTMLDivElement>(null);
   const infoRef = useRef<HTMLDivElement>(null);
 
   // Re-fetch when slug OR locale changes — axios interceptor sends Accept-Language automatically
@@ -153,7 +155,7 @@ export default function ProductDetailPage({ params }: PageProps) {
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 bg-[#F5F5F5]">
       <p className="text-4xl">😕</p>
       <p className="font-bold text-lg text-[#1A3459]">{t.product.notFound}</p>
-      <Link href="/products" className="px-6 py-2.5 bg-[#FCCE00] text-[#1A1A1A] font-bold rounded-full text-sm">
+      <Link href="/products" className="px-6 py-2.5 bg-[#1A1A1A] text-white font-bold rounded-full text-sm">
         {t.product.viewOther}
       </Link>
     </div>
@@ -179,7 +181,7 @@ export default function ProductDetailPage({ params }: PageProps) {
           <span className="text-[#1A3459] font-semibold line-clamp-1">{product.name}</span>
         </nav>
 
-        {/* Main Layout: Left images stack + Right sticky info */}
+        {/* Main Layout: Left images + Right sticky info (2 cols) */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 items-start">
 
           {/* ── LEFT: Stacked Images (Yody/Zara style) ── */}
@@ -266,8 +268,8 @@ export default function ProductDetailPage({ params }: PageProps) {
                     <Star
                       key={s}
                       size={13}
-                      fill={s <= Math.round(product.avgRating!) ? "#FCCE00" : "none"}
-                      stroke={s <= Math.round(product.avgRating!) ? "#FCCE00" : "#ccc"}
+                      fill={s <= Math.round(product.avgRating!) ? "#1A1A1A" : "none"}
+                      stroke={s <= Math.round(product.avgRating!) ? "#1A1A1A" : "#ccc"}
                     />
                   ))}
                   <span className="text-xs text-[#666] ml-1">({product.reviewCount} đánh giá)</span>
@@ -293,7 +295,7 @@ export default function ProductDetailPage({ params }: PageProps) {
                         title={v.color!}
                         className={`relative w-10 h-10 rounded-full border-2 transition-all shrink-0 ${
                           isActive
-                            ? "border-[#FCCE00] shadow-[0_0_0_1px_#FCCE00]"
+                            ? "border-[#1A1A1A] shadow-[0_0_0_1px_#1A1A1A]"
                             : "border-[#ddd] hover:border-[#aaa]"
                         }`}
                         style={{ backgroundColor: swatchBg }}
@@ -331,7 +333,7 @@ export default function ProductDetailPage({ params }: PageProps) {
                         disabled={outOfStock}
                         className={`min-w-[50px] h-10 px-3 rounded-full text-[13px] font-semibold transition-all border ${
                           isActive
-                            ? "border-[#FCCE00] border-2 bg-white text-[#1A1A1A] shadow-sm"
+                            ? "border-[#1A1A1A] border-2 bg-white text-[#1A1A1A] shadow-sm"
                             : outOfStock
                             ? "border-[#e0e0e0] text-[#ccc] line-through cursor-not-allowed bg-[#fafafa]"
                             : "border-[#ccc] text-[#333] hover:border-[#1A3459] bg-white"
@@ -374,8 +376,8 @@ export default function ProductDetailPage({ params }: PageProps) {
                   addedToCart
                     ? "bg-emerald-500 text-white"
                     : inStock
-                    ? "bg-[#FCCE00] text-[#1A1A1A] hover:bg-[#f5c500]"
-                    : "bg-[#FCCE00]/50 text-[#1A1A1A]/50 cursor-not-allowed"
+                    ? "bg-[#1A1A1A] text-white hover:bg-[#f5c500]"
+                    : "bg-[#1A1A1A]/50 text-white/50 cursor-not-allowed"
                 }`}
               >
                 <ShoppingBag size={17} strokeWidth={2.5} />
@@ -390,6 +392,22 @@ export default function ProductDetailPage({ params }: PageProps) {
               className="w-full h-12 bg-[#1A3459] hover:bg-[#142a47] text-white font-bold text-sm rounded-full transition-all active:scale-[0.98] disabled:opacity-40"
             >
               {t.product.buyNow}
+            </button>
+
+            {/* ✨ Virtual Try-On — button scrolls to try-on panel */}
+            <button
+              id="try-on-scroll-btn"
+              onClick={() => tryOnRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              className="group w-full flex items-center justify-between py-3 px-4 border-2 rounded-xl font-bold text-sm transition-all active:scale-[0.98]"
+              style={{ borderColor: "#FF2D78", color: "#FF2D78" }}
+            >
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.57a1 1 0 00.99.86H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.86l.58-3.57a2 2 0 00-1.34-2.23z" />
+                </svg>
+                Try On
+              </div>
+              <span className="text-[10px] font-black bg-[#FF2D78] text-white px-1.5 py-0.5 rounded-full">NEW</span>
             </button>
 
             {addError && (
@@ -463,12 +481,16 @@ export default function ProductDetailPage({ params }: PageProps) {
                 {inStock ? t.product.stockCount(selectedVariant.stockQty) : t.product.outOfStockHint}
               </p>
             )}
-          </div>
-        </div>
+          </div>{/* end info panel */}
 
-        {/* ── Description ── */}
+        </div>{/* end 2-col grid */}
+
+      </div>
+
+      {/* ── Description ── */}
+      <div className="max-w-[1200px] mx-auto px-4">
         {product.description && (
-          <div className="mt-8 bg-white rounded-2xl p-6 border border-[#eee]">
+          <div className="mt-6 bg-white rounded-2xl p-6 border border-[#eee]">
             <h2 className="text-base font-bold text-[#1A3459] mb-4 pb-3 border-b border-[#f0f0f0]">
               {t.product.description}
             </h2>
@@ -478,8 +500,35 @@ export default function ProductDetailPage({ params }: PageProps) {
           </div>
         )}
 
-        {/* ── FAQ / Câu hỏi thường gặp ── */}
-        <div className="mt-4 bg-white rounded-2xl p-6 border border-[#eee]">
+        {/* ── AI Virtual Try-On Section ── */}
+        <div ref={tryOnRef} id="try-on-section" className="mt-6 bg-white rounded-2xl border border-[#eee] overflow-hidden">
+          {/* Section header */}
+          <div className="flex items-center gap-3 px-6 py-4 border-b border-[#f0f0f0]" style={{ background: "#fff5f8" }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#FF2D7820" }}>
+              <svg className="w-5 h-5" style={{ color: "#FF2D78" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.57a1 1 0 00.99.86H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.86l.58-3.57a2 2 0 00-1.34-2.23z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-[#1A1A1A]">AI Virtual Try-On</h2>
+                <span className="text-[10px] font-black text-white px-2 py-0.5 rounded-full" style={{ background: "#FF2D78" }}>NEW</span>
+              </div>
+              <p className="text-xs text-gray-400 mt-0.5">Upload your photo and see how this outfit looks on you</p>
+            </div>
+          </div>
+          {/* Panel content */}
+          <div className="p-6">
+            <TryOnPanel
+              productId={product.id}
+              productName={product.name}
+              productImageUrl={product.thumbnailUrl}
+            />
+          </div>
+        </div>
+
+        {/* ── FAQ ── */}
+        <div className="mt-6 bg-white rounded-2xl p-6 border border-[#eee]">
           <h2 className="text-base font-bold text-[#1A3459] mb-4 pb-3 border-b border-[#f0f0f0]">
             {t.product.faq}
           </h2>

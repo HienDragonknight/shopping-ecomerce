@@ -85,7 +85,7 @@ function VNPaySandboxContent() {
               </div>
               <div className="text-right">
                 <p className="text-xs text-white/60 font-medium">Số tiền thanh toán</p>
-                <p className="font-black text-xl text-[#FCCE00]">
+                <p className="font-black text-xl text-[#1A1A1A]">
                   {Number(amount).toLocaleString("vi-VN")}₫
                 </p>
               </div>

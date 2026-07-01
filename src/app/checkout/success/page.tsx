@@ -33,7 +33,7 @@ function SuccessContent() {
             Xem đơn hàng
           </Link>
         )}
-        <Link href="/products" className="px-6 py-3 bg-[#FCCE00] text-[#1A1A1A] font-bold rounded-full text-sm">
+        <Link href="/products" className="px-6 py-3 bg-[#1A1A1A] text-white font-bold rounded-full text-sm">
           Tiếp tục mua sắm
         </Link>
       </div>

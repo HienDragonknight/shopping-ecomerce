@@ -60,7 +60,7 @@ export default function AddressBookPage() {
                 <h1 className="text-xl font-bold text-[#1A1A1A]">Sổ địa chỉ</h1>
                 <button
                   onClick={() => setShowForm(!showForm)}
-                  className="px-4 py-2 bg-[#FCCE00] text-[#1A1A1A] font-bold rounded-full text-sm hover:bg-[#E5B800] transition-colors"
+                  className="px-4 py-2 bg-[#1A1A1A] text-white font-bold rounded-full text-sm hover:bg-[#E5B800] transition-colors"
                 >
                   + Thêm địa chỉ
                 </button>
@@ -87,7 +87,7 @@ export default function AddressBookPage() {
                   <p className="font-semibold">Bạn chưa có địa chỉ nào</p>
                   <button
                     onClick={() => setShowForm(true)}
-                    className="mt-4 px-5 py-2 bg-[#FCCE00] text-[#1A1A1A] font-bold rounded-full text-sm"
+                    className="mt-4 px-5 py-2 bg-[#1A1A1A] text-white font-bold rounded-full text-sm"
                   >
                     Thêm địa chỉ đầu tiên
                   </button>
@@ -97,14 +97,14 @@ export default function AddressBookPage() {
                   {addresses.map((addr) => (
                     <div
                       key={addr.id}
-                      className={`p-4 border rounded-2xl transition-all ${addr.isDefault ? "border-[#FCCE00] bg-[#FFFDE7]" : "border-slate-100 hover:border-slate-200"}`}
+                      className={`p-4 border rounded-2xl transition-all ${addr.isDefault ? "border-[#1A1A1A] bg-[#FFFDE7]" : "border-slate-100 hover:border-slate-200"}`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-semibold text-sm text-[#1A1A1A]">{addr.fullName}</p>
                             {addr.isDefault && (
-                              <span className="text-xs bg-[#FCCE00] text-[#1A1A1A] px-2 py-0.5 rounded-full font-bold">
+                              <span className="text-xs bg-[#1A1A1A] text-white px-2 py-0.5 rounded-full font-bold">
                                 Mặc định
                               </span>
                             )}
@@ -118,7 +118,7 @@ export default function AddressBookPage() {
                           {!addr.isDefault && (
                             <button
                               onClick={() => handleSetDefault(addr.id)}
-                              className="text-xs text-[#1A1A1A] hover:text-[#FCCE00] font-semibold underline underline-offset-2"
+                              className="text-xs text-[#1A1A1A] hover:text-[#1A1A1A] font-semibold underline underline-offset-2"
                             >
                               Đặt mặc định
                             </button>

@@ -97,7 +97,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 }}
                 className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
                   isActive 
-                    ? "border-2 border-[#FCCE00] p-[2px]" 
+                    ? "border-2 border-[#1A1A1A] p-[2px]" 
                     : "border border-transparent hover:scale-105"
                 }`}
               >

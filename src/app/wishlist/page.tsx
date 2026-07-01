@@ -42,7 +42,7 @@ export default function WishlistPage() {
           <div className="bg-white rounded-2xl p-16 text-center">
             <p className="text-5xl mb-4">❤️</p>
             <p className="font-bold text-lg text-[#1A1A1A]">Danh sách yêu thích trống</p>
-            <Link href="/products" className="mt-4 inline-block px-6 py-3 bg-[#FCCE00] text-[#1A1A1A] font-bold rounded-full">
+            <Link href="/products" className="mt-4 inline-block px-6 py-3 bg-[#1A1A1A] text-white font-bold rounded-full">
               Khám phá sản phẩm
             </Link>
           </div>
@@ -65,13 +65,13 @@ export default function WishlistPage() {
                   </div>
                   <div className="p-3">
                     <Link href={`/product/${p.slug}`}>
-                      <p className="text-sm font-semibold line-clamp-2 hover:text-[#FCCE00] transition-colors">{p.name}</p>
+                      <p className="text-sm font-semibold line-clamp-2 hover:text-[#1A1A1A] transition-colors">{p.name}</p>
                     </Link>
                     <p className="font-bold mt-1">{p.effectivePrice?.toLocaleString("vi-VN")}đ</p>
                     {p.variants?.[0] && (
                       <button
                         onClick={() => addItem(p.variants[0].id)}
-                        className="w-full mt-2 h-8 bg-[#FCCE00] text-[#1A1A1A] text-xs font-bold rounded-full"
+                        className="w-full mt-2 h-8 bg-[#1A1A1A] text-white text-xs font-bold rounded-full"
                       >
                         Thêm vào giỏ
                       </button>

@@ -18,7 +18,7 @@ export function ProductSection({ section }: ProductSectionProps) {
           </h2>
           <Link
             href={section.viewMoreLink}
-            className="flex items-center gap-1 text-sm font-semibold text-[#1A1A1A] hover:text-[#FCCE00] transition-colors"
+            className="flex items-center gap-1 text-sm font-semibold text-[#1A1A1A] hover:text-[#1A1A1A] transition-colors"
           >
             Xem thêm
             <ChevronRightIcon className="w-4 h-4" />

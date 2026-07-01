@@ -39,8 +39,8 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) * 1.5);
   /* YODY brand colors */
-  --color-yody-yellow: #FCCE00;
-  --color-yody-yellow-dark: #f0c200;
+  --color-yody-yellow: #1A1A1A;
+  --color-yody-yellow-dark: #333333;
   --color-yody-black: #1A1A1A;
   --color-yody-red: #E53E3E;
   --color-yody-gray: #666666;

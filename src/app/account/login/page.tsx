@@ -36,7 +36,7 @@ export default function LoginPage() {
   };
 
   const DEV_ACCOUNTS = [
-    { label: "Admin", email: "admin@fashion.com", password: "Admin@123", color: "#1A1A1A", bg: "#FCCE00" },
+    { label: "Admin", email: "admin@fashion.com", password: "Admin@123", color: "#1A1A1A", bg: "#1A1A1A" },
     { label: "Customer", email: "customer@test.com", password: "123456", color: "#fff", bg: "#333" },
   ];
 
@@ -46,7 +46,7 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold text-[#1A1A1A] text-center mb-4">{t.auth.login}</h1>
 
         {/* DEV QUICK-LOGIN */}
-        <div className="mb-5 rounded-xl border border-dashed border-[#FCCE00] bg-[#FFFBEB] p-3">
+        <div className="mb-5 rounded-xl border border-dashed border-[#1A1A1A] bg-[#FFFBEB] p-3">
           <p className="text-[10px] font-bold text-[#999] uppercase tracking-widest mb-2 text-center">
             🛠 Dev accounts — click để điền nhanh
           </p>
@@ -56,7 +56,7 @@ export default function LoginPage() {
                 key={acc.label}
                 type="button"
                 onClick={() => { setIdentifier(acc.email); setPassword(acc.password); }}
-                className="flex flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left transition-all hover:scale-[1.02] active:scale-95 border border-[#E5E5E5] hover:border-[#FCCE00] bg-white hover:bg-[#FFFDE7] shadow-sm"
+                className="flex flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left transition-all hover:scale-[1.02] active:scale-95 border border-[#E5E5E5] hover:border-[#1A1A1A] bg-white hover:bg-[#FFFDE7] shadow-sm"
               >
                 <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full mb-1" style={{ background: acc.bg, color: acc.color }}>
                   {acc.label}
@@ -108,7 +108,7 @@ export default function LoginPage() {
           </div>
 
           <div className="flex justify-end">
-            <Link href="/account/forgot-password" className="text-sm font-semibold text-[#1A1A1A] hover:text-[#FCCE00] transition-colors">
+            <Link href="/account/forgot-password" className="text-sm font-semibold text-[#1A1A1A] hover:text-[#1A1A1A] transition-colors">
               {t.auth.forgotPassword}
             </Link>
           </div>
@@ -116,7 +116,7 @@ export default function LoginPage() {
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full h-12 bg-[#FCCE00] hover:bg-[#E5B800] text-[#1A1A1A] font-bold text-base rounded-full transition-colors disabled:opacity-60"
+            className="w-full h-12 bg-[#1A1A1A] hover:bg-[#E5B800] text-white font-bold text-base rounded-full transition-colors disabled:opacity-60"
           >
             {isLoading ? (
               <span className="flex items-center gap-2">
@@ -156,7 +156,7 @@ export default function LoginPage() {
 
         <p className="mt-8 text-center text-sm text-[#555]">
           {t.auth.noAccount}{" "}
-          <Link href="/account/register" className="font-bold text-[#1A1A1A] hover:text-[#FCCE00] transition-colors">
+          <Link href="/account/register" className="font-bold text-[#1A1A1A] hover:text-[#1A1A1A] transition-colors">
             {t.auth.registerNow}
           </Link>
         </p>

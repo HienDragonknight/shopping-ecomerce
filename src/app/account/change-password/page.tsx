@@ -61,7 +61,7 @@ export default function ChangePasswordPage() {
                 </div>
                 {error && <p className="text-red-500 text-sm">{error}</p>}
                 {success && <p className="text-emerald-600 text-sm font-semibold">{success}</p>}
-                <Button type="submit" disabled={loading} className="w-full h-12 bg-[#FCCE00] hover:bg-[#E5B800] text-[#1A1A1A] font-bold rounded-full">
+                <Button type="submit" disabled={loading} className="w-full h-12 bg-[#1A1A1A] hover:bg-[#E5B800] text-white font-bold rounded-full">
                   {loading ? t.auth.saving : t.auth.changePassword}
                 </Button>
               </form>

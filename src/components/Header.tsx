@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { SearchIcon, CartIcon, UserIcon, MenuIcon, CloseIcon, StoreIcon, ChevronRightIcon } from "@/components/icons";
+import { SearchIcon, CartIcon, UserIcon, MenuIcon, CloseIcon, StoreIcon, ChevronRightIcon, HeartIcon } from "@/components/icons";
 import { navCategories } from "@/lib/data";
 import type { NavCategory } from "@/types";
 import { useCartStore } from "@/store/useCartStore";
@@ -15,9 +15,9 @@ import { useLocale } from "@/context/LocaleContext";
 
 function YodyLogo() {
   return (
-    <Link href="/" className="flex-shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FCCE00]">
+    <Link href="/" className="flex-shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1A1A1A]">
       <img
-        src="/images/logo.webp"
+        src="https://res.cloudinary.com/dev4uz63q/image/upload/f_auto,q_auto/Asset_4_xd8oe6"
         alt="Logo"
         className="h-10 md:h-12 w-auto object-contain transition-opacity duration-200 hover:opacity-80"
       />
@@ -64,7 +64,7 @@ function MegaMenuDropdown({ category }: { category: NavCategory }) {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <div className="absolute bottom-4 left-4 right-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 text-white">
-                <span className="text-[10px] font-bold uppercase tracking-wider mb-1 block text-[#FCCE00]">
+                <span className="text-[10px] font-bold uppercase tracking-wider mb-1 block text-[#1A1A1A]">
                   {t.nav.discover}
                 </span>
                 <span className="font-bold text-sm">
@@ -72,7 +72,7 @@ function MegaMenuDropdown({ category }: { category: NavCategory }) {
                 </span>
               </div>
             </div>
-            <h4 className="font-bold text-sm text-[#1A1A1A] group-hover:text-[#FCCE00] transition-colors">
+            <h4 className="font-bold text-sm text-[#1A1A1A] group-hover:text-[#1A1A1A] transition-colors">
               {t.nav.monthlyCollection}
             </h4>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -108,7 +108,7 @@ function NavItem({ category }: { category: NavCategory }) {
     >
       <Link
         href={category.href}
-        className="block py-5 text-[13px] font-bold text-[#1A1A1A] hover:text-[#FCCE00] transition-colors whitespace-nowrap tracking-wide relative after:absolute after:bottom-0 after:left-0 after:w-full after:h-[3px] after:bg-[#FCCE00] after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 after:origin-center"
+        className="block py-5 text-[13px] font-bold text-[#1A1A1A] hover:text-slate-500 transition-colors whitespace-nowrap tracking-wide relative after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-[#1A1A1A] after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 after:origin-center"
       >
         {isEn ? category.nameEn || category.name : category.name}
       </Link>
@@ -171,12 +171,6 @@ export function Header() {
   useEffect(() => { setMounted(true); }, []);
   const cartCount = mounted ? totalItems() : 0;
 
-  const topLinks = [
-    { name: t.nav.newArrivalsShort, href: "/collection/hang-moi-ve-thang-qua", className: "" },
-    { name: isEn ? "SALE -50%" : "ƯU ĐÃI -50%", href: "/sale", className: "text-[#E53E3E] font-black" },
-    { name: t.nav.uniformsShort, href: "https://landing.yody.vn/dongphucyody", className: "" },
-  ];
-
   return (
     <>
       <CartDrawer />
@@ -189,43 +183,31 @@ export function Header() {
         }`}
       >
         <div className="yody-container">
-          <div className={`flex items-center gap-4 transition-all duration-300 ${isScrolled ? "h-16" : "h-20"}`}>
-            {/* Mobile menu button */}
-            <button
-              className="lg:hidden flex items-center justify-center w-10 h-10 text-[#1A1A1A] hover:bg-slate-100 rounded-full transition-colors"
-              onClick={() => setMobileOpen(!mobileOpen)}
-              aria-label="Menu"
-              aria-expanded={mobileOpen}
-            >
-              {mobileOpen ? <CloseIcon className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
-            </button>
-
-            {/* Logo */}
-            <div className="mr-4 lg:mr-8">
+          <div className={`grid grid-cols-3 items-center gap-4 transition-all duration-300 ${isScrolled ? "h-16" : "h-20"}`}>
+            {/* Left: Logo & Mobile menu button */}
+            <div className="flex items-center gap-4">
+              <button
+                className="lg:hidden flex items-center justify-center w-10 h-10 text-[#1A1A1A] hover:bg-slate-100 rounded-full transition-colors"
+                onClick={() => setMobileOpen(!mobileOpen)}
+                aria-label="Menu"
+                aria-expanded={mobileOpen}
+              >
+                {mobileOpen ? <CloseIcon className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
+              </button>
               <YodyLogo />
             </div>
 
-            {/* Desktop nav */}
-            <nav className="hidden lg:flex flex-1" aria-label="Danh mục chính">
+            {/* Center: Navigation Menu */}
+            <nav className="hidden lg:flex justify-center" aria-label="Danh mục chính">
               <ul className="flex items-center gap-8">
                 {navCategories.map((cat) => (
                   <NavItem key={cat.name} category={cat} />
                 ))}
-                {topLinks.map((link) => (
-                  <li key={link.name} className="relative">
-                    <Link
-                      href={link.href}
-                      className={`block py-5 text-[13px] font-bold hover:text-[#FCCE00] transition-colors whitespace-nowrap tracking-wide ${link.className || "text-[#1A1A1A]"}`}
-                    >
-                      {link.name}
-                    </Link>
-                  </li>
-                ))}
               </ul>
             </nav>
 
-            {/* Right actions */}
-            <div className="flex items-center gap-3 ml-auto">
+            {/* Right: Actions aligned right */}
+            <div className="flex items-center justify-end gap-3.5">
               {/* Search */}
               <div className="hidden md:flex relative group">
                 <input
@@ -235,14 +217,14 @@ export function Header() {
                   onFocus={() => setSearchFocused(true)}
                   onBlur={() => setSearchFocused(false)}
                   placeholder={t.nav.searchPlaceholder}
-                  className={`w-[200px] lg:w-[240px] h-10 pl-4 pr-10 text-[13px] font-medium rounded-full transition-all duration-300 outline-none placeholder:text-slate-400 ${
+                  className={`w-[160px] lg:w-[200px] h-10 pl-5 pr-10 text-[13px] font-medium rounded-full transition-all duration-300 border bg-transparent outline-none placeholder:text-slate-400/80 ${
                     searchFocused
-                      ? "bg-white border-2 border-[#FCCE00] shadow-[0_0_10px_rgba(252,206,0,0.2)] w-[240px] lg:w-[280px]"
-                      : "bg-slate-100 border border-transparent hover:bg-slate-200"
+                      ? "border-[#111111] bg-white shadow-[0_4px_12px_rgba(0,0,0,0.03)] w-[200px] lg:w-[240px]"
+                      : "border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300"
                   }`}
                 />
                 <button
-                  className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${searchFocused ? "text-[#1A1A1A]" : "text-slate-500 group-hover:text-[#1A1A1A]"}`}
+                  className={`absolute right-3.5 top-1/2 -translate-y-1/2 transition-colors ${searchFocused ? "text-[#111111]" : "text-slate-500 group-hover:text-[#111111]"}`}
                   aria-label={t.common.search}
                 >
                   <SearchIcon className="w-4 h-4" />
@@ -271,7 +253,7 @@ export function Header() {
                         title={t.nav.account}
                         className="flex items-center justify-center w-10 h-10 text-slate-700 hover:text-[#1A1A1A] hover:bg-slate-100 rounded-full transition-all"
                       >
-                        <div className="w-7 h-7 rounded-full bg-[#FCCE00] flex items-center justify-center text-[#1A1A1A] font-black text-xs">
+                        <div className="w-7 h-7 rounded-full bg-[#1A1A1A] flex items-center justify-center text-white font-black text-xs">
                           {user?.fullName?.[0]?.toUpperCase() || "U"}
                         </div>
                       </button>
@@ -326,6 +308,15 @@ export function Header() {
                   )}
                 </div>
 
+                {/* Wishlist Link */}
+                <Link
+                  href="/wishlist"
+                  className="flex items-center justify-center w-10 h-10 text-slate-700 hover:text-[#1A1A1A] hover:bg-slate-100 rounded-full transition-all"
+                  title={t.account.wishlist}
+                >
+                  <HeartIcon className="w-[22px] h-[22px]" />
+                </Link>
+
                 {/* Cart button — opens drawer */}
                 <button
                   onClick={openCart}
@@ -336,7 +327,7 @@ export function Header() {
                 >
                   <CartIcon className="w-6 h-6" />
                   {mounted && cartCount > 0 && (
-                    <span className="absolute top-1 right-0 min-w-[18px] h-[18px] bg-[#FCCE00] text-[#1A1A1A] text-[10px] font-black rounded-full flex items-center justify-center px-1 border-2 border-white shadow-sm transition-transform animate-in zoom-in">
+                    <span className="absolute top-1 right-0 min-w-[18px] h-[18px] bg-[#1A1A1A] text-white text-[10px] font-black rounded-full flex items-center justify-center px-1 border-2 border-white shadow-sm transition-transform animate-in zoom-in">
                       {cartCount > 99 ? "99+" : cartCount}
                     </span>
                   )}
@@ -352,7 +343,7 @@ export function Header() {
             <input
               type="text"
               placeholder={t.nav.searchPlaceholderFull}
-              className="w-full h-11 pl-4 pr-10 text-sm border-none rounded-xl bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#FCCE00]"
+              className="w-full h-11 pl-4 pr-10 text-sm border-none rounded-xl bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]"
             />
             <button className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" aria-label={t.common.search}>
               <SearchIcon className="w-5 h-5" />
@@ -360,46 +351,73 @@ export function Header() {
           </div>
         </div>
 
-        {/* Mobile drawer */}
+        {/* Full-screen Mobile Menu */}
         {mobileOpen && (
-          <div className="lg:hidden absolute top-full left-0 w-full bg-white/95 backdrop-blur-xl border-t border-slate-100 px-6 py-4 max-h-[calc(100vh-80px)] overflow-y-auto shadow-2xl animate-in slide-in-from-top-2">
-            <ul className="space-y-1">
-              {navCategories.map((cat) => (
-                <li key={cat.name}>
-                  <Link
-                    href={cat.href}
-                    className="flex items-center justify-between py-4 text-sm font-bold text-[#1A1A1A] border-b border-slate-100"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    {isEn ? cat.nameEn || cat.name : cat.name}
-                    <ChevronRightIcon className="w-4 h-4 text-slate-300" />
-                  </Link>
-                </li>
-              ))}
-              {topLinks.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className={`flex items-center justify-between py-4 text-sm font-bold border-b border-slate-100 ${link.className || "text-[#1A1A1A]"}`}
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    {link.name}
-                    <ChevronRightIcon className="w-4 h-4 text-slate-300" />
-                  </Link>
-                </li>
-              ))}
-              {/* Auth links in mobile */}
-              <li>
-                <Link
-                  href={isAuthenticated ? "/account" : "/account/login"}
-                  className="flex items-center justify-between py-4 text-sm font-bold text-[#1A1A1A] border-b border-slate-100"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  {isAuthenticated ? t.auth.myAccount : `${t.auth.login} / ${t.auth.register}`}
-                  <ChevronRightIcon className="w-4 h-4 text-slate-300" />
-                </Link>
-              </li>
-            </ul>
+          <div className="lg:hidden fixed inset-0 z-[100] bg-white flex flex-col animate-in fade-in zoom-in-95 duration-200">
+            {/* Top Bar inside Menu */}
+            <div className="flex items-center justify-center relative h-16 px-4 shrink-0 bg-white">
+              <button 
+                onClick={() => setMobileOpen(false)}
+                className="absolute left-4 w-10 h-10 flex items-center justify-center text-[#1A1A1A] hover:bg-slate-100 rounded-full transition-colors"
+                aria-label="Close menu"
+              >
+                <CloseIcon className="w-5 h-5" />
+              </button>
+              <YodyLogo />
+            </div>
+
+            {/* Menu Content Area */}
+            <div className="relative flex-1 bg-[#FCFCFC] rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.03)] overflow-hidden mt-2">
+              {/* Watermark Background */}
+              <div 
+                className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')] bg-cover bg-center bg-no-repeat opacity-[0.05] mix-blend-multiply pointer-events-none"
+                style={{ backgroundPosition: "top center" }}
+              />
+
+              {/* Scrollable List */}
+              <div className="relative z-10 h-full overflow-y-auto px-8 pt-8 pb-20">
+                <ul className="space-y-0">
+                  {navCategories.map((cat) => (
+                    <li key={cat.name} className="border-b border-slate-200/70 py-4">
+                      <Link
+                        href={cat.href}
+                        className="block text-[17px] tracking-tight font-semibold text-[#1A1A1A] mb-1"
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        {isEn ? cat.nameEn || cat.name : cat.name}
+                      </Link>
+                      {cat.groups && (
+                        <ul className="pl-4 space-y-1.5 mt-2">
+                          {cat.groups.map(group => 
+                            group.items.map(item => (
+                              <li key={item.name}>
+                                <Link
+                                  href={item.href}
+                                  className="block text-[14px] text-slate-500 hover:text-black py-1"
+                                  onClick={() => setMobileOpen(false)}
+                                >
+                                  {isEn ? item.nameEn || item.name : item.name}
+                                </Link>
+                              </li>
+                            ))
+                          )}
+                        </ul>
+                      )}
+                    </li>
+                  ))}
+                  {/* Auth links in mobile */}
+                  <li>
+                    <Link
+                      href={isAuthenticated ? "/account" : "/account/login"}
+                      className="block py-4 text-[17px] tracking-tight font-semibold text-[#1A1A1A] border-b border-slate-200/70"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      {isAuthenticated ? t.auth.myAccount : `${t.auth.login} / ${t.auth.register}`}
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         )}
       </header>

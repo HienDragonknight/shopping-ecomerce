@@ -28,8 +28,8 @@ export function TranslationBanner() {
     >
       <div className="flex items-center gap-3 bg-[#1A1A1A] text-white px-4 py-3 rounded-2xl shadow-2xl border border-white/10 max-w-[92vw] w-max">
         {/* Icon */}
-        <div className="w-8 h-8 rounded-full bg-[#FCCE00]/15 flex items-center justify-center shrink-0">
-          <Globe size={15} className="text-[#FCCE00]" />
+        <div className="w-8 h-8 rounded-full bg-[#1A1A1A]/15 flex items-center justify-center shrink-0">
+          <Globe size={15} className="text-[#1A1A1A]" />
         </div>
 
         {/* Message */}
@@ -37,7 +37,7 @@ export function TranslationBanner() {
           {locale === "vi" ? (
             <>Bạn muốn xem trang bằng <span className="text-white font-semibold">Tiếng Anh</span>?</>
           ) : (
-            <>Page is showing in <span className="text-[#FCCE00] font-semibold">English</span> — based on your browser</>
+            <>Page is showing in <span className="text-[#1A1A1A] font-semibold">English</span> — based on your browser</>
           )}
         </p>
 
@@ -45,7 +45,7 @@ export function TranslationBanner() {
         {locale === "vi" ? (
           <button
             onClick={() => setLocale("en")}
-            className="flex items-center gap-1.5 text-xs font-bold text-[#1A1A1A] bg-[#FCCE00] hover:bg-[#E5B800] px-3 py-1.5 rounded-lg transition-all whitespace-nowrap shrink-0"
+            className="flex items-center gap-1.5 text-xs font-bold text-white bg-[#1A1A1A] hover:bg-[#E5B800] px-3 py-1.5 rounded-lg transition-all whitespace-nowrap shrink-0"
           >
             🇬🇧 Switch to English
           </button>

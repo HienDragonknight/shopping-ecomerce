@@ -15,15 +15,18 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "YODY - Look Good - Feel Good",
+  title: "Vie'Co - Look Good - Feel Good",
   description:
-    "YODY - Thương hiệu thời trang uy tín đưa sản phẩm áo thun, polo, jeans,.. có chất liệu tốt, dịch vụ tốt đến tận tay khách hàng. Liên hệ đặt hàng: 1800 2086",
-  keywords: "yody, thời trang, áo polo, áo thun, quần jeans, áo chống nắng",
+    "Vie'Co - Thương hiệu thời trang uy tín đưa sản phẩm áo thun, polo, jeans,.. có chất liệu tốt, dịch vụ tốt đến tận tay khách hàng. Liên hệ đặt hàng: 1800 2086",
+  keywords: "vieco, thời trang, áo polo, áo thun, quần jeans, áo chống nắng",
+  icons: {
+    icon: "https://res.cloudinary.com/dev4uz63q/image/upload/f_auto,q_auto/Asset_4_xd8oe6",
+  },
   openGraph: {
-    title: "YODY - Look Good - Feel Good",
+    title: "Vie'Co - Look Good - Feel Good",
     description: "Thương hiệu thời trang uy tín với chất liệu tốt, dịch vụ tốt",
-    url: "https://yody.vn",
-    siteName: "YODY",
+    url: "https://vieco.vn",
+    siteName: "Vie'Co",
     type: "website",
   },
 };

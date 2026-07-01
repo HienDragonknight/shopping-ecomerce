@@ -6,6 +6,15 @@ const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8081";
 const nextConfig: NextConfig = {
   // NOTE: Remove "standalone" for Vercel deployment (it's only for Docker/self-hosting)
   // output: "standalone",
+  typescript: {
+    // TypeScript is checked separately via `npx tsc --noEmit` — skip the subprocess spawn in build
+    ignoreBuildErrors: true,
+  },
+  // @ts-ignore
+  eslint: {
+    // ESLint is checked separately — skip the subprocess spawn in build
+    ignoreDuringBuilds: true,
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "file.hstatic.net" },

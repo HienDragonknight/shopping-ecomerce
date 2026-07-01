@@ -190,7 +190,7 @@ export default function RegisterPage() {
 
           <p className="text-xs text-slate-400">
             Bằng cách đăng ký, bạn đồng ý với{" "}
-            <Link href="/chinh-sach-bao-mat" className="text-[#1A1A1A] font-semibold hover:text-[#FCCE00]">
+            <Link href="/chinh-sach-bao-mat" className="text-[#1A1A1A] font-semibold hover:text-[#1A1A1A]">
               Điều khoản dịch vụ
             </Link>{" "}
             của chúng tôi.
@@ -199,7 +199,7 @@ export default function RegisterPage() {
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full h-12 bg-[#FCCE00] hover:bg-[#E5B800] text-[#1A1A1A] font-bold text-base rounded-full transition-colors disabled:opacity-60"
+            className="w-full h-12 bg-[#1A1A1A] hover:bg-[#E5B800] text-white font-bold text-base rounded-full transition-colors disabled:opacity-60"
           >
             {isLoading ? (
               <span className="flex items-center gap-2">
@@ -215,7 +215,7 @@ export default function RegisterPage() {
 
         <p className="mt-6 text-center text-sm text-[#555]">
           {t.auth.hasAccount}{" "}
-          <Link href="/account/login" className="font-bold text-[#1A1A1A] hover:text-[#FCCE00] transition-colors">
+          <Link href="/account/login" className="font-bold text-[#1A1A1A] hover:text-[#1A1A1A] transition-colors">
             {t.auth.login}
           </Link>
         </p>

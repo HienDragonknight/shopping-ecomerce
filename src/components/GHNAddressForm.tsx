@@ -117,7 +117,7 @@ export function GHNAddressForm({ onSave, onCancel, initialData, saving }: Props)
   };
 
 
-  const inputCls = "w-full h-11 px-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#FCCE00] focus:border-transparent bg-white transition-all";
+  const inputCls = "w-full h-11 px-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1A1A1A] focus:border-transparent bg-white transition-all";
   const selectCls = `${inputCls} cursor-pointer disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed`;
 
   return (
@@ -276,7 +276,7 @@ export function GHNAddressForm({ onSave, onCancel, initialData, saving }: Props)
           type="checkbox"
           checked={form.isDefault}
           onChange={(e) => setForm({ ...form, isDefault: e.target.checked })}
-          className="w-4 h-4 accent-[#FCCE00] rounded"
+          className="w-4 h-4 accent-[#1A1A1A] rounded"
         />
         <span className="text-sm text-slate-600">Đặt làm địa chỉ mặc định</span>
       </label>
@@ -294,7 +294,7 @@ export function GHNAddressForm({ onSave, onCancel, initialData, saving }: Props)
         <button
           type="submit"
           disabled={saving}
-          className="flex-1 h-11 bg-[#FCCE00] hover:bg-[#E5B800] text-[#1A1A1A] font-bold rounded-full text-sm transition-colors disabled:opacity-60"
+          className="flex-1 h-11 bg-[#1A1A1A] hover:bg-[#E5B800] text-white font-bold rounded-full text-sm transition-colors disabled:opacity-60"
         >
           {saving ? "Đang lưu..." : "Lưu địa chỉ"}
         </button>

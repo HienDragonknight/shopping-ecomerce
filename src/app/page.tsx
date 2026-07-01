@@ -64,7 +64,7 @@ export default async function Home() {
         image="/images/promo-office.jpg"
         bgColor="#E8F4FD"
         textColor="#1A2B49"
-        accentColor="#FCCE00"
+        accentColor="#1A1A1A"
       />
       {polo && <ProductSection section={polo} />}
 
@@ -81,7 +81,7 @@ export default async function Home() {
               </p>
             </div>
             <div className="ml-auto flex-shrink-0">
-              <span className="inline-block bg-[#FCCE00] text-[#1A1A1A] font-extrabold text-3xl md:text-4xl px-6 py-3 rounded-xl">
+              <span className="inline-block bg-[#1A1A1A] text-white font-extrabold text-3xl md:text-4xl px-6 py-3 rounded-xl">
                 -50%
               </span>
             </div>
@@ -98,7 +98,7 @@ export default async function Home() {
         image="/images/promo-kids.jpg"
         bgColor="#E3F2FD"
         textColor="#1A2B49"
-        accentColor="#FCCE00"
+        accentColor="#1A1A1A"
       />
       {kids && <ProductSection section={kids} />}
 

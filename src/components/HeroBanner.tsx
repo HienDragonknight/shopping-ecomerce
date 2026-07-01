@@ -78,7 +78,7 @@ export function HeroBanner({ slides }: HeroBannerProps) {
       {/* Slides */}
       {slides.map((slide, i) => {
         const isActive = i === current;
-        const badgeColor = slide.badgeColor ?? "#FCCE00";
+        const badgeColor = slide.badgeColor ?? "#1A1A1A";
         const textColor = slide.textColor ?? "#ffffff";
         return (
           <div
@@ -97,7 +97,7 @@ export function HeroBanner({ slides }: HeroBannerProps) {
                 className="w-full h-full object-cover object-center"
                 onError={(e) => {
                   const t = e.target as HTMLImageElement;
-                  t.src = `https://placehold.co/1920x800/222/555?text=YODY+FASHION+${i + 1}`;
+                  t.src = `https://placehold.co/1920x800/222/555?text=VIECO+FASHION+${i + 1}`;
                 }}
               />
             </div>
@@ -118,7 +118,7 @@ export function HeroBanner({ slides }: HeroBannerProps) {
                       className={`inline-block text-xs font-black tracking-[0.2em] uppercase px-4 py-1.5 rounded-full mb-4 md:mb-6 transition-all duration-700 delay-100 transform ${isActive ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}
                       style={{
                         backgroundColor: badgeColor,
-                        color: badgeColor === "#FCCE00" || badgeColor === "#fff" ? "#1A1A1A" : "#fff",
+                        color: badgeColor === "#1A1A1A" || badgeColor === "#fff" ? "#1A1A1A" : "#fff",
                       }}
                     >
                       {slide.badge}
@@ -145,10 +145,10 @@ export function HeroBanner({ slides }: HeroBannerProps) {
                   <div className={`transition-all duration-700 delay-500 transform ${isActive ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
                     <Link
                       href={slide.linkUrl ?? "/"}
-                      className="group/btn inline-flex items-center gap-3 px-8 py-3.5 text-base font-bold rounded-full transition-all duration-300 hover:shadow-[0_0_20px_rgba(252,206,0,0.4)] hover:scale-105 active:scale-95 bg-[#FCCE00] text-[#1A1A1A]"
+                      className="group/btn inline-flex items-center gap-3 px-8 py-3.5 text-base font-bold rounded-full transition-all duration-300 hover:shadow-[0_0_20px_rgba(252,206,0,0.4)] hover:scale-105 active:scale-95 bg-[#1A1A1A] text-white"
                     >
                       {slide.ctaText ?? t.hero.defaultCta}
-                      <span className="w-6 h-6 rounded-full bg-[#1A1A1A] flex items-center justify-center text-[#FCCE00] group-hover/btn:translate-x-1 transition-transform">
+                      <span className="w-6 h-6 rounded-full bg-[#1A1A1A] flex items-center justify-center text-[#1A1A1A] group-hover/btn:translate-x-1 transition-transform">
                         <ChevronRightIcon className="w-3.5 h-3.5" />
                       </span>
                     </Link>
@@ -191,7 +191,7 @@ export function HeroBanner({ slides }: HeroBannerProps) {
               >
                 {i === current && (
                   <div
-                    className="absolute top-0 left-0 bottom-0 bg-[#FCCE00]"
+                    className="absolute top-0 left-0 bottom-0 bg-[#1A1A1A]"
                     style={{ width: `${progress}%` }}
                   />
                 )}
