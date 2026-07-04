@@ -209,7 +209,7 @@ export function Header() {
                     rel="noopener noreferrer"
                     className="block py-5 text-[13px] font-bold text-[#1A1A1A] hover:text-slate-500 transition-colors whitespace-nowrap tracking-wide relative after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-[#1A1A1A] after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 after:origin-center"
                   >
-                    AR quét <span className="text-[9px] font-black text-white bg-red-500 px-1.5 py-0.5 rounded-full uppercase tracking-normal ml-1 animate-pulse">Live</span>
+                    AR quét <span className="text-[10px] font-extrabold text-white bg-[#ff7684] px-2 py-0.5 rounded-full uppercase tracking-wider ml-1.5 inline-flex items-center justify-center">LIVE</span>
                   </Link>
                 </li>
               </ul>
@@ -388,7 +388,7 @@ export function Header() {
                       className="block text-[17px] tracking-tight font-semibold text-[#1A1A1A] mb-1"
                       onClick={() => setMobileOpen(false)}
                     >
-                      AR quét <span className="text-[9px] font-black text-white bg-red-500 px-1.5 py-0.5 rounded-full uppercase tracking-normal ml-1 animate-pulse">Live</span>
+                      AR quét <span className="text-[10px] font-extrabold text-white bg-[#ff7684] px-2 py-0.5 rounded-full uppercase tracking-wider ml-1.5 inline-flex items-center justify-center">LIVE</span>
                     </a>
                   </li>
                   {/* Auth links in mobile */}
