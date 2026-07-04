@@ -60,12 +60,14 @@ export default function ViecoTechPage() {
             </div>
 
             <div className="pt-8">
-              <Link
-                href="/ar-scan"
+              <a
+                href="https://vieco-dragon-ar.pages.dev/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center justify-center w-full py-4 rounded-2xl font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 transition-all shadow-lg active:scale-[0.98]"
               >
                 {isEn ? "Launch AR Scan ✦" : "Trải nghiệm AR Scan ✦"}
-              </Link>
+              </a>
             </div>
           </div>
 

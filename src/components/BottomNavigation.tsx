@@ -89,10 +89,10 @@ export function BottomNavigation() {
       active: pathname.startsWith("/products") || pathname.startsWith("/category") || pathname.startsWith("/collection"),
     },
     {
-      label: "Thử đồ AI",
-      href: "/try-on",
+      label: "AR Quét",
+      href: "https://vieco-dragon-ar.pages.dev/",
       icon: SparklesIcon,
-      active: pathname.startsWith("/try-on") || pathname.startsWith("/ar-scan"),
+      active: false,
       special: true, // Center highlighted button
     },
     {
@@ -117,10 +117,13 @@ export function BottomNavigation() {
           const Icon = item.icon;
           
           if (item.special) {
+            const isExternal = item.href.startsWith("http");
             return (
               <Link
                 key={index}
                 href={item.href}
+                target={isExternal ? "_blank" : undefined}
+                rel={isExternal ? "noopener noreferrer" : undefined}
                 className="flex flex-col items-center justify-center -translate-y-4"
               >
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${

@@ -201,14 +201,16 @@ export function Header() {
                 {navCategories.map((cat) => (
                   <NavItem key={cat.name} category={cat} />
                 ))}
-                {/* AR Scan (Coming soon) Link */}
-                <li className="relative group">
-                  <span className="cursor-pointer block py-5 text-[13px] font-bold text-[#1A1A1A] hover:text-slate-500 transition-colors whitespace-nowrap tracking-wide relative">
-                    AR quét <span className="text-[9px] font-black text-white bg-red-500 px-1.5 py-0.5 rounded-full uppercase tracking-normal ml-1 animate-pulse">Soon</span>
-                  </span>
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-48 bg-white border border-slate-100 shadow-lg rounded-b-xl p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 text-center">
-                    <p className="text-xs text-slate-500 font-medium">Tính năng AR Heritage Scan đang được phát triển!</p>
-                  </div>
+                {/* AR Scan Link */}
+                <li className="relative">
+                  <Link
+                    href="https://vieco-dragon-ar.pages.dev/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block py-5 text-[13px] font-bold text-[#1A1A1A] hover:text-slate-500 transition-colors whitespace-nowrap tracking-wide relative after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-[#1A1A1A] after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 after:origin-center"
+                  >
+                    AR quét <span className="text-[9px] font-black text-white bg-red-500 px-1.5 py-0.5 rounded-full uppercase tracking-normal ml-1 animate-pulse">Live</span>
+                  </Link>
                 </li>
               </ul>
             </nav>
@@ -377,6 +379,18 @@ export function Header() {
                       )}
                     </li>
                   ))}
+                  {/* Mobile Menu AR Scan Link */}
+                  <li className="border-b border-slate-200/70 py-4">
+                    <a
+                      href="https://vieco-dragon-ar.pages.dev/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-[17px] tracking-tight font-semibold text-[#1A1A1A] mb-1"
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      AR quét <span className="text-[9px] font-black text-white bg-red-500 px-1.5 py-0.5 rounded-full uppercase tracking-normal ml-1 animate-pulse">Live</span>
+                    </a>
+                  </li>
                   {/* Auth links in mobile */}
                   <li>
                     <Link
