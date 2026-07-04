@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 // Backend URL: use env var (set on Vercel dashboard), fallback to localhost for dev
-const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8081";
+const BACKEND_URL = process.env.BACKEND_URL ?? "https://fashion-backend-production-8e3b.up.railway.app";
 
 const nextConfig: NextConfig = {
   // NOTE: Remove "standalone" for Vercel deployment (it's only for Docker/self-hosting)

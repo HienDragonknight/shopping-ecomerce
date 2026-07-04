@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "https://fashion-backend-production-8e3b.up.railway.app/api";
 
 /**
  * POST /api/try-on

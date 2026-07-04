@@ -5,7 +5,7 @@ import type {
   ApiBlogPost,
 } from "@/types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8081/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://fashion-backend-production-8e3b.up.railway.app/api";
 
 /**
  * Generic fetcher — throws on HTTP error.

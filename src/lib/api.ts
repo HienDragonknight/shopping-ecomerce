@@ -5,7 +5,7 @@ import axios from "axios";
 const API_BASE =
   typeof window !== "undefined"
     ? "/api"
-    : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api");
+    : (process.env.NEXT_PUBLIC_API_URL || "https://fashion-backend-production-8e3b.up.railway.app/api");
 
 const api = axios.create({
   baseURL: API_BASE,
