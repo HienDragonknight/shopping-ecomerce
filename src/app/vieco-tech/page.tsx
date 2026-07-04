@@ -19,7 +19,7 @@ export default function ViecoTechPage() {
           ✦ Innovation Hub
         </span>
         <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
-          VIE'CO TECHNOLOGY
+          VIE&apos;CO TECHNOLOGY
         </h1>
         <p className="text-slate-400 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
           {isEn

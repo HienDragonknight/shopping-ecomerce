@@ -75,12 +75,16 @@ export default function ArScanPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // Stop camera when leaving page or toggling off
-  useEffect(() => {
-    return () => {
-      stopCamera();
-    };
-  }, []);
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraActive(false);
+  };
 
   const startCamera = async () => {
     setCameraError("");
@@ -99,16 +103,12 @@ export default function ArScanPage() {
     }
   };
 
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    setIsCameraActive(false);
-  };
+  // Stop camera when leaving page or toggling off
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
 
   const handleZoomIn = () => setZoom(z => Math.min(z + 0.15, 1.8));
   const handleZoomOut = () => setZoom(z => Math.max(z - 0.15, 0.7));
@@ -128,7 +128,7 @@ export default function ArScanPage() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-2 text-sm text-slate-400">
           <Link href="/" className="hover:text-white">Home</Link>
           <span>/</span>
-          <Link href="/vieco-tech" className="hover:text-white">Vie'Co Tech</Link>
+          <Link href="/vieco-tech" className="hover:text-white">Vie&apos;Co Tech</Link>
           <span>/</span>
           <span className="font-semibold text-white">AR Heritage Scan</span>
         </div>

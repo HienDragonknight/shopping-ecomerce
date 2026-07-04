@@ -44,12 +44,13 @@ export default function ProductDetailPage({ params }: PageProps) {
   const [addedToCart, setAddedToCart] = useState(false);
   const [addError, setAddError] = useState("");
   const [skuCopied, setSkuCopied] = useState(false);
-  const [imgExpanded, setImgExpanded] = useState(false);
+  const [activeImgIndex, setActiveImgIndex] = useState(0);
   const tryOnRef = useRef<HTMLDivElement>(null);
   const infoRef = useRef<HTMLDivElement>(null);
 
   // Re-fetch when slug OR locale changes — axios interceptor sends Accept-Language automatically
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     api.get(`/products/${slug}`)
       .then((r) => {
@@ -61,6 +62,12 @@ export default function ProductDetailPage({ params }: PageProps) {
       .catch(() => setProduct(null))
       .finally(() => setLoading(false));
   }, [slug, locale]);
+
+  // Reset active image index when variant changes
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setActiveImgIndex(0);
+  }, [selectedVariant]);
 
   // All product images stacked (Yody style)
   const allImages = (() => {
@@ -182,97 +189,136 @@ export default function ProductDetailPage({ params }: PageProps) {
         </nav>
 
         {/* Main Layout: Left images + Right sticky info (2 cols) */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_450px] gap-8 items-start">
 
-          {/* ── LEFT: Stacked Images (Yody/Zara style) ── */}
-          <div className="space-y-2 relative">
-            {allImages.length === 0 ? (
-              <div className="aspect-[3/4] bg-slate-200 rounded-2xl flex items-center justify-center text-slate-400 text-sm">
-                Chưa có ảnh sản phẩm
-              </div>
-            ) : (
-              <>
-                {/* Show first image always, rest based on expanded state */}
-                {(imgExpanded ? allImages : allImages.slice(0, 3)).map((src, i) => (
-                  <div
-                    key={i}
-                    className="relative overflow-hidden rounded-2xl bg-white"
+          {/* ── LEFT: Interactive Image Gallery (Vertical thumbnails + Main image) ── */}
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Vertical thumbnails list (desktop only) */}
+            {allImages.length > 0 && (
+              <div className="hidden lg:flex flex-col gap-2.5 w-[80px] shrink-0 max-h-[550px] overflow-y-auto scrollbar-none">
+                {allImages.map((src, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveImgIndex(idx)}
+                    className={`relative aspect-[3/4] rounded-xl overflow-hidden border-2 transition-all bg-white ${
+                      activeImgIndex === idx ? "border-[#fcaf17]" : "border-transparent hover:border-gray-300"
+                    }`}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={src}
-                      alt={`${product.name} - ảnh ${i + 1}`}
-                      className="w-full object-cover"
-                      style={{ aspectRatio: "3/4" }}
-                    />
-                    {/* Discount badge on first image */}
-                    {i === 0 && discountPct > 0 && (
-                      <div className="absolute top-3 left-3 bg-[#E53E3E] text-white text-[11px] font-black px-2 py-1 rounded-md">
-                        -{discountPct}%
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-                {/* Collapse/Expand button */}
-                {allImages.length > 3 && (
-                  <button
-                    onClick={() => setImgExpanded(e => !e)}
-                    className="w-full py-3 text-sm font-bold text-[#1A3459] bg-white rounded-2xl border border-slate-200 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
-                  >
-                    {imgExpanded ? (
-                      <><span>{t.product.collapse}</span> <span className="text-xs">▲</span></>
-                    ) : (
-                      <><span>{t.product.showMoreImages(allImages.length - 3)}</span> <span className="text-xs">▼</span></>
-                    )}
+                    <img src={src} alt="" className="w-full h-full object-contain" />
                   </button>
-                )}
-              </>
+                ))}
+              </div>
+            )}
+
+            {/* Main Image Container */}
+            <div className="relative flex-1 aspect-[3/4] rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-sm">
+              {allImages.length > 0 ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={allImages[activeImgIndex]}
+                    alt={product.name}
+                    className="w-full h-full object-contain"
+                  />
+                  {/* Discount badge */}
+                  {discountPct > 0 && (
+                    <div className="absolute top-4 left-4 bg-[#FF2D37] text-white text-[11px] font-black px-2 py-1 rounded-md shadow-sm">
+                      -{discountPct}%
+                    </div>
+                  )}
+                  {/* Navigation arrows at the bottom right */}
+                  {allImages.length > 1 && (
+                    <div className="absolute bottom-4 right-4 flex gap-2">
+                      <button
+                        onClick={() => setActiveImgIndex((prev) => (prev - 1 + allImages.length) % allImages.length)}
+                        className="w-10 h-10 rounded-full bg-white/90 hover:bg-white text-gray-800 flex items-center justify-center shadow-md transition-all active:scale-95 border border-gray-100"
+                      >
+                        <span className="text-xl font-bold">‹</span>
+                      </button>
+                      <button
+                        onClick={() => setActiveImgIndex((prev) => (prev + 1) % allImages.length)}
+                        className="w-10 h-10 rounded-full bg-white/90 hover:bg-white text-gray-800 flex items-center justify-center shadow-md transition-all active:scale-95 border border-gray-100"
+                      >
+                        <span className="text-xl font-bold">›</span>
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400 text-sm">
+                  Chưa có ảnh sản phẩm
+                </div>
+              )}
+            </div>
+
+            {/* Horizontal thumbnails list (mobile only) */}
+            {allImages.length > 0 && (
+              <div className="flex lg:hidden gap-2 overflow-x-auto pb-2 scrollbar-none mt-2">
+                {allImages.map((src, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveImgIndex(idx)}
+                    className={`relative w-16 h-20 rounded-lg overflow-hidden border-2 shrink-0 transition-all bg-white ${
+                      activeImgIndex === idx ? "border-[#fcaf17]" : "border-transparent"
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={src} alt="" className="w-full h-full object-contain" />
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
           {/* ── RIGHT: Sticky Info Panel ── */}
           <div
             ref={infoRef}
-            className="lg:sticky lg:top-4 space-y-5 bg-transparent"
+            className="lg:sticky lg:top-4 bg-white rounded-2xl border border-gray-100 p-6 shadow-sm space-y-6"
           >
-            {/* Price */}
+            {/* Price & Discount */}
             <div>
-              <div className="flex items-baseline gap-3 mb-1.5">
-                <span className="text-[28px] font-black text-[#1A3459] leading-none">
+              <div className="flex items-baseline gap-3 flex-wrap">
+                <span className="text-2xl lg:text-3xl font-black text-[#FF2D37]">
                   {effectivePrice.toLocaleString("vi-VN")}đ
                 </span>
                 {product.salePrice && (
-                  <span className="text-sm text-[#999] line-through font-medium">
-                    {product.basePrice.toLocaleString("vi-VN")}đ
-                  </span>
+                  <>
+                    <span className="text-sm lg:text-base text-gray-400 line-through font-medium">
+                      {product.basePrice.toLocaleString("vi-VN")}đ
+                    </span>
+                    <span className="bg-[#FF2D37] text-white text-[11px] font-black px-1.5 py-0.5 rounded">
+                      -{discountPct}%
+                    </span>
+                  </>
                 )}
               </div>
 
-              <h1 className="text-[15px] font-semibold text-[#1A1A1A] leading-snug mb-1.5">
+              {/* Product Name */}
+              <h1 className="text-lg lg:text-xl font-bold text-[#1A1A1A] leading-snug mt-2">
                 {product.name}
               </h1>
 
               {/* SKU */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-[#999]">{selectedVariant?.sku || "—"}</span>
-                <button onClick={copySku} className="text-[#999] hover:text-[#1A3459] transition-colors">
+              <div className="flex items-center gap-1.5 mt-2">
+                <span className="text-xs text-gray-400 font-mono">{selectedVariant?.sku || "—"}</span>
+                <button onClick={copySku} className="text-gray-400 hover:text-[#fcaf17] transition-colors">
                   {skuCopied ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
                 </button>
               </div>
 
               {/* Rating */}
               {product.avgRating && (
-                <div className="flex items-center gap-1 mt-2">
+                <div className="flex items-center gap-1 mt-2.5">
                   {[1, 2, 3, 4, 5].map(s => (
                     <Star
                       key={s}
                       size={13}
-                      fill={s <= Math.round(product.avgRating!) ? "#1A1A1A" : "none"}
-                      stroke={s <= Math.round(product.avgRating!) ? "#1A1A1A" : "#ccc"}
+                      fill={s <= Math.round(product.avgRating!) ? "#fcaf17" : "none"}
+                      stroke={s <= Math.round(product.avgRating!) ? "#fcaf17" : "#ccc"}
                     />
                   ))}
-                  <span className="text-xs text-[#666] ml-1">({product.reviewCount} đánh giá)</span>
+                  <span className="text-xs text-gray-500 ml-1">({product.reviewCount} đánh giá)</span>
                 </div>
               )}
             </div>
@@ -280,29 +326,28 @@ export default function ProductDetailPage({ params }: PageProps) {
             {/* ── Colors ── */}
             {uniqueColors.length > 0 && (
               <div>
-                <p className="text-[13px] font-semibold text-[#1A1A1A] mb-2.5">
-                  {t.product.color}: <span className="font-bold">{currentColor || t.product.chooseColor}</span>
+                <p className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wider mb-2.5">
+                  {t.product.color}: <span className="font-bold text-gray-600 normal-case">{currentColor || t.product.chooseColor}</span>
                 </p>
                 <div className="flex gap-2.5 flex-wrap">
                   {uniqueColors.map((v) => {
                     const isActive = currentColor === v.color;
-                    // Use variant image or colorHex as swatch background
                     const swatchBg = v.colorHex || "#ccc";
                     return (
                       <button
                         key={v.color!}
                         onClick={() => selectByColor(v.color!)}
                         title={v.color!}
-                        className={`relative w-10 h-10 rounded-full border-2 transition-all shrink-0 ${
+                        className={`relative w-9 h-9 rounded-full border transition-all shrink-0 ${
                           isActive
-                            ? "border-[#1A1A1A] shadow-[0_0_0_1px_#1A1A1A]"
-                            : "border-[#ddd] hover:border-[#aaa]"
+                            ? "ring-2 ring-[#fcaf17] ring-offset-2 border-transparent"
+                            : "border-gray-200 hover:border-gray-400"
                         }`}
                         style={{ backgroundColor: swatchBg }}
                       >
                         {/* Pattern overlay for light colors */}
                         {swatchBg === "#FFFFFF" || swatchBg === "#fff" ? (
-                          <span className="absolute inset-[3px] rounded-full border border-[#eee]" />
+                          <span className="absolute inset-[2px] rounded-full border border-gray-100" />
                         ) : null}
                       </button>
                     );
@@ -315,10 +360,10 @@ export default function ProductDetailPage({ params }: PageProps) {
             {sizesForColor.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-2.5">
-                  <p className="text-[13px] font-semibold text-[#1A1A1A]">
-                    {t.product.size}: <span className="font-bold">{currentSize || t.product.chooseSize}</span>
+                  <p className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wider">
+                    {t.product.size}: <span className="font-bold text-gray-600 normal-case">{currentSize || t.product.chooseSize}</span>
                   </p>
-                  <button className="text-xs text-[#1A3459] font-semibold hover:underline">
+                  <button className="text-xs text-gray-500 font-medium hover:text-[#fcaf17] hover:underline transition-colors">
                     {t.product.sizeGuide}
                   </button>
                 </div>
@@ -331,12 +376,12 @@ export default function ProductDetailPage({ params }: PageProps) {
                         key={v.id}
                         onClick={() => !outOfStock && selectBySize(v.size!)}
                         disabled={outOfStock}
-                        className={`min-w-[50px] h-10 px-3 rounded-full text-[13px] font-semibold transition-all border ${
+                        className={`min-w-[54px] h-10 px-3 rounded-full text-xs font-bold transition-all border ${
                           isActive
-                            ? "border-[#1A1A1A] border-2 bg-white text-[#1A1A1A] shadow-sm"
+                            ? "border-2 border-[#fcaf17] bg-white text-[#fcaf17] shadow-sm"
                             : outOfStock
-                            ? "border-[#e0e0e0] text-[#ccc] line-through cursor-not-allowed bg-[#fafafa]"
-                            : "border-[#ccc] text-[#333] hover:border-[#1A3459] bg-white"
+                            ? "border-gray-100 text-gray-300 line-through cursor-not-allowed bg-gray-50"
+                            : "border-gray-200 text-gray-700 hover:border-[#fcaf17] bg-white"
                         }`}
                       >
                         {v.size}
@@ -347,13 +392,13 @@ export default function ProductDetailPage({ params }: PageProps) {
               </div>
             )}
 
-            {/* ── Quantity + Add to cart (Yody style) ── */}
-            <div className="flex items-center gap-3">
+            {/* ── Quantity + Add to cart ── */}
+            <div className="flex items-center gap-3 pt-2">
               {/* Qty stepper */}
-              <div className="flex items-center border border-[#ddd] rounded-full h-12 px-1 bg-white shrink-0">
+              <div className="flex items-center border border-gray-200 rounded-full h-12 px-1 bg-white shrink-0">
                 <button
                   onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                  className="w-9 h-9 flex items-center justify-center text-[#333] hover:bg-[#f5f5f5] rounded-full text-xl font-light transition-colors"
+                  className="w-9 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 rounded-full text-xl font-light transition-colors"
                 >
                   −
                 </button>
@@ -362,7 +407,7 @@ export default function ProductDetailPage({ params }: PageProps) {
                 </span>
                 <button
                   onClick={() => setQuantity(q => Math.min(selectedVariant?.stockQty || 99, q + 1))}
-                  className="w-9 h-9 flex items-center justify-center text-[#333] hover:bg-[#f5f5f5] rounded-full text-xl font-light transition-colors"
+                  className="w-9 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50 rounded-full text-xl font-light transition-colors"
                 >
                   +
                 </button>
@@ -372,12 +417,12 @@ export default function ProductDetailPage({ params }: PageProps) {
               <button
                 onClick={handleAddToCart}
                 disabled={cartLoading || !inStock}
-                className={`flex-1 h-12 rounded-full font-bold text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2.5 shadow-sm ${
+                className={`flex-1 h-12 rounded-full font-bold text-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-md ${
                   addedToCart
                     ? "bg-emerald-500 text-white"
                     : inStock
-                    ? "bg-[#1A1A1A] text-white hover:bg-[#f5c500]"
-                    : "bg-[#1A1A1A]/50 text-white/50 cursor-not-allowed"
+                    ? "bg-[#fcaf17] hover:bg-[#e59e10] text-[#1A1A1A]"
+                    : "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
                 }`}
               >
                 <ShoppingBag size={17} strokeWidth={2.5} />
@@ -389,7 +434,7 @@ export default function ProductDetailPage({ params }: PageProps) {
             <button
               onClick={handleBuyNow}
               disabled={!inStock || cartLoading}
-              className="w-full h-12 bg-[#1A3459] hover:bg-[#142a47] text-white font-bold text-sm rounded-full transition-all active:scale-[0.98] disabled:opacity-40"
+              className="w-full h-12 bg-[#1A3459] hover:bg-[#142a47] text-white font-bold text-sm rounded-full transition-all active:scale-[0.98] disabled:opacity-40 shadow-md"
             >
               {t.product.buyNow}
             </button>
@@ -407,7 +452,7 @@ export default function ProductDetailPage({ params }: PageProps) {
                 </svg>
                 Try On
               </div>
-              <span className="text-[10px] font-black bg-[#FF2D78] text-white px-1.5 py-0.5 rounded-full">NEW</span>
+              <span className="text-[10px] font-black bg-[#FF2D78] text-white px-1.5 py-0.5 rounded-full animate-pulse">NEW</span>
             </button>
 
             {addError && (
@@ -415,39 +460,39 @@ export default function ProductDetailPage({ params }: PageProps) {
             )}
 
             {/* View in store */}
-            <button className="flex items-center gap-2 text-[13px] text-[#1A3459] font-semibold hover:underline transition-colors w-full">
-              <Store size={16} className="text-[#1A3459] shrink-0" />
+            <button className="flex items-center justify-center gap-2 text-sm text-gray-500 font-medium hover:text-[#fcaf17] hover:underline transition-colors w-full py-2 border border-gray-100 rounded-xl bg-white shadow-sm">
+              <Store size={16} className="text-gray-400 shrink-0" />
               {t.product.viewInStore}
             </button>
 
             {/* ── YODY cam kết ── */}
-            <div>
-              <p className="text-[13px] font-bold text-[#1A1A1A] mb-3 flex items-center gap-2">
+            <div className="border-t border-gray-100 pt-5">
+              <p className="text-sm font-bold text-[#1A1A1A] mb-3 flex items-center gap-2">
                 {t.promises.title}
-                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white text-xs">✓</span>
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px]">✓</span>
               </p>
               <div className="grid grid-cols-2 gap-2.5">
                 {[
                   {
-                    icon: <RefreshCw size={18} className="text-[#1A3459] shrink-0" />,
+                    icon: <RefreshCw size={18} className="text-[#1A3459] shrink-0 mt-0.5" />,
                     title: t.promises.freeReturn,
                     desc: t.promises.freeReturnDesc,
                     link: t.promises.viewPolicy,
                   },
                   {
-                    icon: <Truck size={18} className="text-[#1A3459] shrink-0" />,
+                    icon: <Truck size={18} className="text-[#1A3459] shrink-0 mt-0.5" />,
                     title: t.promises.delivery,
                     desc: t.promises.deliveryDesc,
                     link: null,
                   },
                   {
-                    icon: <ShieldCheck size={18} className="text-[#1A3459] shrink-0" />,
+                    icon: <ShieldCheck size={18} className="text-[#1A3459] shrink-0 mt-0.5" />,
                     title: t.promises.security,
                     desc: t.promises.securityDesc,
                     link: null,
                   },
                   {
-                    icon: <MessageCircle size={18} className="text-[#1A3459] shrink-0" />,
+                    icon: <MessageCircle size={18} className="text-[#1A3459] shrink-0 mt-0.5" />,
                     title: t.promises.support,
                     desc: t.promises.supportDesc,
                     link: t.promises.chatNow,
@@ -456,16 +501,16 @@ export default function ProductDetailPage({ params }: PageProps) {
                 ].map((item, i) => (
                   <div
                     key={i}
-                    className="flex items-start gap-2.5 bg-white rounded-xl border border-[#eee] p-3"
+                    className="flex items-start gap-2.5 bg-gray-50 rounded-xl border border-gray-100 p-3 hover:bg-gray-100/50 transition-colors"
                   >
                     {item.icon}
                     <div className="min-w-0">
-                      <p className="text-[12px] font-bold text-[#1A1A1A] leading-tight">
+                      <p className="text-[11px] font-bold text-[#1A1A1A] leading-tight">
                         {item.title}
                       </p>
-                      <p className="text-[11px] text-[#666] leading-tight mt-0.5">{item.desc}</p>
+                      <p className="text-[10px] text-gray-500 leading-tight mt-0.5">{item.desc}</p>
                       {item.link && (
-                        <button className="text-[11px] text-[#1A3459] font-semibold hover:underline mt-0.5">
+                        <button className="text-[10px] text-[#1A3459] font-semibold hover:underline mt-0.5 block">
                           {item.link}
                         </button>
                       )}
@@ -490,20 +535,20 @@ export default function ProductDetailPage({ params }: PageProps) {
       {/* ── Description ── */}
       <div className="max-w-[1200px] mx-auto px-4">
         {product.description && (
-          <div className="mt-6 bg-white rounded-2xl p-6 border border-[#eee]">
-            <h2 className="text-base font-bold text-[#1A3459] mb-4 pb-3 border-b border-[#f0f0f0]">
+          <div className="mt-6 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+            <h2 className="text-base font-bold text-[#1A3459] mb-4 pb-3 border-b border-gray-100">
               {t.product.description}
             </h2>
-            <div className="text-sm text-[#444] leading-relaxed whitespace-pre-line">
+            <div className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
               {product.description}
             </div>
           </div>
         )}
 
         {/* ── AI Virtual Try-On Section ── */}
-        <div ref={tryOnRef} id="try-on-section" className="mt-6 bg-white rounded-2xl border border-[#eee] overflow-hidden">
+        <div ref={tryOnRef} id="try-on-section" className="mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           {/* Section header */}
-          <div className="flex items-center gap-3 px-6 py-4 border-b border-[#f0f0f0]" style={{ background: "#fff5f8" }}>
+          <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100" style={{ background: "#fff5f8" }}>
             <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#FF2D7820" }}>
               <svg className="w-5 h-5" style={{ color: "#FF2D78" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.57a1 1 0 00.99.86H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.86l.58-3.57a2 2 0 00-1.34-2.23z" />
@@ -528,8 +573,8 @@ export default function ProductDetailPage({ params }: PageProps) {
         </div>
 
         {/* ── FAQ ── */}
-        <div className="mt-6 bg-white rounded-2xl p-6 border border-[#eee]">
-          <h2 className="text-base font-bold text-[#1A3459] mb-4 pb-3 border-b border-[#f0f0f0]">
+        <div className="mt-6 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm mb-16">
+          <h2 className="text-base font-bold text-[#1A3459] mb-4 pb-3 border-b border-gray-100">
             {t.product.faq}
           </h2>
           <div className="space-y-3">
@@ -550,16 +595,16 @@ export default function ProductDetailPage({ params }: PageProps) {
 function FaqItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border border-[#f0f0f0] rounded-xl overflow-hidden">
+    <div className="border border-gray-100 rounded-xl overflow-hidden">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-[#fafafa] transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-gray-50 transition-colors"
       >
         <span className="text-sm font-semibold text-[#1A1A1A]">{question}</span>
-        <span className={`text-[#666] transition-transform duration-200 ${open ? "rotate-180" : ""}`}>▾</span>
+        <span className={`text-gray-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}>▾</span>
       </button>
       {open && (
-        <div className="px-4 pb-4 text-sm text-[#555] leading-relaxed border-t border-[#f0f0f0] pt-3 bg-[#fafafa]">
+        <div className="px-4 pb-4 text-sm text-gray-500 leading-relaxed border-t border-gray-100 pt-3 bg-gray-50">
           {answer}
         </div>
       )}

@@ -3,17 +3,33 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
-import { ArrowLeft, Save, Plus, X, Tag, Box, RefreshCw, Image as ImageIcon, Trash2, ChevronDown, ChevronUp, Languages, Loader2, CheckCircle } from "lucide-react";
+import { ArrowLeft, Save, Plus, X, Tag, Box, RefreshCw, Image as ImageIcon, Trash2, ChevronDown, ChevronUp, Languages, Loader2, CheckCircle, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 interface ProductFormProps {
   productId?: string;
 }
 
+interface FormVariant {
+  id?: number;
+  size: string;
+  color: string;
+  colorHex: string;
+  sku: string;
+  stockQty: number;
+  priceAdjustment: number;
+  imageUrls: string[];
+}
+
+const AVAILABLE_SIZES = {
+  tops: ["XS", "S", "M", "L", "XL", "2XL", "3XL"],
+  bottoms: ["28", "29", "30", "31", "32", "33", "34", "35", "36", "26", "27", "XS", "S", "M", "L", "XL", "2XL"]
+};
+
 export function ProductForm({ productId }: ProductFormProps) {
   const router = useRouter();
-  const [categories, setCategories] = useState<any[]>([]);
-  const [brands, setBrands] = useState<any[]>([]);
+  const [categories, setCategories] = useState<{ id: number; name: string; slug: string }[]>([]);
+  const [brands, setBrands] = useState<{ id: number; name: string; slug: string }[]>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!!productId);
   const [error, setError] = useState("");
@@ -56,16 +72,20 @@ export function ProductForm({ productId }: ProductFormProps) {
   const [translateNameDone, setTranslateNameDone] = useState(false);
   const [translateDescDone, setTranslateDescDone] = useState(false);
 
-  const [variants, setVariants] = useState<any[]>([
+  // Multi-size selection state
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [sizeType, setSizeType] = useState<"tops" | "bottoms">("tops");
+
+  const [variants, setVariants] = useState<FormVariant[]>([
     { size: "S", color: "Đen", colorHex: "#000000", sku: "", stockQty: 10, priceAdjustment: 0, imageUrls: [] }
   ]);
 
-  // Track which variant has its image editor expanded
-  const [expandedVariantIndex, setExpandedVariantIndex] = useState<number | null>(null);
+  // Track which color group has its image editor expanded
+  const [expandedColorGroup, setExpandedColorGroup] = useState<string | null>(null);
   
   // Temp inputs for adding images
   const [newProductImg, setNewProductImg] = useState("");
-  const [newVariantImg, setNewVariantImg] = useState<string[]>([]);
+  const [newColorGroupImg, setNewColorGroupImg] = useState("");
 
   // Load categories + brands with sessionStorage cache (faster on revisit)
   useEffect(() => {
@@ -91,7 +111,6 @@ export function ProductForm({ productId }: ProductFormProps) {
     Promise.all([catPromise, brandPromise]).then(([cats, brands]) => {
       setCategories(cats);
       setBrands(brands);
-      if (!productId) setNewVariantImg(new Array(1).fill(""));
     });
   }, [productId]);
 
@@ -118,33 +137,172 @@ export function ProductForm({ productId }: ProductFormProps) {
           brandId: p.brand?.id ? p.brand.id.toString() : "",
           imageUrls: p.imageUrls || [],
         });
-        const loadedVariants = p.variants && p.variants.length > 0
+        const loadedVariants: FormVariant[] = p.variants && p.variants.length > 0
           ? p.variants.map((v: { imageUrls?: string | string[] | null; [key: string]: unknown }) => ({
               ...v,
+              size: (v.size as string) || "S",
+              color: (v.color as string) || "Đen",
+              colorHex: (v.colorHex as string) || "#000000",
+              sku: (v.sku as string) || "",
+              stockQty: (v.stockQty as number) || 0,
+              priceAdjustment: (v.priceAdjustment as number) || 0,
               imageUrls: Array.isArray(v.imageUrls) ? v.imageUrls : (v.imageUrls ? [v.imageUrls] : [])
             }))
           : [{ size: "S", color: "Đen", colorHex: "#000000", sku: "", stockQty: 10, priceAdjustment: 0, imageUrls: [] }];
         setVariants(loadedVariants);
-        setNewVariantImg(new Array(loadedVariants.length).fill(""));
+
+        // Pre-fill selected sizes based on loaded variants
+        const uniqueLoadedSizes = Array.from(new Set(loadedVariants.map((v: FormVariant) => v.size).filter(Boolean))) as string[];
+        setSelectedSizes(uniqueLoadedSizes);
+        
+        // Guess size type
+        const isNumericSize = uniqueLoadedSizes.some(s => !isNaN(Number(s)));
+        if (isNumericSize) {
+          setSizeType("bottoms");
+        } else {
+          setSizeType("tops");
+        }
       })
       .catch(() => setError("Lỗi kết nối. Vui lòng thử lại."))
       .finally(() => setLoading(false));
   }, [productId]);
 
 
-  const addVariant = () => {
-    setVariants([...variants, { size: "M", color: "Đen", colorHex: "#000000", sku: "", stockQty: 10, priceAdjustment: 0, imageUrls: [] }]);
-    setNewVariantImg([...newVariantImg, ""]);
+  const addColorGroup = () => {
+    let colorIndex = 1;
+    let newColorName = `Màu mới ${colorIndex}`;
+    while (variants.some(v => (v.color ?? "Đen") === newColorName)) {
+      colorIndex++;
+      newColorName = `Màu mới ${colorIndex}`;
+    }
+    setVariants([...variants, {
+      size: "S",
+      color: newColorName,
+      colorHex: "#000000",
+      sku: "",
+      stockQty: 10,
+      priceAdjustment: 0,
+      imageUrls: []
+    }]);
   };
 
-  const removeVariant = (i: number) => {
-    setVariants(variants.filter((_, idx) => idx !== i));
-    setNewVariantImg(newVariantImg.filter((_, idx) => idx !== i));
-    if (expandedVariantIndex === i) setExpandedVariantIndex(null);
+  const removeColorGroup = (colorName: string) => {
+    setVariants(variants.filter(v => (v.color ?? "Đen") !== colorName));
+    if (expandedColorGroup === colorName) setExpandedColorGroup(null);
   };
 
-  const updateVariant = (i: number, field: string, value: any) => {
-    setVariants(variants.map((v, idx) => idx === i ? { ...v, [field]: value } : v));
+  const updateColorGroupName = (oldName: string, newName: string) => {
+    setVariants(variants.map(v => (v.color ?? "Đen") === oldName ? { ...v, color: newName } : v));
+    if (expandedColorGroup === oldName) setExpandedColorGroup(newName);
+  };
+
+  const updateColorGroupHex = (colorName: string, hex: string) => {
+    setVariants(variants.map(v => (v.color ?? "Đen") === colorName ? { ...v, colorHex: hex } : v));
+  };
+
+  const addColorGroupImage = (colorName: string, url: string) => {
+    if (!url.trim()) return;
+    setVariants(variants.map(v => (v.color ?? "Đen") === colorName ? {
+      ...v,
+      imageUrls: [...(v.imageUrls || []), url.trim()]
+    } : v));
+  };
+
+  const removeColorGroupImage = (colorName: string, imgIdx: number) => {
+    setVariants(variants.map(v => {
+      if ((v.color ?? "Đen") === colorName) {
+        return {
+          ...v,
+          imageUrls: (v.imageUrls || []).filter((_: string, i: number) => i !== imgIdx)
+        };
+      }
+      return v;
+    }));
+  };
+
+  const toggleSizeForColor = (colorName: string, size: string) => {
+    const groupVariants = variants.filter(v => (v.color ?? "Đen") === colorName);
+    const hasSize = groupVariants.some(v => v.size === size);
+    if (hasSize) {
+      if (groupVariants.length === 1) {
+        setError("Mỗi nhóm màu phải có ít nhất một kích thước. Để xóa hoàn toàn, hãy chọn xóa nhóm màu.");
+        setTimeout(() => setError(""), 4000);
+        return;
+      }
+      setVariants(variants.filter(v => !((v.color ?? "Đen") === colorName && v.size === size)));
+    } else {
+      const baseVariant = groupVariants[0] || { color: colorName, colorHex: "#000000", imageUrls: [] };
+      setVariants([...variants, {
+        size,
+        color: colorName,
+        colorHex: baseVariant.colorHex || "#000000",
+        sku: "",
+        stockQty: 10,
+        priceAdjustment: 0,
+        imageUrls: baseVariant.imageUrls || []
+      }]);
+    }
+  };
+
+  // Bulk Apply Sizes to Variants
+  const applySelectedSizesToVariants = () => {
+    if (selectedSizes.length === 0) {
+      setError("Vui lòng chọn ít nhất một kích thước!");
+      return;
+    }
+
+    // Capture current colors from existing variants to maintain them
+    const currentColors = Array.from(
+      new Map(variants.map(v => [v.color, { color: v.color, colorHex: v.colorHex, imageUrls: v.imageUrls || [] }])).values()
+    );
+
+    const newVariants: FormVariant[] = [];
+    
+    // For each unique color, generate variants for all selected sizes
+    currentColors.forEach(colorObj => {
+      selectedSizes.forEach(size => {
+        // Check if this variant already exists to preserve its values
+        const existing = variants.find(v => v.color === colorObj.color && v.size === size);
+        if (existing) {
+          newVariants.push(existing);
+        } else {
+          newVariants.push({
+            size,
+            color: colorObj.color ?? "Đen",
+            colorHex: colorObj.colorHex || "#000000",
+            sku: "",
+            stockQty: 10,
+            priceAdjustment: 0,
+            imageUrls: colorObj.imageUrls || []
+          });
+        }
+      });
+    });
+
+    // If no colors are defined yet, just generate variants with default color "Đen"
+    if (newVariants.length === 0) {
+      selectedSizes.forEach(size => {
+        newVariants.push({
+          size,
+          color: "Đen",
+          colorHex: "#000000",
+          sku: "",
+          stockQty: 10,
+          priceAdjustment: 0,
+          imageUrls: []
+        });
+      });
+    }
+
+    setVariants(newVariants);
+    setSuccess(`Đã áp dụng ${selectedSizes.length} kích thước cho các biến thể!`);
+    setTimeout(() => setSuccess(""), 3000);
+  };
+
+  const toggleSizeSelection = (size: string) => {
+    setSelectedSizes(prev => 
+      prev.includes(size) ? prev.filter(s => s !== size) : [...prev, size]
+    );
   };
 
   // Add image to product gallery
@@ -168,35 +326,6 @@ export function ProductForm({ productId }: ProductFormProps) {
     }));
   };
 
-  // Add image to a specific variant
-  const addVariantImage = (vIdx: number) => {
-    const url = newVariantImg[vIdx]?.trim();
-    if (!url) return;
-
-    setVariants(prev => prev.map((v, idx) => {
-      if (idx === vIdx) {
-        return {
-          ...v,
-          imageUrls: [...(v.imageUrls || []), url]
-        };
-      }
-      return v;
-    }));
-
-    setNewVariantImg(prev => prev.map((val, idx) => idx === vIdx ? "" : val));
-  };
-
-  const removeVariantImage = (vIdx: number, imgIdx: number) => {
-    setVariants(prev => prev.map((v, idx) => {
-      if (idx === vIdx) {
-        return {
-          ...v,
-          imageUrls: (v.imageUrls || []).filter((_: any, i: number) => i !== imgIdx)
-        };
-      }
-      return v;
-    }));
-  };
 
   // Auto-translate name VI → EN
   const translateName = async () => {
@@ -275,6 +404,12 @@ export function ProductForm({ productId }: ProductFormProps) {
     setError("");
     setSuccess("");
 
+    if (variants.some(v => !v.color || !v.color.trim())) {
+      setError("Vui lòng nhập tên màu cho tất cả các nhóm màu!");
+      setSaving(false);
+      return;
+    }
+
     if (variants.some(v => !v.sku)) {
       setError("Vui lòng nhập SKU cho tất cả biến thể!");
       setSaving(false);
@@ -288,7 +423,10 @@ export function ProductForm({ productId }: ProductFormProps) {
         salePrice: form.salePrice ? parseFloat(form.salePrice) : null,
         categoryId: form.categoryId ? parseInt(form.categoryId) : null,
         brandId: form.brandId ? parseInt(form.brandId) : null,
-        variants,
+        variants: variants.map(v => ({
+          ...v,
+          color: v.color ? v.color.trim() : "Đen"
+        })),
       };
 
       if (productId) {
@@ -301,8 +439,9 @@ export function ProductForm({ productId }: ProductFormProps) {
       setTimeout(() => {
         router.push("/admin/products");
       }, 1000);
-    } catch (e: any) {
-      setError(e.response?.data?.message || "Lỗi khi lưu sản phẩm. Vui lòng kiểm tra lại dữ liệu.");
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } };
+      setError(err.response?.data?.message || "Lỗi khi lưu sản phẩm. Vui lòng kiểm tra lại dữ liệu.");
     } finally {
       setSaving(false);
     }
@@ -530,6 +669,68 @@ export function ProductForm({ productId }: ProductFormProps) {
             )}
           </div>
 
+          {/* Quick Size Selection Tool */}
+          <div className="bg-slate-50 rounded-2xl border border-slate-200/60 p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
+              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <Sparkles size={16} className="text-amber-500" /> Chọn nhanh kích thước hàng loạt
+              </h3>
+              <div className="flex items-center bg-white border border-slate-200 rounded-lg p-0.5 gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => { setSizeType("tops"); setSelectedSizes([]); }}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all ${
+                    sizeType === "tops" ? "bg-[#1A1A1A] text-white" : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  Áo (Chữ)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setSizeType("bottoms"); setSelectedSizes([]); }}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all ${
+                    sizeType === "bottoms" ? "bg-[#1A1A1A] text-white" : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  Quần (Số/Chữ)
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {AVAILABLE_SIZES[sizeType].map((size) => {
+                const isSelected = selectedSizes.includes(size);
+                return (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => toggleSizeSelection(size)}
+                    className={`h-9 px-4 rounded-xl text-xs font-bold border transition-all ${
+                      isSelected
+                        ? "bg-[#fcaf17] border-[#fcaf17] text-[#1A1A1A] shadow-sm"
+                        : "bg-white border-slate-200 text-slate-700 hover:border-slate-400"
+                    }`}
+                  >
+                    {size}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-[11px] text-slate-400">
+                💡 Chọn các kích cỡ bạn muốn kinh doanh, sau đó nhấn nút áp dụng để tự động đồng bộ hóa.
+              </p>
+              <button
+                type="button"
+                onClick={applySelectedSizesToVariants}
+                className="text-xs font-bold text-white bg-slate-800 hover:bg-slate-900 px-4 py-2 rounded-xl transition-colors shadow-sm"
+              >
+                Áp dụng cho các biến thể
+              </button>
+            </div>
+          </div>
+
           {/* Variants and stock */}
           <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -546,137 +747,109 @@ export function ProductForm({ productId }: ProductFormProps) {
                 </button>
                 <button
                   type="button"
-                  onClick={addVariant}
+                  onClick={addColorGroup}
                   className="text-xs font-bold text-white bg-[#1A1A1A] hover:bg-[#E5B800] px-3 py-1.5 rounded-lg transition-colors"
                 >
-                  + Thêm biến thể
+                  + Thêm nhóm màu
                 </button>
               </div>
             </div>
 
-            <div className="space-y-4">
-              {variants.map((v, i) => {
-                const isExpanded = expandedVariantIndex === i;
-                const imagesCount = v.imageUrls?.length || 0;
+            <div className="space-y-6">
+              {Array.from(new Set(variants.map(v => v.color ?? "Đen"))).map((colorName, idx) => {
+                const groupVariants = variants.filter(v => (v.color ?? "Đen") === colorName);
+                const isExpanded = expandedColorGroup === colorName;
+                const imagesCount = groupVariants[0]?.imageUrls?.length || 0;
 
                 return (
-                  <div key={i} className="border border-slate-100 rounded-xl overflow-hidden bg-white shadow-xs">
-                    {/* Main Row */}
-                    <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center p-3 bg-slate-50/50 hover:bg-slate-50/80 transition-all border-b border-slate-100">
-                      {/* Size */}
-                      <div className="w-full sm:w-16 shrink-0">
+                  <div key={idx} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
+                    {/* Color Group Header */}
+                    <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center p-4 bg-slate-50 border-b border-slate-200">
+                      {/* Color Name Input */}
+                      <div className="flex-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Tên màu</label>
                         <input
                           required
-                          placeholder="Size"
-                          value={v.size}
-                          onChange={(e) => updateVariant(i, "size", e.target.value)}
-                          className="w-full h-9 px-2 text-center border border-slate-200 rounded-lg text-xs font-bold bg-white focus:outline-none"
+                          placeholder="Màu (Ví dụ: Đen, Trắng, Đỏ)"
+                          value={colorName}
+                          onChange={(e) => updateColorGroupName(colorName, e.target.value)}
+                          className="w-full h-9 px-3 border border-slate-200 rounded-lg text-xs font-bold bg-white focus:outline-none"
                         />
                       </div>
 
-                      {/* Color */}
-                      <div className="w-full sm:flex-1">
-                        <input
-                          required
-                          placeholder="Màu (Ví dụ: Đen, Trắng)"
-                          value={v.color}
-                          onChange={(e) => updateVariant(i, "color", e.target.value)}
-                          className="w-full h-9 px-2.5 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none"
-                        />
+                      {/* Color Hex Picker */}
+                      <div className="w-full sm:w-24 shrink-0">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Mã màu HEX</label>
+                        <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2 h-9">
+                          <input
+                            type="color"
+                            value={groupVariants[0]?.colorHex || "#000000"}
+                            onChange={(e) => updateColorGroupHex(colorName, e.target.value)}
+                            className="w-5 h-5 border-0 p-0 rounded-full cursor-pointer overflow-hidden shrink-0"
+                          />
+                          <input
+                            placeholder="#HEX"
+                            value={groupVariants[0]?.colorHex || "#000000"}
+                            onChange={(e) => updateColorGroupHex(colorName, e.target.value)}
+                            className="w-full border-0 text-[10px] uppercase font-mono p-0 focus:outline-none"
+                          />
+                        </div>
                       </div>
 
-                      {/* Color Hex */}
-                      <div className="w-full sm:w-20 flex items-center gap-1 bg-white border border-slate-200 rounded-lg px-1.5 h-9 shrink-0">
-                        <input
-                          type="color"
-                          value={v.colorHex || "#000000"}
-                          onChange={(e) => updateVariant(i, "colorHex", e.target.value)}
-                          className="w-5 h-5 border-0 p-0 rounded-full cursor-pointer overflow-hidden shrink-0"
-                        />
-                        <input
-                          placeholder="#HEX"
-                          value={v.colorHex}
-                          onChange={(e) => updateVariant(i, "colorHex", e.target.value)}
-                          className="w-full border-0 text-[10px] uppercase font-mono p-0 focus:outline-none"
-                        />
-                      </div>
-
-                      {/* SKU */}
-                      <div className="w-full sm:w-28 shrink-0">
-                        <input
-                          required
-                          placeholder="Mã SKU *"
-                          value={v.sku}
-                          onChange={(e) => updateVariant(i, "sku", e.target.value)}
-                          className="w-full h-9 px-2.5 border border-slate-200 rounded-lg text-xs font-mono bg-white focus:outline-none"
-                        />
-                      </div>
-
-                      {/* Stock */}
-                      <div className="w-full sm:w-16 shrink-0">
-                        <input
-                          type="number"
-                          required
-                          placeholder="Kho"
-                          value={v.stockQty}
-                          onChange={(e) => updateVariant(i, "stockQty", parseInt(e.target.value) || 0)}
-                          className="w-full h-9 px-1 border border-slate-200 rounded-lg text-xs text-center bg-white focus:outline-none"
-                        />
-                      </div>
-
-                      {/* Controls: Images Toggle & Delete */}
-                      <div className="flex items-center gap-1.5 justify-end shrink-0">
+                      {/* Color Group Actions */}
+                      <div className="flex items-end gap-1.5 justify-end shrink-0 sm:pt-4">
                         <button
                           type="button"
-                          onClick={() => setExpandedVariantIndex(isExpanded ? null : i)}
-                          className={`h-9 px-2 rounded-lg border text-xs font-semibold flex items-center gap-1 transition-all ${
+                          onClick={() => setExpandedColorGroup(isExpanded ? null : colorName)}
+                          className={`h-9 px-3 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all ${
                             imagesCount > 0 
                               ? "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100" 
                               : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                           }`}
                         >
                           <ImageIcon size={13} />
-                          <span>Ảnh ({imagesCount})</span>
+                          <span>Ảnh chung ({imagesCount})</span>
                           {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                         </button>
                         
                         <button
                           type="button"
-                          onClick={() => removeVariant(i)}
-                          className="w-9 h-9 flex items-center justify-center text-red-500 hover:text-red-700 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                          onClick={() => removeColorGroup(colorName)}
+                          className="w-9 h-9 flex items-center justify-center text-red-500 hover:text-red-700 bg-red-50 rounded-lg hover:bg-red-100 border border-red-100 transition-colors"
+                          title="Xóa nhóm màu"
                         >
-                          <X size={14} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </div>
 
-                    {/* Variant Specific Images Collapse Sub-Form */}
+                    {/* Color Group Image Editor (Collapsible) */}
                     {isExpanded && (
-                      <div className="p-4 bg-slate-50/50 border-t border-slate-100 space-y-3 animate-in fade-in slide-in-from-top-1">
-                        <p className="text-[10px] uppercase font-bold text-slate-400">Hình ảnh riêng của biến thể này (Màu: {v.color || "chưa chọn"})</p>
+                      <div className="p-4 bg-slate-50/50 border-b border-slate-200 space-y-3">
+                        <p className="text-[10px] uppercase font-bold text-slate-400">Hình ảnh chung cho nhóm màu: {colorName}</p>
                         
                         <div className="flex gap-2">
                           <input
-                            placeholder="Nhập URL hình ảnh cho biến thể..."
-                            value={newVariantImg[i] || ""}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setNewVariantImg(prev => prev.map((item, idx) => idx === i ? val : item));
-                            }}
+                            placeholder="Nhập URL hình ảnh cho nhóm màu này..."
+                            value={newColorGroupImg}
+                            onChange={(e) => setNewColorGroupImg(e.target.value)}
                             className="flex-1 h-9 px-3 border border-slate-200 rounded-lg text-xs focus:outline-none bg-white"
                           />
                           <button
                             type="button"
-                            onClick={() => addVariantImage(i)}
+                            onClick={() => {
+                              addColorGroupImage(colorName, newColorGroupImg);
+                              setNewColorGroupImg("");
+                            }}
                             className="px-3 h-9 bg-slate-800 text-white font-bold rounded-lg text-xs hover:bg-slate-900 transition-colors"
                           >
                             + Thêm ảnh
                           </button>
                         </div>
 
-                        {v.imageUrls && v.imageUrls.length > 0 ? (
+                        {groupVariants[0]?.imageUrls && groupVariants[0].imageUrls.length > 0 ? (
                           <div className="grid grid-cols-5 gap-2 mt-2">
-                            {v.imageUrls.map((imgUrl: string, imgIdx: number) => (
+                            {groupVariants[0].imageUrls.map((imgUrl: string, imgIdx: number) => (
                               <div key={imgIdx} className="aspect-[3/4] rounded-lg overflow-hidden border border-slate-200 relative group bg-white">
                                 <img
                                   src={imgUrl}
@@ -685,7 +858,7 @@ export function ProductForm({ productId }: ProductFormProps) {
                                 />
                                 <button
                                   type="button"
-                                  onClick={() => removeVariantImage(i, imgIdx)}
+                                  onClick={() => removeColorGroupImage(colorName, imgIdx)}
                                   className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600/90 text-white flex items-center justify-center hover:bg-red-700 transition-colors"
                                 >
                                   <X size={10} />
@@ -694,10 +867,112 @@ export function ProductForm({ productId }: ProductFormProps) {
                             ))}
                           </div>
                         ) : (
-                          <p className="text-xs text-slate-400 italic">Biến thể này chưa có ảnh riêng (Sẽ sử dụng ảnh chung của sản phẩm).</p>
+                          <p className="text-xs text-slate-400 italic">Nhóm màu này chưa có ảnh riêng (Sẽ sử dụng ảnh chung của sản phẩm).</p>
                         )}
                       </div>
                     )}
+
+                    {/* Size Selector for this Color Group */}
+                    <div className="p-4 border-b border-slate-100 space-y-2.5">
+                      <p className="text-[10px] uppercase font-bold text-slate-400">Kích thước kinh doanh của màu này</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {AVAILABLE_SIZES[sizeType].map((size) => {
+                          const hasSize = groupVariants.some(v => v.size === size);
+                          return (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => toggleSizeForColor(colorName, size)}
+                              className={`h-8 px-3 rounded-lg text-xs font-bold border transition-all ${
+                                hasSize
+                                  ? "bg-[#fcaf17]/20 border-[#fcaf17] text-[#1A1A1A]"
+                                  : "bg-white border-slate-200 text-slate-400 hover:border-slate-300"
+                              }`}
+                            >
+                              {size}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Active Sizes Table / Inputs */}
+                    <div className="p-4 space-y-3">
+                      <p className="text-[10px] uppercase font-bold text-slate-400">Chi tiết tồn kho & SKU từng size</p>
+                      
+                      <div className="space-y-2">
+                        {groupVariants.map((v) => {
+                          return (
+                            <div key={v.size} className="flex flex-col sm:flex-row gap-2 items-center bg-slate-50/30 p-2 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors">
+                              {/* Size Label */}
+                              <div className="w-full sm:w-12 shrink-0 flex items-center justify-center h-8 bg-white border border-slate-200 rounded-lg text-xs font-black text-[#1A1A1A]">
+                                {v.size}
+                              </div>
+
+                              {/* SKU Input */}
+                              <div className="w-full sm:flex-1">
+                                <input
+                                  required
+                                  placeholder="Mã SKU *"
+                                  value={v.sku || ""}
+                                  onChange={(e) => {
+                                    const newSku = e.target.value;
+                                    setVariants(variants.map(item => item === v ? { ...item, sku: newSku } : item));
+                                  }}
+                                  className="w-full h-8 px-2.5 border border-slate-200 rounded-lg text-xs font-mono bg-white focus:outline-none"
+                                />
+                              </div>
+
+                              {/* Stock Qty Input */}
+                              <div className="w-full sm:w-20 shrink-0">
+                                <div className="relative flex items-center">
+                                  <input
+                                    type="number"
+                                    required
+                                    placeholder="Kho"
+                                    value={v.stockQty}
+                                    onChange={(e) => {
+                                      const newStock = parseInt(e.target.value) || 0;
+                                      setVariants(variants.map(item => item === v ? { ...item, stockQty: newStock } : item));
+                                    }}
+                                    className="w-full h-8 pl-2 pr-6 border border-slate-200 rounded-lg text-xs text-center bg-white focus:outline-none"
+                                  />
+                                  <span className="absolute right-2 text-[9px] font-bold text-slate-400">Tồn</span>
+                                </div>
+                              </div>
+
+                              {/* Price Adjustment Input */}
+                              <div className="w-full sm:w-28 shrink-0">
+                                <div className="relative flex items-center">
+                                  <input
+                                    type="number"
+                                    placeholder="+/- Giá"
+                                    value={v.priceAdjustment || ""}
+                                    onChange={(e) => {
+                                      const newPrice = parseFloat(e.target.value) || 0;
+                                      setVariants(variants.map(item => item === v ? { ...item, priceAdjustment: newPrice } : item));
+                                    }}
+                                    className="w-full h-8 pl-2 pr-6 border border-slate-200 rounded-lg text-xs text-center bg-white focus:outline-none"
+                                  />
+                                  <span className="absolute right-2 text-[9px] font-bold text-slate-400">đ</span>
+                                </div>
+                              </div>
+
+                              {/* Delete Size Button */}
+                              <button
+                                type="button"
+                                onClick={() => toggleSizeForColor(colorName, v.size)}
+                                className="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-600 bg-white border border-slate-200 rounded-lg transition-colors shrink-0"
+                                title="Xóa kích thước này"
+                              >
+                                <X size={12} />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
                   </div>
                 );
               })}

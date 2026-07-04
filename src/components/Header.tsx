@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { SearchIcon, CartIcon, UserIcon, MenuIcon, CloseIcon, StoreIcon, ChevronRightIcon, HeartIcon } from "@/components/icons";
+import { CartIcon, UserIcon, MenuIcon, CloseIcon, StoreIcon, HeartIcon } from "@/components/icons";
 import { navCategories } from "@/lib/data";
 import type { NavCategory } from "@/types";
 import { useCartStore } from "@/store/useCartStore";
@@ -119,8 +119,6 @@ function NavItem({ category }: { category: NavCategory }) {
 
 export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchFocused, setSearchFocused] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -128,7 +126,7 @@ export function Header() {
   const router = useRouter();
 
   // Cart & auth state
-  const { totalItems, openCart, isOpen, fetchCart } = useCartStore();
+  const { totalItems, openCart, fetchCart } = useCartStore();
   const { isAuthenticated, user, logout } = useAuthStore();
   const t = useT();
   const { locale } = useLocale();
@@ -154,7 +152,7 @@ export function Header() {
   // Fetch cart when user logs in
   useEffect(() => {
     if (isAuthenticated) fetchCart();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchCart]);
 
   const handleLogout = async () => {
     setUserMenuOpen(false);
@@ -203,34 +201,20 @@ export function Header() {
                 {navCategories.map((cat) => (
                   <NavItem key={cat.name} category={cat} />
                 ))}
+                {/* AR Scan (Coming soon) Link */}
+                <li className="relative group">
+                  <span className="cursor-pointer block py-5 text-[13px] font-bold text-[#1A1A1A] hover:text-slate-500 transition-colors whitespace-nowrap tracking-wide relative">
+                    AR quét <span className="text-[9px] font-black text-white bg-red-500 px-1.5 py-0.5 rounded-full uppercase tracking-normal ml-1 animate-pulse">Soon</span>
+                  </span>
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-48 bg-white border border-slate-100 shadow-lg rounded-b-xl p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 text-center">
+                    <p className="text-xs text-slate-500 font-medium">Tính năng AR Heritage Scan đang được phát triển!</p>
+                  </div>
+                </li>
               </ul>
             </nav>
 
             {/* Right: Actions aligned right */}
             <div className="flex items-center justify-end gap-3.5">
-              {/* Search */}
-              <div className="hidden md:flex relative group">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={() => setSearchFocused(true)}
-                  onBlur={() => setSearchFocused(false)}
-                  placeholder={t.nav.searchPlaceholder}
-                  className={`w-[160px] lg:w-[200px] h-10 pl-5 pr-10 text-[13px] font-medium rounded-full transition-all duration-300 border bg-transparent outline-none placeholder:text-slate-400/80 ${
-                    searchFocused
-                      ? "border-[#111111] bg-white shadow-[0_4px_12px_rgba(0,0,0,0.03)] w-[200px] lg:w-[240px]"
-                      : "border-slate-200/80 bg-slate-50/50 hover:bg-slate-50 hover:border-slate-300"
-                  }`}
-                />
-                <button
-                  className={`absolute right-3.5 top-1/2 -translate-y-1/2 transition-colors ${searchFocused ? "text-[#111111]" : "text-slate-500 group-hover:text-[#111111]"}`}
-                  aria-label={t.common.search}
-                >
-                  <SearchIcon className="w-4 h-4" />
-                </button>
-              </div>
-
               {/* Language Switcher */}
               <LanguageSwitcher />
 
@@ -337,19 +321,7 @@ export function Header() {
           </div>
         </div>
 
-        {/* Mobile search bar */}
-        <div className={`md:hidden px-4 transition-all duration-300 overflow-hidden ${isScrolled ? "h-0 opacity-0" : "h-14 opacity-100"}`}>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder={t.nav.searchPlaceholderFull}
-              className="w-full h-11 pl-4 pr-10 text-sm border-none rounded-xl bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#1A1A1A]"
-            />
-            <button className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" aria-label={t.common.search}>
-              <SearchIcon className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+        {/* Mobile search bar removed */}
 
         {/* Full-screen Mobile Menu */}
         {mobileOpen && (

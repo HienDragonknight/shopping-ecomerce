@@ -61,7 +61,7 @@ export default function AboutUsPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-transparent pointer-events-none" />
         <div className="yody-container relative z-10 text-center space-y-6 max-w-4xl">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase tracking-widest">
-            Vie'Co Brand
+            Vie&apos;Co Brand
           </span>
           <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-tight">
             {isEn ? "CONNECTING HERITAGE & TECHNOLOGY" : "KẾT NỐI DI SẢN & CÔNG NGHỆ"}
