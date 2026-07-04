@@ -588,6 +588,47 @@ export default function ProductDetailPage({ params }: PageProps) {
           </div>
         </div>
       </div>
+
+      {/* Mobile Sticky Bottom Action Bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-100 px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] flex items-center gap-3 pb-safe-bottom">
+        {/* Left: Try On button */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => tryOnRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            className="w-11 h-11 border border-[#FF2D78]/30 rounded-full flex items-center justify-center text-[#FF2D78] bg-[#FF2D78]/5 active:scale-95 transition-all"
+            title="Thử đồ AI"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.57a1 1 0 00.99.86H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.86l.58-3.57a2 2 0 00-1.34-2.23z" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Right: Add to Cart & Buy Now */}
+        <div className="flex-1 flex gap-2">
+          <button
+            onClick={handleAddToCart}
+            disabled={cartLoading || !inStock}
+            className={`flex-1 h-11 rounded-full font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all ${
+              addedToCart
+                ? "bg-emerald-500 text-white"
+                : inStock
+                ? "bg-[#fcaf17] text-[#1A1A1A]"
+                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+            }`}
+          >
+            <ShoppingBag size={14} strokeWidth={2.5} />
+            {cartLoading ? "..." : addedToCart ? "Đã thêm" : "Thêm giỏ"}
+          </button>
+          <button
+            onClick={handleBuyNow}
+            disabled={!inStock || cartLoading}
+            className="flex-1 h-11 bg-[#1A3459] text-white font-bold text-xs rounded-full shadow-sm active:scale-95 transition-all"
+          >
+            Mua ngay
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

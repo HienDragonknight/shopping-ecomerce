@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { TopBar } from "@/components/TopBar";
 import { Footer } from "@/components/Footer";
+import { BottomNavigation } from "@/components/BottomNavigation";
 import { LocaleProvider } from "@/context/LocaleContext";
 import { TranslationBanner } from "@/components/TranslationBanner";
 
@@ -46,9 +47,10 @@ export default function RootLayout({
         <LocaleProvider>
           <TopBar />
           <Header />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 pb-20 lg:pb-0">{children}</main>
           <Footer />
           <TranslationBanner />
+          <BottomNavigation />
         </LocaleProvider>
       </body>
     </html>

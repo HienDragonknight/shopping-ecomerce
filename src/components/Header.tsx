@@ -229,7 +229,7 @@ export function Header() {
                 </Link>
 
                 {/* User icon / dropdown */}
-                <div className="relative" ref={userMenuRef}>
+                <div className="relative hidden lg:block" ref={userMenuRef}>
                   {isAuthenticated ? (
                     <>
                       <button
@@ -295,7 +295,7 @@ export function Header() {
                 {/* Wishlist Link */}
                 <Link
                   href="/wishlist"
-                  className="flex items-center justify-center w-10 h-10 text-slate-700 hover:text-[#1A1A1A] hover:bg-slate-100 rounded-full transition-all"
+                  className="hidden lg:flex items-center justify-center w-10 h-10 text-slate-700 hover:text-[#1A1A1A] hover:bg-slate-100 rounded-full transition-all"
                   title={t.account.wishlist}
                 >
                   <HeartIcon className="w-[22px] h-[22px]" />

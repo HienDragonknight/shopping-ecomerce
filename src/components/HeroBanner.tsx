@@ -62,8 +62,7 @@ export function HeroBanner({ slides }: HeroBannerProps) {
   if (slides.length === 0) {
     return (
       <div
-        className="relative w-full bg-[#1A1A1A] flex items-center justify-center"
-        style={{ aspectRatio: "21/9", minHeight: "400px", maxHeight: "600px" }}
+        className="relative w-full bg-[#1A1A1A] flex items-center justify-center aspect-[4/3] md:aspect-[21/9] h-[320px] md:h-auto min-h-[320px] md:min-h-[400px] md:max-h-[600px]"
       >
         <p className="text-white/40 text-xl">{t.hero.loading}</p>
       </div>
@@ -72,8 +71,7 @@ export function HeroBanner({ slides }: HeroBannerProps) {
 
   return (
     <div
-      className="relative w-full overflow-hidden bg-[#1A1A1A] group"
-      style={{ aspectRatio: "21/9", minHeight: "400px", maxHeight: "600px" }}
+      className="relative w-full overflow-hidden bg-[#1A1A1A] group aspect-[4/3] md:aspect-[21/9] h-[320px] md:h-auto min-h-[320px] md:min-h-[400px] md:max-h-[600px]"
     >
       {/* Slides */}
       {slides.map((slide, i) => {
@@ -115,7 +113,7 @@ export function HeroBanner({ slides }: HeroBannerProps) {
                   {/* Badge */}
                   {slide.badge && (
                     <span
-                      className={`inline-block text-xs font-black tracking-[0.2em] uppercase px-4 py-1.5 rounded-full mb-4 md:mb-6 transition-all duration-700 delay-100 transform ${isActive ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}
+                      className={`inline-block text-[10px] md:text-xs font-black tracking-[0.2em] uppercase px-3 py-1 md:px-4 md:py-1.5 rounded-full mb-3 md:mb-6 transition-all duration-700 delay-100 transform ${isActive ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}
                       style={{
                         backgroundColor: badgeColor,
                         color: badgeColor === "#1A1A1A" || badgeColor === "#fff" ? "#1A1A1A" : "#fff",
@@ -127,7 +125,7 @@ export function HeroBanner({ slides }: HeroBannerProps) {
 
                   {/* Title */}
                   <h1
-                    className={`text-4xl md:text-6xl lg:text-7xl font-black leading-[1.1] mb-4 whitespace-pre-line tracking-tight drop-shadow-lg transition-all duration-700 delay-200 transform ${isActive ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}
+                    className={`text-2xl sm:text-3xl md:text-6xl lg:text-7xl font-black leading-[1.15] md:leading-[1.1] mb-2 md:mb-4 whitespace-pre-line tracking-tight drop-shadow-lg transition-all duration-700 delay-200 transform ${isActive ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}
                     style={{ color: textColor }}
                   >
                     {slide.titleText}
@@ -135,7 +133,7 @@ export function HeroBanner({ slides }: HeroBannerProps) {
 
                   {/* Subtitle */}
                   <p
-                    className={`text-base md:text-xl mb-8 leading-relaxed font-medium drop-shadow-md transition-all duration-700 delay-300 transform ${isActive ? "translate-y-0 opacity-90" : "translate-y-8 opacity-0"}`}
+                    className={`text-xs sm:text-sm md:text-xl mb-5 md:mb-8 leading-relaxed font-medium drop-shadow-md transition-all duration-700 delay-300 transform ${isActive ? "translate-y-0 opacity-90" : "translate-y-8 opacity-0"}`}
                     style={{ color: textColor }}
                   >
                     {slide.subtitle}
@@ -145,11 +143,11 @@ export function HeroBanner({ slides }: HeroBannerProps) {
                   <div className={`transition-all duration-700 delay-500 transform ${isActive ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"}`}>
                     <Link
                       href={slide.linkUrl ?? "/"}
-                      className="group/btn inline-flex items-center gap-3 px-8 py-3.5 text-base font-bold rounded-full transition-all duration-300 hover:shadow-[0_0_20px_rgba(252,206,0,0.4)] hover:scale-105 active:scale-95 bg-[#1A1A1A] text-white"
+                      className="group/btn inline-flex items-center gap-2 md:gap-3 px-5 py-2.5 md:px-8 md:py-3.5 text-xs sm:text-sm md:text-base font-bold rounded-full transition-all duration-300 hover:shadow-[0_0_20px_rgba(252,206,0,0.4)] hover:scale-105 active:scale-95 bg-[#1A1A1A] text-white"
                     >
                       {slide.ctaText ?? t.hero.defaultCta}
-                      <span className="w-6 h-6 rounded-full bg-[#1A1A1A] flex items-center justify-center text-[#1A1A1A] group-hover/btn:translate-x-1 transition-transform">
-                        <ChevronRightIcon className="w-3.5 h-3.5" />
+                      <span className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-[#1A1A1A] flex items-center justify-center text-[#1A1A1A] group-hover/btn:translate-x-1 transition-transform">
+                        <ChevronRightIcon className="w-3 md:w-3.5 h-3 md:h-3.5" />
                       </span>
                     </Link>
                   </div>
