@@ -31,7 +31,7 @@ export function SocialLoginButtons({ onSuccess, onError, disabled }: SocialLogin
   };
 
   return (
-    <div className="mt-6 flex justify-center">
+    <div className="mt-6 flex w-full justify-center [&>div]:w-full">
       {GOOGLE_CLIENT_ID ? (
         <GoogleLogin
           onSuccess={handleGoogleSuccess}
@@ -40,7 +40,6 @@ export function SocialLoginButtons({ onSuccess, onError, disabled }: SocialLogin
           size="large"
           shape="pill"
           text="signin_with"
-          width="100%"
         />
       ) : (
         <Button
