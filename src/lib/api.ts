@@ -1,6 +1,6 @@
 import axios from "axios";
 
-// In browser: use relative /api (proxied by Next.js rewrites → port 8081)
+// In browser: use relative /api (proxied by Next.js rewrites → port 8080)
 // In SSR: fall back to direct backend URL
 const API_BASE =
   typeof window !== "undefined"

@@ -34,6 +34,8 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (identifier: string, password: string) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
+  loginWithFacebook: (accessToken: string) => Promise<void>;
   register: (fullName: string, email: string | null, phone: string | null, password: string) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: User) => void;
@@ -52,6 +54,34 @@ export const useAuthStore = create<AuthState>()(
           const res = await api.post("/auth/login", { identifier, password });
           const { accessToken, refreshToken, user } = res.data.data;
           setTokens(accessToken, refreshToken);
+          setUser(user);
+          set({ user, isAuthenticated: true });
+          syncAuthCookie(user, true);
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      loginWithGoogle: async (idToken) => {
+        set({ isLoading: true });
+        try {
+          const res = await api.post("/auth/oauth/google", { token: idToken });
+          const { accessToken, refreshToken, user } = res.data.data;
+          setTokens(accessToken, refreshToken);
+          setUser(user);
+          set({ user, isAuthenticated: true });
+          syncAuthCookie(user, true);
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      loginWithFacebook: async (accessToken) => {
+        set({ isLoading: true });
+        try {
+          const res = await api.post("/auth/oauth/facebook", { token: accessToken });
+          const { accessToken: access, refreshToken, user } = res.data.data;
+          setTokens(access, refreshToken);
           setUser(user);
           set({ user, isAuthenticated: true });
           syncAuthCookie(user, true);

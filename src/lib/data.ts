@@ -139,14 +139,27 @@ export const navCategories: NavCategory[] = [
     href: "/products",
     groups: [
       {
-        title: "Danh mục sản phẩm",
-        titleEn: "Product Categories",
+        title: "Sản phẩm cơ bản",
+        titleEn: "Basic Products",
         items: [
-          { name: "Sản phẩm cơ bản", nameEn: "Everyday Basics", href: "/collection/everyday-basics" },
-          { name: "Bộ sưu tập", nameEn: "Collections", href: "/collections" },
-        ]
-      }
-    ]
+          { name: "Tất cả sản phẩm", nameEn: "All Products", href: "/products" },
+          { name: "Nam", nameEn: "Men", href: "/category/nam" },
+          { name: "Nữ", nameEn: "Women", href: "/category/nu" },
+          { name: "Trẻ em", nameEn: "Kids", href: "/category/tre-em" },
+        ],
+      },
+      {
+        title: "Bộ sưu tập",
+        titleEn: "Collections",
+        items: [
+          { name: "Xem tất cả bộ sưu tập", nameEn: "All Collections", href: "/collections" },
+          { name: "BST Dream Team Winner", nameEn: "Dream Team Winner", href: "/collection/dream-team-winner" },
+          { name: "BST ÁO CHỐNG NẮNG", nameEn: "Sun Protection", href: "/collection/ao-chong-nang" },
+          { name: "BST JEAN FLEX", nameEn: "Jean Flex", href: "/collection/jeans-collection" },
+          { name: "BST BUSINESS CASUAL", nameEn: "Business Casual", href: "/collection/bst-business-casual" },
+        ],
+      },
+    ],
   },
   {
     name: "Vie'Co Tech",

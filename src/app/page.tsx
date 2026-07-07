@@ -1,12 +1,10 @@
 import { cookies } from "next/headers";
 import { HeroBanner } from "@/components/HeroBanner";
 import { TrustBanner } from "@/components/TrustBanner";
-import { CollectionTabs } from "@/components/CollectionTabs";
 import { ProductSection } from "@/components/ProductSection";
 import { BlogSection } from "@/components/BlogSection";
 import {
   getHomepageBanners,
-  getHomepageCollections,
   getHomepageSections,
   getHomepageBlogPosts,
 } from "@/lib/homepage-api";
@@ -18,9 +16,8 @@ export default async function Home() {
   const lang = cookieStore.get("NEXT_LOCALE")?.value === "en" ? "en" : "vi";
 
   // Fetch all homepage data in parallel, forwarding locale to backend
-  const [banners, collections, sections, blogPosts] = await Promise.all([
+  const [banners, sections, blogPosts] = await Promise.all([
     getHomepageBanners(lang),
-    getHomepageCollections(lang),
     getHomepageSections(lang),
     getHomepageBlogPosts(lang),
   ]);
@@ -44,7 +41,6 @@ export default async function Home() {
     <>
       <HeroBanner slides={banners} />
       <TrustBanner />
-      <CollectionTabs collections={collections} />
 
       {/* Dynamic Product Sections from Database */}
       {productSections.length > 0 ? (

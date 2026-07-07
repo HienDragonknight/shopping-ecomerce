@@ -61,7 +61,7 @@ export default function ViecoTechPage() {
 
             <div className="pt-8">
               <a
-                href="https://vieco-dragon-ar.pages.dev/"
+                href="https://ar-beige-delta.vercel.app/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center w-full py-4 rounded-2xl font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 transition-all shadow-lg active:scale-[0.98]"

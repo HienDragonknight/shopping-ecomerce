@@ -90,7 +90,7 @@ export function BottomNavigation() {
     },
     {
       label: "AR Quét",
-      href: "https://vieco-dragon-ar.pages.dev/",
+      href: "https://ar-beige-delta.vercel.app/",
       icon: SparklesIcon,
       active: false,
       special: true, // Center highlighted button

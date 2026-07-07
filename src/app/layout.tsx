@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
-import { TopBar } from "@/components/TopBar";
 import { Footer } from "@/components/Footer";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { LocaleProvider } from "@/context/LocaleContext";
@@ -45,7 +44,6 @@ export default function RootLayout({
         style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
       >
         <LocaleProvider>
-          <TopBar />
           <Header />
           <main className="flex-1 pb-20 lg:pb-0">{children}</main>
           <Footer />

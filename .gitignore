@@ -41,6 +41,9 @@ next-env.d.ts
 # Local settings (not project config)
 .claude/settings.local.json
 
+# Spring Boot local overrides (OAuth keys, etc.)
+fashion-backend/application-local.yml
+
 # User-specific skills (not part of the template)
 .claude/skills/customize/
 .claude/skills/release/

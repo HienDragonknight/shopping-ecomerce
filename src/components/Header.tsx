@@ -204,7 +204,7 @@ export function Header() {
                 {/* AR Scan Link */}
                 <li className="relative">
                   <Link
-                    href="https://vieco-dragon-ar.pages.dev/"
+                    href="https://ar-beige-delta.vercel.app/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block py-5 text-[13px] font-bold text-[#1A1A1A] hover:text-slate-500 transition-colors whitespace-nowrap tracking-wide relative after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-[#1A1A1A] after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 after:origin-center"
@@ -361,20 +361,27 @@ export function Header() {
                         {isEn ? cat.nameEn || cat.name : cat.name}
                       </Link>
                       {cat.groups && (
-                        <ul className="pl-4 space-y-1.5 mt-2">
-                          {cat.groups.map(group => 
-                            group.items.map(item => (
-                              <li key={item.name}>
-                                <Link
-                                  href={item.href}
-                                  className="block text-[14px] text-slate-500 hover:text-black py-1"
-                                  onClick={() => setMobileOpen(false)}
-                                >
-                                  {isEn ? item.nameEn || item.name : item.name}
-                                </Link>
-                              </li>
-                            ))
-                          )}
+                        <ul className="pl-4 space-y-3 mt-3">
+                          {cat.groups.map((group) => (
+                            <li key={group.title}>
+                              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                                {isEn ? group.titleEn || group.title : group.title}
+                              </p>
+                              <ul className="space-y-1.5">
+                                {group.items.map((item) => (
+                                  <li key={item.name}>
+                                    <Link
+                                      href={item.href}
+                                      className="block text-[14px] text-slate-500 hover:text-black py-1"
+                                      onClick={() => setMobileOpen(false)}
+                                    >
+                                      {isEn ? item.nameEn || item.name : item.name}
+                                    </Link>
+                                  </li>
+                                ))}
+                              </ul>
+                            </li>
+                          ))}
                         </ul>
                       )}
                     </li>
@@ -382,7 +389,7 @@ export function Header() {
                   {/* Mobile Menu AR Scan Link */}
                   <li className="border-b border-slate-200/70 py-4">
                     <a
-                      href="https://vieco-dragon-ar.pages.dev/"
+                      href="https://ar-beige-delta.vercel.app/"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="block text-[17px] tracking-tight font-semibold text-[#1A1A1A] mb-1"
