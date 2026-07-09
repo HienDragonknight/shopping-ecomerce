@@ -34,13 +34,14 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor: refresh token on 401
+// Response interceptor: refresh token on 401/403 (unauthenticated)
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const status = error.response?.status;
 
-    if (typeof window !== "undefined" && error.response?.status === 401 && !originalRequest._retry) {
+    if (typeof window !== "undefined" && (status === 401 || status === 403) && !originalRequest._retry) {
       originalRequest._retry = true;
       const refreshToken = localStorage.getItem("refreshToken");
 
@@ -57,11 +58,21 @@ api.interceptors.response.use(
         } catch {
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
+          localStorage.removeItem("user");
           localStorage.removeItem("auth-storage");
           document.cookie = "auth-token=; path=/; max-age=0; SameSite=Lax";
           document.cookie = "auth-storage=; path=/; max-age=0; SameSite=Lax";
-          window.location.href = "/account/login";
+          if (!window.location.pathname.startsWith("/account/login")) {
+            window.location.href = `/account/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+          }
         }
+      } else if (status === 403 || status === 401) {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user");
+        localStorage.removeItem("auth-storage");
+        document.cookie = "auth-token=; path=/; max-age=0; SameSite=Lax";
+        document.cookie = "auth-storage=; path=/; max-age=0; SameSite=Lax";
       }
     }
 

@@ -52,7 +52,7 @@ export const useCartStore = create<CartState>()(
         } catch (err) {
           const axiosErr = err as { response?: { status?: number } };
           // Don't surface 401 errors (handled by interceptor)
-          if (axiosErr?.response?.status !== 401) {
+          if (axiosErr?.response?.status !== 401 && axiosErr?.response?.status !== 403) {
             set({ error: "Không thể tải giỏ hàng" });
           }
         }
