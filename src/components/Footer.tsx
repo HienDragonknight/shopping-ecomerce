@@ -91,11 +91,8 @@ export function Footer() {
   };
 
   const shopLinks = [
-    { name: t.shopLinks.men, href: "/category/nam" },
-    { name: t.shopLinks.women, href: "/category/nu" },
-    { name: t.shopLinks.kids, href: "/category/tre-em" },
-    { name: t.shopLinks.uniform, href: "/" },
-    { name: t.shopLinks.blog, href: "/blog" },
+    { name: t.shopLinks.basicProducts, href: "/products" },
+    { name: t.shopLinks.collections, href: "/collections" },
   ];
 
   const serviceLinks = [
@@ -247,18 +244,6 @@ export function Footer() {
                 </li>
               ))}
             </ul>
-
-            {/* Payment icons */}
-            <div className="mt-6">
-              <p className="text-xs text-[#555] mb-2 font-semibold uppercase tracking-wide">{t.footer.paymentMethods}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {["VISA", "MasterCard", "ATM", "COD", "MoMo", "ZaloPay"].map((m) => (
-                  <span key={m} className="px-2 py-1 text-[10px] font-bold bg-[#2A2A2A] text-[#aaa] rounded-md border border-[#3A3A3A]">
-                    {m}
-                  </span>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       </div>

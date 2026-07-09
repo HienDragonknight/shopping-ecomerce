@@ -252,11 +252,8 @@ export interface Dict {
     defaultCta: string;
   };
   shopLinks: {
-    men: string;
-    women: string;
-    kids: string;
-    uniform: string;
-    blog: string;
+    basicProducts: string;
+    collections: string;
   };
   serviceLinks: {
     loyalty: string;

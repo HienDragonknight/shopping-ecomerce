@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { AccountSidebar } from "@/components/AccountSidebar";
 import api from "@/lib/api";
+import { getPaymentMethodLabel } from "@/lib/payment";
 
 interface Order {
   id: number; status: string; paymentMethod: string; paymentStatus: string;
@@ -130,7 +131,7 @@ export default function OrdersPage() {
                           {/* Footer */}
                           <div className="flex items-center justify-between px-4 pb-3 border-t border-slate-100 pt-2.5">
                             <div className="text-xs text-slate-500 space-y-0.5">
-                              <p>{order.paymentMethod === "COD" ? "💵 COD" : "💳 VNPay"}
+                              <p>{order.paymentMethod === "COD" ? "💵" : "🏦"} {getPaymentMethodLabel(order.paymentMethod)}
                                 {" · "}
                                 <span className={`font-semibold ${order.paymentStatus === "PAID" ? "text-emerald-600" : "text-slate-500"}`}>
                                   {order.paymentStatus === "PAID" ? "Đã thanh toán" : "Chưa thanh toán"}

@@ -251,11 +251,8 @@ export const vi: Dict = {
     defaultCta: "Khám phá ngay",
   },
   shopLinks: {
-    men: "Nam",
-    women: "Nữ",
-    kids: "Trẻ em",
-    uniform: "Đồng phục",
-    blog: "Tin tức",
+    basicProducts: "Sản phẩm cơ bản",
+    collections: "Bộ sưu tập",
   },
   serviceLinks: {
     loyalty: "Chính sách khách hàng thân thiết",

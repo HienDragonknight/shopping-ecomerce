@@ -251,11 +251,8 @@ export const en: Dict = {
     defaultCta: "Explore now",
   },
   shopLinks: {
-    men: "Men",
-    women: "Women",
-    kids: "Kids",
-    uniform: "Uniforms",
-    blog: "Blog",
+    basicProducts: "Basic Products",
+    collections: "Collections",
   },
   serviceLinks: {
     loyalty: "Loyalty Program Policy",

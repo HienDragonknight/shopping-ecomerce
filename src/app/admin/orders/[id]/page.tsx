@@ -3,6 +3,7 @@
 import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
+import { getPaymentMethodLabel } from "@/lib/payment";
 
 interface PageProps { params: Promise<{ id: string }> }
 
@@ -163,7 +164,7 @@ export default function AdminOrderDetailPage({ params }: PageProps) {
             </div>
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">💳 Thanh toán</p>
-              <p className="font-semibold text-[#1A1A1A]">{order.paymentMethod === "COD" ? "Tiền mặt (COD)" : "VNPay"}</p>
+              <p className="font-semibold text-[#1A1A1A]">{getPaymentMethodLabel(order.paymentMethod)}</p>
               <span className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full mt-1.5 ${
                 order.paymentStatus === "PAID" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"
               }`}>

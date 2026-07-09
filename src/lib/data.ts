@@ -134,13 +134,13 @@ export const navCategories: NavCategory[] = [
     ]
   },
   {
-    name: "Sản phẩm",
-    nameEn: "Products",
+    name: "Sản phẩm cơ bản",
+    nameEn: "Basic Products",
     href: "/products",
     groups: [
       {
-        title: "Sản phẩm cơ bản",
-        titleEn: "Basic Products",
+        title: "Danh mục",
+        titleEn: "Categories",
         items: [
           { name: "Tất cả sản phẩm", nameEn: "All Products", href: "/products" },
           { name: "Nam", nameEn: "Men", href: "/category/nam" },
@@ -148,6 +148,13 @@ export const navCategories: NavCategory[] = [
           { name: "Trẻ em", nameEn: "Kids", href: "/category/tre-em" },
         ],
       },
+    ],
+  },
+  {
+    name: "Bộ sưu tập",
+    nameEn: "Collections",
+    href: "/collections",
+    groups: [
       {
         title: "Bộ sưu tập",
         titleEn: "Collections",
