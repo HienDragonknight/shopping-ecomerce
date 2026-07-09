@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import { HeroBanner } from "@/components/HeroBanner";
-import { TrustBanner } from "@/components/TrustBanner";
 import { ProductSection } from "@/components/ProductSection";
 import { BlogSection } from "@/components/BlogSection";
 import {
@@ -40,7 +39,6 @@ export default async function Home() {
   return (
     <>
       <HeroBanner slides={banners} />
-      <TrustBanner />
 
       {/* Dynamic Product Sections from Database */}
       {productSections.length > 0 ? (
