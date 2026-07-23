@@ -5,6 +5,7 @@ import Link from "next/link";
 import api from "@/lib/api";
 import { KpiCard } from "@/components/admin/KpiCard";
 import { ChartCard } from "@/components/admin/ChartCard";
+import { VisitorStatsCard } from "@/components/admin/VisitorStatsCard";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
@@ -193,6 +194,9 @@ export default function AdminDashboardPage() {
           Xem báo cáo
         </Link>
       </div>
+
+      {/* Realtime Visitor Statistics Card */}
+      <VisitorStatsCard />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">

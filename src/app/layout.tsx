@@ -6,6 +6,7 @@ import { Footer } from "@/components/Footer";
 import { BottomNavigation } from "@/components/BottomNavigation";
 import { LocaleProvider } from "@/context/LocaleContext";
 import { TranslationBanner } from "@/components/TranslationBanner";
+import { VisitorTracker } from "@/components/VisitorTracker";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -44,6 +45,7 @@ export default function RootLayout({
         style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
       >
         <LocaleProvider>
+          <VisitorTracker />
           <Header />
           <main className="flex-1 pb-20 lg:pb-0">{children}</main>
           <Footer />
