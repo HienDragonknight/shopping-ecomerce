@@ -25,19 +25,10 @@ export default function CollectionsPage() {
     setLoading(true);
     api.get("/homepage/collections")
       .then(res => {
-        if (res?.data?.data && res.data.data.length > 0) {
-          const MOCK_SLUGS = [
-            'dream-team-winner',
-            'ao-chong-nang',
-            'bst-sip-emmm',
-            'ao-giu-nhiet-xtra-heat',
-            'jeans-collection',
-            'bst-business-casual',
-            'yody-sport-nhe-tenh',
-            'everyday-basics'
-          ];
-          const filtered = res.data.data.filter((item: any) => !MOCK_SLUGS.includes(item.slug));
-          setCols(filtered);
+        if (res?.data?.data) {
+          setCols(res.data.data);
+        } else {
+          setCols([]);
         }
       })
       .catch(() => {
