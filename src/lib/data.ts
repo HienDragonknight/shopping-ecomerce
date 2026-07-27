@@ -1,15 +1,6 @@
 import type { Product, Collection, BlogPost, NavCategory, ProductSectionData } from "@/types";
 
-export const collections: Collection[] = [
-  { id: "1", name: "BST Dream Team Winner", slug: "dream-team-winner", image: "https://placehold.co/64x64/1A1A1A/FCCE00?text=DT" },
-  { id: "2", name: "BST ÁO CHỐNG NẮNG", slug: "ao-chong-nang", image: "https://placehold.co/64x64/2d6a4f/ffffff?text=UV" },
-  { id: "3", name: "BST SỊP ÊM", slug: "bst-sip-emmm", image: "https://placehold.co/64x64/9B59B6/ffffff?text=SÊ" },
-  { id: "4", name: "ÁO GIỮ NHIỆT XTRA-HEAT™", slug: "ao-giu-nhiet-xtra-heat", image: "https://placehold.co/64x64/E53E3E/ffffff?text=XH" },
-  { id: "5", name: "BST JEAN FLEX", slug: "jeans-collection", image: "https://placehold.co/64x64/1565C0/ffffff?text=JF" },
-  { id: "6", name: "BST BUSINESS CASUAL", slug: "bst-business-casual", image: "https://placehold.co/64x64/37474F/ffffff?text=BC" },
-  { id: "7", name: "BST SPORT NHẸ TÊNH", slug: "yody-sport-nhe-tenh", image: "https://placehold.co/64x64/F5A623/ffffff?text=SP" },
-  { id: "8", name: "BST EVERYDAY BASIC", slug: "everyday-basics", image: "https://placehold.co/64x64/555555/ffffff?text=EB" },
-];
+export const collections: Collection[] = [];
 
 function pImg(w: number, h: number, bg: string, label: string) {
   const lower = label.toLowerCase();

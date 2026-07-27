@@ -10,11 +10,6 @@ const nextConfig: NextConfig = {
     // TypeScript is checked separately via `npx tsc --noEmit` — skip the subprocess spawn in build
     ignoreBuildErrors: true,
   },
-  // @ts-expect-error - eslint option is deprecated in NextConfig but we want to ignore it during build
-  eslint: {
-    // ESLint is checked separately — skip the subprocess spawn in build
-    ignoreDuringBuilds: true,
-  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "file.hstatic.net" },
@@ -25,6 +20,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "res.cloudinary.com" },
       { protocol: "http", hostname: "localhost" },
       { protocol: "https", hostname: "fashion-backend-production-8e3b.up.railway.app" },
+      { protocol: "https", hostname: "image3.luatvietnam.vn" },
+      { protocol: "https", hostname: "*.luatvietnam.vn" },
     ],
     dangerouslyAllowSVG: true,
   },

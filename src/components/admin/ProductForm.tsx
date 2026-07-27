@@ -45,6 +45,7 @@ export function ProductForm({ productId }: ProductFormProps) {
     thumbnailUrl: string;
     isActive: boolean;
     isFeatured: boolean;
+    isCollection: boolean;
     weightGrams: number;
     categoryId: string;
     brandId: string;
@@ -59,6 +60,7 @@ export function ProductForm({ productId }: ProductFormProps) {
     thumbnailUrl: "",
     isActive: true,
     isFeatured: false,
+    isCollection: false,
     weightGrams: 300,
     categoryId: "",
     brandId: "",
@@ -132,6 +134,7 @@ export function ProductForm({ productId }: ProductFormProps) {
           thumbnailUrl: p.thumbnailUrl || "",
           isActive: p.isActive !== false,
           isFeatured: !!p.isFeatured,
+          isCollection: !!p.isCollection,
           weightGrams: p.weightGrams || 300,
           categoryId: p.category?.id ? p.category.id.toString() : "",
           brandId: p.brand?.id ? p.brand.id.toString() : "",
@@ -1147,6 +1150,21 @@ export function ProductForm({ productId }: ProductFormProps) {
                 <div>
                   <p className="text-xs font-bold text-slate-800">Đánh dấu nổi bật</p>
                   <p className="text-[10px] text-slate-400">Đưa sản phẩm lên banner hoặc các mục nổi bật</p>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-xl transition-all border border-amber-100 bg-amber-50/30">
+                <input
+                  type="checkbox"
+                  checked={form.isCollection}
+                  onChange={(e) => setForm({ ...form, isCollection: e.target.checked })}
+                  className="w-4 h-4 accent-amber-600 rounded"
+                />
+                <div>
+                  <p className="text-xs font-bold text-amber-900 flex items-center gap-1">
+                    <span>✨ Sản phẩm Collection (BST)</span>
+                  </p>
+                  <p className="text-[10px] text-amber-700">Chỉ hiển thị sản phẩm ở mục Collection, ẩn khỏi danh mục thường</p>
                 </div>
               </label>
             </div>

@@ -165,7 +165,7 @@ export default function ProductListPage() {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const p: Record<string, string | number> = { page, size: PAGE_SIZE, sort };
+      const p: Record<string, string | number | boolean> = { page, size: PAGE_SIZE, sort, isCollection: false };
       if (categoryId) p.categoryId = categoryId;
       if (brandId) p.brandId = brandId;
       if (minPrice) p.minPrice = minPrice;
@@ -174,7 +174,7 @@ export default function ProductListPage() {
       if (minDiscountPercent !== null) p.minDiscountPercent = minDiscountPercent;
       
       if (search.trim()) {
-        const res = await api.get("/products/search", { params: { q: search, page, size: PAGE_SIZE } });
+        const res = await api.get("/products/search", { params: { q: search, page, size: PAGE_SIZE, isCollection: false } });
         setProducts(res.data.data.content || []);
         setTotal(res.data.data.totalElements || 0);
         return;

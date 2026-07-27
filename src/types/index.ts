@@ -13,6 +13,7 @@ export interface Product {
   badge?: string;
   slug: string;
   genderTags?: GenderTag[];
+  isCollection?: boolean;
 }
 
 export interface Collection {
@@ -80,6 +81,7 @@ export interface ApiProductCard {
   originalPrice?: number;
   image: string;
   genderTags?: GenderTag[];
+  isCollection?: boolean;
 }
 
 export interface ApiProductSection {

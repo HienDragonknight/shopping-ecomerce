@@ -63,3 +63,13 @@ scripts/            # Asset download scripts
 - After editing `.claude/skills/clone-website/SKILL.md`, run `node scripts/sync-skills.mjs` to regenerate the skill for all platforms.
 
 @docs/research/INSPECTION_GUIDE.md
+
+
+
+1. Backend (Spring Boot)
+
+
+Công nghệ khởi chạy: Sử dụng Java JDK openjdk-22.0.1 (C:\Users\Hp\.jdks\openjdk-22.0.1) và Maven.
+2. Frontend (Next.js)
+
+run code be và fe cho tôi

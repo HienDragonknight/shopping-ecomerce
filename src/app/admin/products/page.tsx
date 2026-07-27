@@ -47,6 +47,7 @@ interface Product {
   category: { id: number; name: string } | null;
   variants: ProductVariant[];
   totalStock?: number;
+  isCollection?: boolean;
 }
 
 interface Category { id: number; name: string; parentId?: number | null }
@@ -84,6 +85,7 @@ export default function AdminProductsPage() {
   const [brandId, setBrandId] = useState("");
   const [statusFilter, setStatusFilter] = useState(""); // "" | "active" | "inactive"
   const [stockFilter, setStockFilter] = useState(""); // "" | "out" | "low" | "in"
+  const [collectionFilter, setCollectionFilter] = useState(""); // "" | "collection" | "normal"
   const [showFilters, setShowFilters] = useState(false);
 
   // Debounce search — chỉ gọi API sau 350ms kể từ lần gõ cuối cùng
@@ -143,6 +145,8 @@ export default function AdminProductsPage() {
       if (categoryId) params.categoryId = categoryId;
       if (brandId) params.brandId = brandId;
       if (statusFilter) params.isActive = statusFilter === "active";
+      if (collectionFilter === "collection") params.isCollection = true;
+      if (collectionFilter === "normal") params.isCollection = false;
 
       // DB-native sorting
       if (sortField === "price") {
@@ -216,6 +220,7 @@ export default function AdminProductsPage() {
         thumbnailUrl: p.thumbnailUrl || "",
         isActive: !p.isActive,
         isFeatured: p.isFeatured,
+        isCollection: !!p.isCollection,
         categoryId: p.category?.id || null,
         brandId: p.brand?.id || null,
         variants: p.variants || []
@@ -444,7 +449,7 @@ export default function AdminProductsPage() {
             >
               <SlidersHorizontal size={15} />
               Bộ lọc nâng cao
-              {(categoryId || brandId || statusFilter || stockFilter) && (
+              {(categoryId || brandId || statusFilter || stockFilter || collectionFilter) && (
                 <span className="w-2 h-2 bg-[#1A1A1A] rounded-full" />
               )}
             </button>
@@ -488,9 +493,18 @@ export default function AdminProductsPage() {
                 <option value="out">Đã hết hàng (0)</option>
               </select>
             </div>
+            <div>
+              <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Loại sản phẩm</label>
+              <select value={collectionFilter} onChange={e => { setCollectionFilter(e.target.value); setPage(0); }}
+                className="w-full h-9 px-3 text-xs border border-slate-200 rounded-xl bg-white focus:outline-none">
+                <option value="">Tất cả loại</option>
+                <option value="normal">Sản phẩm thường</option>
+                <option value="collection">BST Collection</option>
+              </select>
+            </div>
             <div className="sm:col-span-4 flex justify-end">
               <button 
-                onClick={() => { setCategoryId(""); setBrandId(""); setStatusFilter(""); setStockFilter(""); setSearch(""); setPage(0); }}
+                onClick={() => { setCategoryId(""); setBrandId(""); setStatusFilter(""); setStockFilter(""); setCollectionFilter(""); setSearch(""); setPage(0); }}
                 className="text-xs font-bold text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors"
               >
                 Xóa tất cả bộ lọc
@@ -615,6 +629,11 @@ export default function AdminProductsPage() {
                               {p.isFeatured && (
                                 <span className="text-[9px] bg-red-50 text-red-600 px-1 py-0.5 rounded font-black flex items-center gap-0.5">
                                   <Sparkles size={8} /> Nổi bật
+                                </span>
+                              )}
+                              {p.isCollection && (
+                                <span className="text-[9px] bg-amber-50 text-amber-700 border border-amber-200 px-1 py-0.5 rounded font-black flex items-center gap-0.5">
+                                  ✨ Collection
                                 </span>
                               )}
                             </div>
