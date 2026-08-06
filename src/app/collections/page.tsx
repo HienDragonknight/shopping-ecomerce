@@ -17,7 +17,7 @@ export default function CollectionsPage() {
 
   const [cols, setCols] = useState<Collection[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  
+
   const [collectionProducts, setCollectionProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState<boolean>(true);
 
@@ -25,10 +25,19 @@ export default function CollectionsPage() {
     setLoading(true);
     api.get("/homepage/collections")
       .then(res => {
-        if (res?.data?.data) {
-          setCols(res.data.data);
-        } else {
-          setCols([]);
+        if (res?.data?.data && res.data.data.length > 0) {
+          const MOCK_SLUGS = [
+            'dream-team-winner',
+            'ao-chong-nang',
+            'bst-sip-emmm',
+            'ao-giu-nhiet-xtra-heat',
+            'jeans-collection',
+            'bst-business-casual',
+            'yody-sport-nhe-tenh',
+            'everyday-basics'
+          ];
+          const filtered = res.data.data.filter((item: any) => !MOCK_SLUGS.includes(item.slug));
+          setCols(filtered);
         }
       })
       .catch(() => {
@@ -51,7 +60,7 @@ export default function CollectionsPage() {
         }));
         setCollectionProducts(mapped);
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoadingProducts(false));
   }, []);
 
@@ -123,7 +132,7 @@ export default function CollectionsPage() {
                       />
                       {/* Premium gradient overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-90 group-hover:opacity-100 transition-opacity duration-300" />
-                      
+
                       {/* Absolute Badge */}
                       <div className="absolute top-4 left-4">
                         <span className="inline-block px-3 py-1 rounded-full text-[9px] font-extrabold bg-[#fcaf17] text-black uppercase tracking-wider shadow-sm">
@@ -171,7 +180,7 @@ export default function CollectionsPage() {
                 : "Các thiết kế độc bản chỉ xuất hiện giới hạn trong các ấn phẩm Lookbook thời trang của Vie'Co."}
             </p>
           </div>
-          
+
           {collectionProducts.length > 0 && (
             <div className="text-xs text-slate-400 font-bold shrink-0">
               Hiển thị {collectionProducts.length} sản phẩm
