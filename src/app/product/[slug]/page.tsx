@@ -124,8 +124,17 @@ export default function ProductDetailPage({ params }: PageProps) {
   };
 
   const handleBuyNow = async () => {
-    await handleAddToCart();
-    router.push("/checkout");
+    if (!isAuthenticated) { router.push("/account/login?redirect=/product/" + slug); return; }
+    if (!selectedVariant) { setAddError(t.product.noVariantError); return; }
+    if (selectedVariant.stockQty < quantity) { setAddError(t.product.insufficientStock); return; }
+    setAddError("");
+    try {
+      await addItem(selectedVariant.id, quantity);
+      router.push("/checkout");
+    } catch (err) {
+      const axiosErr = err as { response?: { data?: { message?: string } } };
+      setAddError(axiosErr?.response?.data?.message || t.product.cartError);
+    }
   };
 
   const copySku = () => {

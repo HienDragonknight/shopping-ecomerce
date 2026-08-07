@@ -78,7 +78,11 @@ export default function CheckoutPage() {
   const handleSaveAddress = async (data: AddressFormData) => {
     setSavingAddress(true);
     try {
-      const cleanData = { ...data, phone: data.phone.replace(/[\s\-().]/g, "") };
+      let cleanPhone = data.phone.replace(/[^0-9]/g, "");
+      if (cleanPhone.startsWith("84") && cleanPhone.length > 10) {
+        cleanPhone = "0" + cleanPhone.slice(2);
+      }
+      const cleanData = { ...data, phone: cleanPhone };
       const res = await api.post("/addresses", cleanData);
       const newAddr: Address = res.data.data;
       const updatedRes = await api.get("/addresses");

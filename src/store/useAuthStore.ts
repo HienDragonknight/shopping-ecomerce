@@ -56,6 +56,7 @@ export const useAuthStore = create<AuthState>()(
           setUser(user);
           set({ user, isAuthenticated: true });
           syncAuthCookie(user, true);
+          useCartStore.getState().fetchCart().catch(() => {});
         } finally {
           set({ isLoading: false });
         }
@@ -70,6 +71,7 @@ export const useAuthStore = create<AuthState>()(
           setUser(user);
           set({ user, isAuthenticated: true });
           syncAuthCookie(user, true);
+          useCartStore.getState().fetchCart().catch(() => {});
         } finally {
           set({ isLoading: false });
         }
@@ -84,6 +86,7 @@ export const useAuthStore = create<AuthState>()(
           setUser(user);
           set({ user, isAuthenticated: true });
           syncAuthCookie(user, true);
+          useCartStore.getState().fetchCart().catch(() => {});
         } finally {
           set({ isLoading: false });
         }
