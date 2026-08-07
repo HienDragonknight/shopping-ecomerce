@@ -41,41 +41,13 @@ export default function LoginPage() {
     }
   };
 
-  const DEV_ACCOUNTS = [
-    { label: "Admin", email: "admin@fashion.com", password: "Admin@123", color: "#1A1A1A", bg: "#1A1A1A" },
-    { label: "Customer", email: "customer@test.com", password: "123456", color: "#fff", bg: "#333" },
-  ];
-
   return (
     <OAuthProviders>
-    <div className="flex justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[#F5F5F5] min-h-[80vh]">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm p-8">
-        <h1 className="text-2xl font-bold text-[#1A1A1A] text-center mb-4">{t.auth.login}</h1>
+      <div className="flex justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[#F5F5F5] min-h-[80vh]">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-sm p-8">
+          <h1 className="text-2xl font-bold text-[#1A1A1A] text-center mb-4">{t.auth.login}</h1>
 
-        {/* DEV QUICK-LOGIN */}
-        <div className="mb-5 rounded-xl border border-dashed border-[#1A1A1A] bg-[#FFFBEB] p-3">
-          <p className="text-[10px] font-bold text-[#999] uppercase tracking-widest mb-2 text-center">
-            🛠 Dev accounts — click để điền nhanh
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {DEV_ACCOUNTS.map((acc) => (
-              <button
-                key={acc.label}
-                type="button"
-                onClick={() => { setIdentifier(acc.email); setPassword(acc.password); }}
-                className="flex flex-col items-start gap-0.5 rounded-lg px-3 py-2 text-left transition-all hover:scale-[1.02] active:scale-95 border border-[#E5E5E5] hover:border-[#1A1A1A] bg-white hover:bg-[#FFFDE7] shadow-sm"
-              >
-                <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full mb-1" style={{ background: acc.bg, color: acc.color }}>
-                  {acc.label}
-                </span>
-                <span className="text-[11px] font-mono text-[#1A1A1A] truncate w-full">{acc.email}</span>
-                <span className="text-[11px] font-mono text-[#666]">{acc.password}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {error && (
+          {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm text-center flex items-center gap-2 justify-center">
             <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
