@@ -204,7 +204,7 @@ export function Header() {
                 {/* AR Scan Link */}
                 <li className="relative">
                   <Link
-                    href="https://ar-beige-delta.vercel.app/"
+                    href="https://ar-ashen-nine.vercel.app/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block py-5 text-[13px] font-bold text-[#1A1A1A] hover:text-slate-500 transition-colors whitespace-nowrap tracking-wide relative after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-[#1A1A1A] after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 after:origin-center"
@@ -389,7 +389,7 @@ export function Header() {
                   {/* Mobile Menu AR Scan Link */}
                   <li className="border-b border-slate-200/70 py-4">
                     <a
-                      href="https://ar-beige-delta.vercel.app/"
+                      href="https://ar-ashen-nine.vercel.app/"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="block text-[17px] tracking-tight font-semibold text-[#1A1A1A] mb-1"

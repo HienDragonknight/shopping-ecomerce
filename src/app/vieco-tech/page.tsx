@@ -59,7 +59,7 @@ export default function ViecoTechPage() {
 
             <div className="pt-10">
               <a
-                href="https://ar-beige-delta.vercel.app/"
+                href="https://ar-ashen-nine.vercel.app/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center w-full py-4 text-sm font-semibold bg-black text-white group-hover:bg-white group-hover:text-black transition-colors"
