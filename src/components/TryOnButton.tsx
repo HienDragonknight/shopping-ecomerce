@@ -4,16 +4,22 @@ import { useRouter } from "next/navigation";
 
 interface Props {
   productId: number;
+  color?: string;
   className?: string;
 }
 
-export default function TryOnButton({ productId, className = "" }: Props) {
+export default function TryOnButton({ productId, color, className = "" }: Props) {
   const router = useRouter();
+
+  const handleNavigate = () => {
+    const url = `/try-on?productId=${productId}${color ? `&color=${encodeURIComponent(color)}` : ""}`;
+    router.push(url);
+  };
 
   return (
     <button
       id={`try-on-btn-${productId}`}
-      onClick={() => router.push(`/try-on?productId=${productId}`)}
+      onClick={handleNavigate}
       className={`group flex items-center justify-center gap-2 w-full py-3 px-4 border-2 border-black bg-white hover:bg-black text-black hover:text-white rounded-xl transition-all duration-200 text-sm font-semibold ${className}`}
     >
       {/* Shirt icon */}

@@ -146,8 +146,24 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
     if (!personFile) return;
     setStep("processing"); setError("");
     try {
+      let garmentFile: File | null = null;
+      if (productImageUrl) {
+        try {
+          const res = await fetch(productImageUrl);
+          if (res.ok) {
+            const blob = await res.blob();
+            garmentFile = new File([blob], "garment.jpg", { type: blob.type || "image/jpeg" });
+          }
+        } catch (e) {
+          console.warn("[TryOnPanel] Fetching productImageUrl failed:", e);
+        }
+      }
+
       const fd = new FormData();
       fd.append("personImage", personFile);
+      if (garmentFile) {
+        fd.append("garmentImage", garmentFile);
+      }
       fd.append("garmentImageUrl", productImageUrl || "");
       fd.append("productId", String(productId));
       fd.append("productName", productName);
@@ -325,6 +341,16 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
 
           {(step === "idle" || step === "error") && (
             <>
+              {productImageUrl && (
+                <div className="flex items-center gap-3 p-2 bg-pink-50/50 border border-pink-100 rounded-xl">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={productImageUrl} alt={productName} className="w-12 h-14 object-contain rounded-lg bg-white border border-gray-100 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400">Mẫu thử đang chọn</p>
+                    <p className="text-xs font-bold text-[#1A1A1A] truncate">{productName}</p>
+                  </div>
+                </div>
+              )}
               {error && <p className="text-xs text-red-500 text-center font-medium">{error}</p>}
               <button
                 onClick={handleTryOn}

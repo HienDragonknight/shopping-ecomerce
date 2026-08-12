@@ -3,20 +3,61 @@
 import { useState, useRef, useCallback, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { QRCodeSVG } from "qrcode.react";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCartStore } from "@/store/useCartStore";
 import { getAccessToken } from "@/lib/auth";
+import CameraCaptureModal from "@/components/try-on/CameraCaptureModal";
+import QrCodeModal from "@/components/try-on/QrCodeModal";
+import { RippleLoader, WaveBars, RotatingTip } from "@/components/try-on/TryOnLoaders";
 
 const PINK = "#FF2D78";
 
-interface ProductInfo {
-  id: number; name: string; slug: string;
-  thumbnailUrl: string | null; effectivePrice: number;
-  category?: { name: string };
+interface VariantInfo {
+  id: number;
+  size: string | null;
+  color: string | null;
+  colorHex: string | null;
+  imageUrls?: string[];
+  stockQty: number;
 }
 
-type Step = "upload" | "processing" | "result" | "error";
+interface ProductInfo {
+  id: number;
+  name: string;
+  slug: string;
+  thumbnailUrl: string | null;
+  effectivePrice: number;
+  category?: { name: string };
+  imageUrls?: string[];
+  variants?: VariantInfo[];
+}
+
+// Pre-defined sample outfits from public/images/custome/
+const PRESET_OUTFITS = [
+  {
+    id: "outfit1",
+    label: "Bộ Trang Phục 1",
+    url: "/images/custome/1785493157090_6183024285053964314_6183024285053964314_5975b1d7ce238f09ace3c7b2ded94e37.jpg",
+    category: "dresses",
+  },
+  {
+    id: "outfit2",
+    label: "Bộ Trang Phục 2",
+    url: "/images/custome/1785493395531_6183024285053964314_6183024285053964314_d75d6731b5ee10679443168d153d4193.jpg",
+    category: "dresses",
+  },
+];
+
+const TIPS = [
+  "Dùng ảnh toàn thân hoặc nửa thân rõ mặt",
+  "Giữ khoảng cách 1.5m - 2.0m từ camera",
+  "Đảm bảo đủ ánh sáng, tránh nguồn sáng chói chiếu thẳng",
+  "Nhìn thẳng camera và đứng ở giữa khung hình",
+];
+
+type Step = "idle" | "processing" | "result" | "error";
 
 function TryOnContent() {
   const searchParams = useSearchParams();
@@ -25,347 +66,667 @@ function TryOnContent() {
   const { addItem } = useCartStore();
   const productId = searchParams.get("productId");
 
-  const [step, setStep] = useState<Step>("upload");
+  const [step, setStep] = useState<Step>("idle");
   const [personFile, setPersonFile] = useState<File | null>(null);
   const [personPreview, setPersonPreview] = useState<string | null>(null);
+  
+  // Product & Preset states
   const [product, setProduct] = useState<ProductInfo | null>(null);
-  const [loadingProduct, setLoadingProduct] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState<VariantInfo | null>(null);
+  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(PRESET_OUTFITS[0].id);
+  const [useCustomProduct, setUseCustomProduct] = useState(false);
+
+  const [modelType, setModelType] = useState<"IDM_VTON" | "OOTDIFFUSION" | "OPENAI">("IDM_VTON");
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [progress, setProgress] = useState(0);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
+
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!productId) return;
-    setLoadingProduct(true);
     api.get(`/products/${productId}`)
-      .then(r => setProduct(r.data.data))
-      .catch(() => setProduct(null))
-      .finally(() => setLoadingProduct(false));
-  }, [productId]);
+      .then((r) => {
+        const p: ProductInfo = r.data.data;
+        setProduct(p);
+        setUseCustomProduct(true);
+        const paramColor = searchParams.get("color");
+        const match = paramColor
+          ? p.variants?.find((v) => v.color?.toLowerCase() === paramColor.toLowerCase())
+          : null;
+        setSelectedVariant(match || p.variants?.[0] || null);
+      })
+      .catch(() => setProduct(null));
+  }, [productId, searchParams]);
 
-  const handleFile = (file: File) => {
-    if (!file.type.startsWith("image/")) { setError("Vui lòng chọn file ảnh"); return; }
-    if (file.size > 10 * 1024 * 1024) { setError("Ảnh tối đa 10MB"); return; }
-    setError(""); setPersonFile(file); setPersonPreview(URL.createObjectURL(file));
+  const handlePersonFile = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setError("Vui lòng chọn file ảnh cá nhân (JPG, PNG, WEBP)");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Ảnh cá nhân tối đa 10MB");
+      return;
+    }
+    setError("");
+    setPersonFile(file);
+    setPersonPreview(URL.createObjectURL(file));
   };
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    const f = e.dataTransfer.files[0]; if (f) handleFile(f);
-  }, []); // eslint-disable-line
+    const f = e.dataTransfer.files[0];
+    if (f) handlePersonFile(f);
+  }, []);
 
   const handleTryOn = async () => {
-    if (!personFile || !product) return;
-    setStep("processing"); setProgress(10); setError("");
-    const iv = setInterval(() => setProgress(p => Math.min(p + 8, 88)), 2500);
+    if (!personFile) {
+      setError("Vui lòng tải lên hoặc chụp ảnh cá nhân của bạn");
+      return;
+    }
+
+    setStep("processing");
+    setError("");
+
     try {
+      let garmentFile: File | null = null;
+      let garmentUrl = "";
+      let productName = "";
+      let category = "dresses";
+
+      if (useCustomProduct && product) {
+        garmentUrl = (selectedVariant?.imageUrls && selectedVariant.imageUrls.length > 0)
+          ? selectedVariant.imageUrls[0]
+          : (product.thumbnailUrl || "");
+        productName = selectedVariant?.color ? `${product.name} (${selectedVariant.color})` : product.name;
+        category = product.category?.name || "dresses";
+      } else {
+        const preset = PRESET_OUTFITS.find((p) => p.id === selectedPresetId);
+        if (!preset) throw new Error("Vui lòng chọn 1 trang phục");
+        garmentUrl = preset.url;
+        productName = preset.label;
+        category = preset.category;
+      }
+
+      // Convert image URL to File blob if using static / preset URL
+      if (garmentUrl && garmentUrl.startsWith("/")) {
+        try {
+          const res = await fetch(garmentUrl);
+          const blob = await res.blob();
+          garmentFile = new File([blob], "garment.jpg", { type: blob.type || "image/jpeg" });
+        } catch {
+          // ignore error
+        }
+      }
+
       const fd = new FormData();
       fd.append("personImage", personFile);
-      fd.append("garmentImageUrl", product.thumbnailUrl || "");
-      fd.append("productId", String(product.id));
-      fd.append("productName", product.name);
+      if (garmentFile) {
+        fd.append("garmentImage", garmentFile);
+      }
+      fd.append("garmentImageUrl", garmentUrl);
+      if (useCustomProduct && product) {
+        fd.append("productId", String(product.id));
+      }
+      fd.append("productName", productName);
+      fd.append("category", category);
+      fd.append("modelType", modelType);
+
       const token = getAccessToken();
       if (token) fd.append("authToken", token);
 
       const res = await fetch("/api/try-on", { method: "POST", body: fd });
       const data = await res.json();
-      if (!res.ok || data.error) { setError(data.error || "Thử đồ thất bại"); setStep("error"); return; }
-      setResultUrl(data.resultUrl); setProgress(100); setStep("result");
+
+      if (!res.ok || data.error) {
+        setError(data.error || "AI xử lý thất bại. Vui lòng thử lại.");
+        setStep("error");
+        return;
+      }
+
+      setResultUrl(data.resultUrl);
+      setStep("result");
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Lỗi không xác định"); setStep("error");
-    } finally { clearInterval(iv); }
+      setError(e instanceof Error ? e.message : "Lỗi không xác định khi thử đồ");
+      setStep("error");
+    }
   };
 
   const handleAddToCart = async () => {
     if (!product) return;
-    if (!isAuthenticated) { router.push(`/account/login?redirect=/try-on?productId=${product.id}`); return; }
+    if (!isAuthenticated) {
+      router.push(`/account/login?redirect=/try-on?productId=${product.id}`);
+      return;
+    }
     try {
       const r = await api.get(`/products/${product.slug}`);
       const variants = r.data.data.variants || [];
       const v = variants.find((x: { stockQty: number }) => x.stockQty > 0) || variants[0];
       if (v) await addItem(v.id, 1);
-      setAddedToCart(true); setTimeout(() => setAddedToCart(false), 2500);
-    } catch { /* ignore */ }
+      setAddedToCart(true);
+      setTimeout(() => setAddedToCart(false), 2500);
+    } catch {
+      /* ignore */
+    }
   };
 
-  const reset = () => {
-    setStep("upload"); setResultUrl(null); setError("");
-    setProgress(0); setPersonFile(null); setPersonPreview(null);
+  const resetAll = () => {
+    setStep("idle");
+    setResultUrl(null);
+    setError("");
+    setPersonFile(null);
+    setPersonPreview(null);
+    setIsQrModalOpen(false);
+    setCopied(false);
+  };
+
+  const handleCopyLink = () => {
+    if (!resultUrl) return;
+    navigator.clipboard.writeText(resultUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   };
 
   const isProcessing = step === "processing";
   const isDone = step === "result";
 
   return (
-    <div className="min-h-screen bg-[#F9F9F9]">
+    <div className="min-h-screen bg-[#F9F9F9] pb-20 pt-6">
       {/* ── Top nav ── */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center gap-2 text-sm">
+      <div className="bg-white border-b border-gray-200 mb-6">
+        <div className="max-w-6xl mx-auto px-4 py-3.5 flex items-center gap-2 text-sm">
           <Link href="/" className="text-gray-400 hover:text-black">Home</Link>
           <span className="text-gray-300">/</span>
-          {product && <><Link href="/products" className="text-gray-400 hover:text-black">Products</Link><span className="text-gray-300">/</span></>}
+          {product && (
+            <>
+              <Link href="/products" className="text-gray-400 hover:text-black">Products</Link>
+              <span className="text-gray-300">/</span>
+            </>
+          )}
           <span className="font-semibold text-gray-700">Virtual Try-On</span>
-          <span className="ml-auto inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full text-white" style={{ background: PINK }}>
-            ✦ AI Powered
+          <span
+            className="ml-auto inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full text-white shadow-sm"
+            style={{ background: PINK }}
+          >
+            ✦ AI Try-On Studio
           </span>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-black mb-2">Virtual Try-On</h1>
-          <p className="text-gray-500 text-sm max-w-md mx-auto">
-            Upload your photo and see how the outfit looks on you — powered by AI
+      <div className="max-w-6xl mx-auto px-4">
+        {/* Header section */}
+        <div className="mb-8 text-center">
+          <span
+            className="inline-block rounded-full px-4 py-1 text-xs font-bold uppercase tracking-widest text-white mb-2"
+            style={{ background: PINK }}
+          >
+            AI Virtual Try-On Studio
+          </span>
+          <h1 className="text-3xl md:text-4xl font-extrabold uppercase tracking-wider text-[#1A1A1A]">
+            Phòng Thử Đồ Ảo AI
+          </h1>
+          <p className="mx-auto mt-2 max-w-xl text-sm text-gray-500">
+            Tải lên 1 ảnh của bạn và chọn 1 trang phục để AI mặc thử trực tiếp trên cơ thể bạn.
           </p>
         </div>
 
-        {/* ── Main 2-col layout ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6">
-
-          {/* LEFT: Steps flow */}
-          <div className="space-y-6">
-
-            {/* Step flow visual (3 boxes like mockup bottom section) */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto_1fr] gap-4 items-start">
-
-                {/* Step 1 — Upload Photo */}
-                <div className="flex flex-col items-center gap-3">
-                  <div className="flex items-center gap-2 self-start">
-                    <span className="w-7 h-7 rounded-full text-white text-xs font-black flex items-center justify-center" style={{ background: PINK }}>1</span>
-                    <p className="font-bold text-sm text-[#1A1A1A]">Upload Photo</p>
-                  </div>
-                  <div
-                    onDrop={handleDrop}
-                    onDragOver={e => e.preventDefault()}
-                    onClick={() => !personPreview && fileRef.current?.click()}
-                    className={`w-full border-2 border-dashed rounded-xl overflow-hidden transition-all
-                      ${personPreview ? "border-gray-200" : "cursor-pointer"}`}
-                    style={{ borderColor: personPreview ? "#e5e7eb" : PINK, minHeight: 200 }}
+        <div className="flex flex-col gap-6">
+          {/* Main Dual Upload Section */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            
+            {/* Card 1: Person Photo */}
+            <div className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-black text-white"
+                    style={{ background: PINK }}
                   >
-                    {personPreview ? (
-                      <div className="relative">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={personPreview} alt="Bạn" className="w-full h-48 object-cover" />
-                        <button onClick={e => { e.stopPropagation(); setPersonFile(null); setPersonPreview(null); }}
-                          className="absolute top-2 right-2 w-6 h-6 bg-black/60 text-white rounded-full flex items-center justify-center text-[11px]">✕</button>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-48 gap-2 px-4">
-                        <svg className="w-10 h-10 opacity-50" style={{ color: PINK }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                        </svg>
-                        <p className="text-sm font-semibold text-gray-600 text-center">Kéo thả hoặc click</p>
-                        <p className="text-xs text-gray-400">JPG, PNG, WEBP · 10MB</p>
-                      </div>
-                    )}
-                  </div>
-                  <input ref={fileRef} type="file" accept="image/*" className="hidden"
-                    onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])} />
-                  {!personPreview && (
-                    <button onClick={() => fileRef.current?.click()}
-                      className="w-full py-2.5 text-sm font-bold text-white rounded-xl transition-all"
-                      style={{ background: PINK }}>
-                      Chọn ảnh
-                    </button>
-                  )}
+                    1
+                  </span>
+                  <p className="text-sm font-bold text-[#1A1A1A]">Ảnh cá nhân của bạn</p>
                 </div>
-
-                {/* Arrow 1 */}
-                <div className="hidden md:flex items-center justify-center pt-10">
-                  <svg className="w-7 h-7 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </div>
-
-                {/* Step 2 — AI Processing */}
-                <div className="flex flex-col items-center gap-3">
-                  <div className="flex items-center gap-2 self-start">
-                    <span className="w-7 h-7 rounded-full text-xs font-black flex items-center justify-center"
-                      style={{ background: isProcessing ? PINK : "#f3f4f6", color: isProcessing ? "white" : "#9ca3af" }}>2</span>
-                    <p className={`font-bold text-sm ${isProcessing ? "text-[#1A1A1A]" : "text-gray-400"}`}>AI Processing</p>
-                  </div>
-                  <div className="w-full border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-3 py-8 px-4" style={{ minHeight: 200 }}>
-                    {isProcessing ? (
-                      <>
-                        {/* Circular spinner */}
-                        <div className="relative w-20 h-20">
-                          <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
-                            <circle cx="40" cy="40" r="34" fill="none" stroke="#fce7ef" strokeWidth="7" />
-                            <circle cx="40" cy="40" r="34" fill="none" strokeWidth="7"
-                              stroke={PINK}
-                              strokeDasharray={`${2 * Math.PI * 34}`}
-                              strokeDashoffset={`${2 * Math.PI * 34 * (1 - progress / 100)}`}
-                              className="transition-all duration-1000" strokeLinecap="round" />
-                          </svg>
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-base font-black" style={{ color: PINK }}>AI</span>
-                          </div>
-                        </div>
-                        <p className="font-bold text-sm text-[#1A1A1A] text-center">Generating your try-on...</p>
-                        <p className="text-xs text-gray-400 text-center">This may take a few seconds</p>
-                      </>
-                    ) : isDone ? (
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: `${PINK}15` }}>
-                          <svg className="w-6 h-6" style={{ color: PINK }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        <p className="text-sm font-bold text-[#1A1A1A]">Completed!</p>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center gap-2 opacity-40">
-                        <div className="w-16 h-16 rounded-full border-4 border-dashed border-gray-300 flex items-center justify-center">
-                          <span className="text-base font-black text-gray-300">AI</span>
-                        </div>
-                        <p className="text-xs text-gray-400">Waiting...</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Arrow 2 */}
-                <div className="hidden md:flex items-center justify-center pt-10">
-                  <svg className="w-7 h-7 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </div>
-
-                {/* Step 3 — Try-On Result */}
-                <div className="flex flex-col items-center gap-3">
-                  <div className="flex items-center gap-2 self-start">
-                    <span className="w-7 h-7 rounded-full text-xs font-black flex items-center justify-center"
-                      style={{ background: isDone ? PINK : "#f3f4f6", color: isDone ? "white" : "#9ca3af" }}>3</span>
-                    <p className={`font-bold text-sm ${isDone ? "text-[#1A1A1A]" : "text-gray-400"}`}>Try-On Result</p>
-                  </div>
-                  <div className="w-full border-2 border-dashed border-gray-200 rounded-xl overflow-hidden" style={{ minHeight: 200 }}>
-                    {resultUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={resultUrl} alt="Kết quả" className="w-full h-48 object-cover" />
-                    ) : (
-                      <div className="flex items-center justify-center h-48 opacity-30">
-                        <svg className="w-12 h-12 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                {personPreview && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPersonFile(null);
+                      setPersonPreview(null);
+                    }}
+                    className="text-xs font-semibold text-gray-400 hover:text-red-500"
+                  >
+                    Đổi ảnh
+                  </button>
+                )}
               </div>
 
-              {/* CTA */}
-              {(step === "upload" || step === "error") && (
-                <div className="mt-6 border-t border-gray-100 pt-5">
-                  {error && <p className="text-xs text-red-500 text-center mb-3 font-medium">{error}</p>}
-                  <button onClick={handleTryOn} disabled={!personFile || !product}
-                    className="w-full py-4 rounded-xl font-bold text-white text-base transition-all active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed"
-                    style={{ background: PINK }}>
-                    Try On Now ✦
+              <div
+                onClick={() => !personPreview && fileRef.current?.click()}
+                onDrop={handleDrop}
+                onDragOver={(e) => e.preventDefault()}
+                className={`relative overflow-hidden rounded-xl border-2 border-dashed transition-all ${
+                  personPreview ? "border-gray-200" : "cursor-pointer hover:border-[#FF2D78]"
+                }`}
+                style={{ borderColor: personPreview ? "#e5e7eb" : PINK, minHeight: 240 }}
+              >
+                {personPreview ? (
+                  <div className="relative flex min-h-[240px] max-h-[380px] w-full items-center justify-center bg-[#f9f9f9]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={personPreview}
+                      alt="Ảnh cá nhân"
+                      className="max-h-[380px] w-full object-contain"
+                    />
+                    <div
+                      className="absolute bottom-2 left-2 rounded-full px-2.5 py-1 text-[11px] font-bold text-white shadow"
+                      style={{ background: PINK }}
+                    >
+                      ✓ Đã chọn ảnh
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex h-60 flex-col items-center justify-center gap-2 px-4">
+                    <span className="text-4xl opacity-80">👤</span>
+                    <p className="text-center text-sm font-bold text-[#1A1A1A]">Tải ảnh hoặc Chụp trực tiếp</p>
+                    <p className="text-center text-xs text-gray-400">Tải tệp từ máy tính hoặc bấm Chụp từ Camera</p>
+                  </div>
+                )}
+              </div>
+
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => e.target.files?.[0] && handlePersonFile(e.target.files[0])}
+              />
+
+              {!personPreview && (
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    className="flex items-center justify-center gap-1.5 rounded-xl border py-2.5 text-xs font-bold transition-all hover:bg-pink-50 active:scale-[0.98]"
+                    style={{ borderColor: PINK, color: PINK }}
+                  >
+                    <span>📤 Tải ảnh lên</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsCameraOpen(true)}
+                    className="flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white transition-all hover:opacity-90 active:scale-[0.98] shadow-sm"
+                    style={{ background: PINK }}
+                  >
+                    <span>📸 Chụp Camera</span>
                   </button>
                 </div>
               )}
             </div>
 
-            {/* Privacy note */}
-            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3 items-start">
-              <svg className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              <div>
-                <p className="text-sm font-bold text-blue-700">Your privacy is our priority</p>
-                <p className="text-xs text-blue-500 mt-0.5">Your photos are used only for virtual try-on and will be deleted after 24 hours.</p>
+            {/* Card 2: Outfit Selection */}
+            <div className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-black text-white"
+                    style={{ background: PINK }}
+                  >
+                    2
+                  </span>
+                  <p className="text-sm font-bold text-[#1A1A1A]">Chọn trang phục</p>
+                </div>
+                {product && (
+                  <button
+                    type="button"
+                    onClick={() => setUseCustomProduct(!useCustomProduct)}
+                    className="text-xs font-semibold underline"
+                    style={{ color: PINK }}
+                  >
+                    {useCustomProduct ? "Dùng trang phục mẫu" : "Dùng sản phẩm đang xem"}
+                  </button>
+                )}
+              </div>
+
+              {/* Product mode vs Preset mode */}
+              {useCustomProduct && product ? (
+                <div className="flex flex-col gap-3 rounded-xl border border-pink-200 bg-pink-50/30 p-3">
+                  <div className="flex gap-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={
+                        (selectedVariant?.imageUrls && selectedVariant.imageUrls.length > 0)
+                          ? selectedVariant.imageUrls[0]
+                          : (product.thumbnailUrl || "/images/placeholder.jpg")
+                      }
+                      alt={product.name}
+                      className="h-24 w-20 object-cover rounded-lg border border-gray-200 bg-white"
+                    />
+                    <div className="flex flex-col justify-center gap-1 min-w-0 flex-1">
+                      <p className="text-xs font-bold text-[#1A1A1A] line-clamp-2">{product.name}</p>
+                      <p className="text-xs font-black" style={{ color: PINK }}>
+                        {product.effectivePrice.toLocaleString("vi-VN")}đ
+                      </p>
+                      <span className="text-[10px] text-gray-500">Danh mục: {product.category?.name || "Khác"}</span>
+
+                      {/* Color swatches selection */}
+                      {product.variants && Array.from(new Map(product.variants.filter(v => v.color).map(v => [v.color!, v])).values()).length > 0 && (
+                        <div className="mt-1 pt-1 border-t border-pink-100 flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] font-bold text-gray-500">Màu sắc:</span>
+                          {Array.from(new Map(product.variants.filter(v => v.color).map(v => [v.color!, v])).values()).map((v) => {
+                            const isSel = selectedVariant?.color === v.color;
+                            return (
+                              <button
+                                key={v.color!}
+                                type="button"
+                                onClick={() => setSelectedVariant(v)}
+                                title={v.color!}
+                                className={`w-5 h-5 rounded-full border transition-all ${
+                                  isSel ? "ring-2 ring-[#FF2D78] border-white scale-110" : "border-gray-300 opacity-70 hover:opacity-100"
+                                }`}
+                                style={{ backgroundColor: v.colorHex || "#ccc" }}
+                              />
+                            );
+                          })}
+                          {selectedVariant?.color && (
+                            <span className="text-[10px] font-semibold text-[#FF2D78] ml-1">
+                              {selectedVariant.color}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="text-xs text-gray-400 -mt-1">
+                    Chọn 1 trong các bộ trang phục bên dưới để AI thử mặc lên ảnh của bạn:
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {PRESET_OUTFITS.map((outfit) => {
+                      const isSelected = !useCustomProduct && selectedPresetId === outfit.id;
+                      return (
+                        <button
+                          key={outfit.id}
+                          type="button"
+                          onClick={() => {
+                            setUseCustomProduct(false);
+                            setSelectedPresetId(outfit.id);
+                            setError("");
+                          }}
+                          className="group relative overflow-hidden rounded-xl border-2 transition-all duration-200 focus:outline-none"
+                          style={{
+                            borderColor: isSelected ? PINK : "#e5e7eb",
+                            boxShadow: isSelected ? `0 0 0 3px ${PINK}30` : "none",
+                          }}
+                        >
+                          <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#f9f9f9]">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={outfit.url}
+                              alt={outfit.label}
+                              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                            {isSelected && (
+                              <div
+                                className="absolute inset-0 flex items-center justify-center"
+                                style={{ background: `${PINK}22` }}
+                              >
+                                <div
+                                  className="flex h-9 w-9 items-center justify-center rounded-full text-white shadow-lg text-lg"
+                                  style={{ background: PINK }}
+                                >
+                                  ✓
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          <div
+                            className="py-2 text-center text-xs font-semibold"
+                            style={{ color: isSelected ? PINK : "#555" }}
+                          >
+                            {outfit.label}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+
+              {/* Model AI selection */}
+              <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-600">Chọn mô hình AI:</span>
+                <select
+                  value={modelType}
+                  onChange={(e) => setModelType(e.target.value as "IDM_VTON" | "OOTDIFFUSION" | "OPENAI")}
+                  className="text-xs border border-gray-300 rounded-lg px-2 py-1 font-medium bg-white focus:outline-none"
+                >
+                  <option value="IDM_VTON">IDM-VTON (Cao cấp - Phù hợp dáng)</option>
+                  <option value="OOTDIFFUSION">OOTDiffusion (Tốc độ cao)</option>
+                  <option value="OPENAI">OpenAI Image Edit</option>
+                </select>
               </div>
             </div>
           </div>
 
-          {/* RIGHT: Product + Result panel */}
-          <div className="space-y-4">
-            {/* Product card */}
-            {loadingProduct ? (
-              <div className="bg-white rounded-2xl border border-gray-200 h-64 animate-pulse" />
-            ) : product ? (
-              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          {/* Requirements & Tips Banner */}
+          <div className="rounded-2xl border border-amber-200/60 bg-amber-50/50 p-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#FF2D78] mb-2 flex items-center gap-1.5">
+              <span>💡</span>
+              Hướng dẫn chụp & tải ảnh để AI xử lý đẹp nhất:
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-700">
+              {TIPS.map((tip, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: PINK }} />
+                  <span>{tip}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Error Notification */}
+          {error && (
+            <div className="flex items-center gap-2 rounded-xl bg-red-50 border border-red-200 p-4 text-xs font-medium text-red-600">
+              <span>⚠️</span>
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Action Button */}
+          {step !== "result" && (
+            <button
+              type="button"
+              disabled={!personFile || isProcessing}
+              onClick={handleTryOn}
+              className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl py-4 text-sm font-bold uppercase tracking-widest text-white shadow-md transition-all active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+              style={{
+                background: personFile && !isProcessing ? `linear-gradient(135deg, ${PINK}, #e02669)` : "#ccc",
+              }}
+            >
+              {isProcessing ? (
+                <>
+                  <WaveBars />
+                  <span className="ml-2">AI đang xử lý ghép đồ...</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-lg">✨</span>
+                  <span>Thử Đồ Ngay Với AI ✦</span>
+                </>
+              )}
+            </button>
+          )}
+
+          {/* Loading Animation Overlay during AI Processing */}
+          {isProcessing && (
+            <div className="flex flex-col items-center justify-center gap-6 rounded-2xl border border-gray-200 bg-white p-10 shadow-sm text-center">
+              <RippleLoader />
+              <div className="flex flex-col items-center gap-2">
+                <h3 className="font-serif text-lg font-bold text-black">Đang Tạo Kết Quả Thử Đồ AI</h3>
+                <RotatingTip />
+                <p className="text-[11px] text-gray-400 max-w-xs mt-2">
+                  Quá trình này mất khoảng 15-25 giây. Vui lòng giữ nguyên màn hình.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* AI Result Card */}
+          {isDone && resultUrl && (
+            <div className="flex flex-col gap-5 rounded-2xl border bg-white p-6 shadow-md" style={{ borderColor: `${PINK}40` }}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">🎉</span>
+                  <h3 className="font-serif text-xl font-bold text-black">Kết Quả Thử Đồ AI ✦</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={resetAll}
+                  className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-4 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-100"
+                >
+                  🔄 Thử bộ khác
+                </button>
+              </div>
+
+              <div className="relative flex min-h-[380px] max-h-[600px] w-full items-center justify-center overflow-hidden rounded-xl bg-[#111]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={product.thumbnailUrl || "https://placehold.co/400x300/f5f5f5/999?text=No+Image"}
-                  alt={product.name} className="w-full h-52 object-cover" />
-                <div className="p-4">
-                  <p className="font-bold text-sm text-[#1A1A1A] line-clamp-2 mb-1">{product.name}</p>
-                  <p className="text-sm font-black" style={{ color: PINK }}>{product.effectivePrice.toLocaleString("vi-VN")}đ</p>
-                  <div className="mt-3 flex gap-2">
-                    <Link href={`/product/${product.slug}`}
-                      className="flex-1 text-center py-2 border border-gray-200 rounded-lg text-xs font-semibold text-gray-500 hover:border-gray-400 hover:text-black transition-colors">
-                      Xem chi tiết
-                    </Link>
-                    <button onClick={() => router.push("/try-on")}
-                      className="flex-1 py-2 border border-gray-200 rounded-lg text-xs font-semibold text-gray-500 hover:border-gray-400 hover:text-black transition-colors">
-                      Đổi sản phẩm
+                <img
+                  src={resultUrl}
+                  alt="Kết quả thử đồ AI"
+                  className="max-h-[600px] w-full object-contain shadow-2xl"
+                />
+              </div>
+
+              {/* QR Code Section */}
+              <div
+                className="flex flex-col sm:flex-row items-center gap-4 rounded-2xl border p-4"
+                style={{ borderColor: `${PINK}30`, background: `linear-gradient(135deg, ${PINK}08, ${PINK}04)` }}
+              >
+                {/* QR Code */}
+                <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                  <div
+                    className="rounded-xl p-3 bg-white shadow-sm border cursor-pointer hover:shadow-md transition-shadow"
+                    style={{ borderColor: `${PINK}30` }}
+                    onClick={() => setIsQrModalOpen(true)}
+                    title="Bấm để phóng to QR"
+                  >
+                    <QRCodeSVG
+                      value={resultUrl}
+                      size={100}
+                      fgColor={PINK}
+                      bgColor="#ffffff"
+                      level="M"
+                      includeMargin={false}
+                    />
+                  </div>
+                  <span className="text-[10px] text-gray-400 font-medium">Bấm để phóng to</span>
+                </div>
+
+                {/* Instructions */}
+                <div className="flex flex-col gap-2 flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-lg">📲</span>
+                    <p className="text-sm font-bold text-[#1A1A1A]">Tải ảnh về điện thoại qua mã QR</p>
+                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    Mở camera điện thoại → quét mã QR → ảnh mở ra trong trình duyệt → giữ ảnh để lưu về máy.
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setIsQrModalOpen(true)}
+                      className="flex items-center gap-1.5 rounded-xl py-2 px-4 text-xs font-bold text-white shadow transition hover:opacity-90"
+                      style={{ background: PINK }}
+                    >
+                      🔍 Phóng to QR
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCopyLink}
+                      className="flex items-center gap-1.5 rounded-xl py-2 px-4 text-xs font-bold border transition hover:bg-gray-50"
+                      style={{ borderColor: `${PINK}50`, color: copied ? "#22c55e" : PINK }}
+                    >
+                      <span>{copied ? "✓" : "📋"}</span>
+                      {copied ? "Đã sao chép!" : "Sao chép link"}
                     </button>
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-4 p-8">
-                <p className="text-sm font-semibold text-gray-400">Chưa chọn sản phẩm</p>
-                <Link href="/products" className="px-5 py-2 text-white text-sm font-bold rounded-full" style={{ background: PINK }}>
-                  Chọn sản phẩm
-                </Link>
-              </div>
-            )}
 
-            {/* Result panel */}
-            {step === "result" && resultUrl && (
-              <div className="bg-white rounded-2xl border border-gray-200 p-5">
-                <p className="font-bold text-sm text-[#1A1A1A] mb-1">Result</p>
-                <p className="text-xs text-gray-400 mb-3">{"Here's how it looks on you!"}</p>
-                <div className="rounded-xl overflow-hidden border border-gray-100 mb-4">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={resultUrl} alt="Kết quả thử đồ" className="w-full object-cover max-h-64" />
-                </div>
-                <div className="flex gap-2 mb-3">
-                  <a href={resultUrl} download="virtual-tryon.png" target="_blank" rel="noopener noreferrer"
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-600 hover:border-gray-400 hover:text-black transition-colors">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Download
-                  </a>
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <a
+                  href={resultUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  download="virtual-tryon.jpg"
+                  className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl py-3 px-6 text-xs font-bold uppercase tracking-widest text-white shadow transition hover:opacity-90"
+                  style={{ background: PINK }}
+                >
+                  📥 Tải ảnh về máy
+                </a>
+
+                {product && (
                   <button
-                    onClick={() => { if (navigator.share) navigator.share({ url: resultUrl, title: "My Try-On" }).catch(() => {}); }}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-600 hover:border-gray-400 hover:text-black transition-colors">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />
-                    </svg>
-                    Share
+                    type="button"
+                    onClick={handleAddToCart}
+                    className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl py-3 px-6 text-xs font-bold uppercase tracking-widest text-white shadow transition"
+                    style={{ background: addedToCart ? "#22c55e" : "#1A1A1A" }}
+                  >
+                    {addedToCart ? "✓ Đã thêm vào giỏ!" : "🛒 Thêm sản phẩm vào giỏ"}
                   </button>
-                </div>
-                <button onClick={handleAddToCart}
-                  className={`w-full py-3 rounded-xl font-bold text-sm text-white transition-all active:scale-[0.98]`}
-                  style={{ background: addedToCart ? "#16a34a" : PINK }}>
-                  {addedToCart ? "✓ Đã thêm vào giỏ!" : "Thêm vào giỏ hàng"}
-                </button>
-                <button onClick={reset} className="w-full mt-2 py-2.5 border-2 rounded-xl text-sm font-bold transition-all"
-                  style={{ borderColor: PINK, color: PINK }}>
-                  Try another photo
+                )}
+
+                <button
+                  type="button"
+                  onClick={resetAll}
+                  className="w-full sm:w-auto text-xs font-semibold text-gray-500 hover:text-black py-2"
+                >
+                  Thử chụp & thử đồ lại
                 </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Camera Capture Modal */}
+      <CameraCaptureModal
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onCapture={(file) => {
+          handlePersonFile(file);
+        }}
+      />
+
+      {/* QR Code Full Screen Modal */}
+      {resultUrl && (
+        <QrCodeModal
+          isOpen={isQrModalOpen}
+          onClose={() => setIsQrModalOpen(false)}
+          resultUrl={resultUrl}
+        />
+      )}
     </div>
   );
 }
 
 export default function TryOnPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#F9F9F9] flex items-center justify-center">
-        <div className="text-gray-400 text-sm">Đang tải...</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#F9F9F9] flex items-center justify-center">
+          <div className="text-gray-400 text-sm">Đang tải...</div>
+        </div>
+      }
+    >
       <TryOnContent />
     </Suspense>
   );

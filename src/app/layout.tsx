@@ -8,6 +8,8 @@ import { LocaleProvider } from "@/context/LocaleContext";
 import { TranslationBanner } from "@/components/TranslationBanner";
 import { VisitorTracker } from "@/components/VisitorTracker";
 
+import { OAuthProviders } from "@/components/OAuthProviders";
+
 const manrope = Manrope({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
@@ -44,14 +46,16 @@ export default function RootLayout({
         className="min-h-full flex flex-col bg-white antialiased"
         style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
       >
-        <LocaleProvider>
-          <VisitorTracker />
-          <Header />
-          <main className="flex-1 pb-20 lg:pb-0">{children}</main>
-          <Footer />
-          <TranslationBanner />
-          <BottomNavigation />
-        </LocaleProvider>
+        <OAuthProviders>
+          <LocaleProvider>
+            <VisitorTracker />
+            <Header />
+            <main className="flex-1 pb-20 lg:pb-0">{children}</main>
+            <Footer />
+            <TranslationBanner />
+            <BottomNavigation />
+          </LocaleProvider>
+        </OAuthProviders>
       </body>
     </html>
   );

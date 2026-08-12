@@ -10,7 +10,9 @@ interface SocialLoginButtonsProps {
   disabled?: boolean;
 }
 
-const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
+const GOOGLE_CLIENT_ID =
+  process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+  "961427749932-t5thilf7f1i18r1jhi128e2u8snfbo94.apps.googleusercontent.com";
 
 export function SocialLoginButtons({ onSuccess, onError, disabled }: SocialLoginButtonsProps) {
   const { loginWithGoogle, isLoading } = useAuthStore();

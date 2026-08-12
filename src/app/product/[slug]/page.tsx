@@ -99,7 +99,15 @@ export default function ProductDetailPage({ params }: PageProps) {
   const selectByColor = (color: string) => {
     const v = product?.variants?.find(v => v.color === color && (currentSize ? v.size === currentSize : true))
       || product?.variants?.find(v => v.color === color);
-    if (v) setSelectedVariant(v);
+    if (v) {
+      setSelectedVariant(v);
+      if (!v.imageUrls || v.imageUrls.length === 0) {
+        const colorIdx = uniqueColors.findIndex(c => c.color === color);
+        if (colorIdx >= 0 && colorIdx < allImages.length) {
+          setActiveImgIndex(colorIdx);
+        }
+      }
+    }
   };
 
   const selectBySize = (size: string) => {
@@ -575,8 +583,12 @@ export default function ProductDetailPage({ params }: PageProps) {
           <div className="p-6">
             <TryOnPanel
               productId={product.id}
-              productName={product.name}
-              productImageUrl={product.thumbnailUrl}
+              productName={currentColor ? `${product.name} (${currentColor})` : product.name}
+              productImageUrl={
+                (selectedVariant?.imageUrls && selectedVariant.imageUrls.length > 0)
+                  ? selectedVariant.imageUrls[0]
+                  : (allImages[activeImgIndex] || product.thumbnailUrl)
+              }
             />
           </div>
         </div>
