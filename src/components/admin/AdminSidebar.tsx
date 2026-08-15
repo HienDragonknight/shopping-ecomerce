@@ -8,7 +8,7 @@ import {
   LayoutDashboard, ShoppingBag, ListOrdered, Users, Package,
   Tag, Star, BarChart3, Image, FolderOpen, Award,
   LogOut, ChevronDown, ChevronRight, X, Menu,
-  Ticket, Settings
+  Ticket, Settings, BookOpen
 } from "lucide-react";
 
 interface NavItem {
@@ -54,6 +54,7 @@ const navGroups: { group: string; items: NavItem[] }[] = [
   {
     group: "Nội dung",
     items: [
+      { href: "/admin/blog", label: "Bài viết / Blog", icon: <BookOpen size={18} /> },
       { href: "/admin/reviews", label: "Đánh giá", icon: <Star size={18} /> },
       { href: "/admin/banners", label: "Banner", icon: <Image size={18} /> },
     ],

@@ -27,6 +27,7 @@ interface ProductDetail {
   variants: Variant[];
   brand: { name: string; logoUrl?: string | null } | null;
   category: { name: string; slug: string } | null;
+  isCollection?: boolean;
 }
 
 export default function ProductDetailPage({ params }: PageProps) {
@@ -341,7 +342,7 @@ export default function ProductDetailPage({ params }: PageProps) {
             </div>
 
             {/* ── Colors ── */}
-            {uniqueColors.length > 0 && (
+            {uniqueColors.length > 1 && !product.isCollection && (
               <div>
                 <p className="text-xs font-bold text-[#1A1A1A] uppercase tracking-wider mb-2.5">
                   {t.product.color}: <span className="font-bold text-gray-600 normal-case">{currentColor || t.product.chooseColor}</span>

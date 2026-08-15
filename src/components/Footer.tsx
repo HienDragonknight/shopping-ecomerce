@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { PhoneIcon, MailIcon, MapPinIcon } from "@/components/icons";
 import { useT } from "@/hooks/useT";
 
@@ -21,14 +20,6 @@ function TiktokIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-function YoutubeIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
-      <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.518 3.5 12 3.5 12 3.5s-7.518 0-9.388.553a3.003 3.003 0 0 0-2.11 2.11C0 8.033 0 12 0 12s0 3.967.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.87.553 9.388.553 9.388.553s7.518 0 9.388-.553a3.003 3.003 0 0 0 2.11-2.11C24 15.967 24 12 24 12s0-3.967-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-    </svg>
-  );
-}
-
 function InstagramIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -39,56 +30,29 @@ function InstagramIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-function ZaloIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
-      <path d="M12 2C6.5 2 2 6.1 2 11.2c0 2.8 1.4 5.3 3.7 6.9L4.8 21c-.1.3.2.6.5.5l4-1.5c.8.2 1.7.3 2.7.3 5.5 0 10-4.1 10-9.1S17.5 2 12 2zm2.9 12h-5.8v-1.1l3.5-3.8H9.3V8h5.6v1.1l-3.5 3.8h3.5V14z"/>
-    </svg>
-  );
-}
-
 const socialLinks = [
   { 
     name: "Facebook", 
-    href: "https://www.facebook.com/", 
+    href: "https://www.facebook.com/profile.php?id=61590500870261", 
     icon: FacebookIcon,
     hoverClass: "hover:bg-[#1877F2] hover:text-white hover:border-[#1877F2]"
   },
   { 
     name: "TikTok", 
-    href: "https://www.tiktok.com/", 
+    href: "https://www.tiktok.com/@vieco.vn?_r=1&_d=secCgYIASAHKAESPgo8T38b481M9KvQ8wQ1fY%2F2kcgKU0puYZgk9wV6XnPxkRPJUOXwlyULs8UNr2%2FGoPw0h3Vc0EU5SklBV7zgGgA%3D&_svg=1&checksum=68d2bfc9ee6d83d31901c90c69376473af715f9927c8237f34ce572483c56e3a&item_author_type=1&reflow_sign_scene=7&rgssign=8.1.zh0i2Ij60cD-DvQe4nSBQQ&sec_uid=MS4wLjABAAAAoVzJCKPOubfIBKXtFKWxNu_QDXXUZnB0Ik5LbWig2wFYwwcZhy4Sr-9fWFixVNiR&sec_user_id=MS4wLjABAAAAoVzJCKPOubfIBKXtFKWxNu_QDXXUZnB0Ik5LbWig2wFYwwcZhy4Sr-9fWFixVNiR&share_app_id=1180&share_author_id=7652398436171858964&share_link_id=CF2001CF-7D7F-469E-8DF4-30B3767E88A4&share_region=VN&share_scene=1&sharer_language=vi&social_share_type=4&source=h5_t&timestamp=1786610638&tt_from=copy&u_code=f4495i4iibljaa&ug_btm=b8727%2Cb0&user_id=7652398436171858964&utm_campaign=client_share&utm_medium=ios&utm_source=copy", 
     icon: TiktokIcon,
     hoverClass: "hover:bg-black hover:text-white hover:border-slate-800"
   },
   { 
-    name: "YouTube", 
-    href: "https://www.youtube.com/", 
-    icon: YoutubeIcon,
-    hoverClass: "hover:bg-[#FF0000] hover:text-white hover:border-[#FF0000]"
-  },
-  { 
     name: "Instagram", 
-    href: "https://www.instagram.com/", 
+    href: "https://www.instagram.com/vieco.vn", 
     icon: InstagramIcon,
     hoverClass: "hover:bg-gradient-to-tr hover:from-[#f9ce34] hover:via-[#ee2a7b] hover:to-[#6228d7] hover:text-white hover:border-transparent"
-  },
-  { 
-    name: "Zalo", 
-    href: "https://zalo.me/", 
-    icon: ZaloIcon,
-    hoverClass: "hover:bg-[#0068FF] hover:text-white hover:border-[#0068FF]"
   },
 ];
 
 export function Footer() {
   const t = useT();
-  const [email, setEmail] = useState("");
-  const [subscribed, setSubscribed] = useState(false);
-
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email.trim()) setSubscribed(true);
-  };
 
   const shopLinks = [
     { name: t.shopLinks.basicProducts, href: "/products" },
@@ -112,38 +76,6 @@ export function Footer() {
 
   return (
     <footer className="bg-[#1A1A1A] text-white">
-      {/* Newsletter bar */}
-      <div className="border-b border-[#2E2E2E]">
-        <div className="yody-container py-6">
-          <div className="flex flex-col md:flex-row items-center gap-4 justify-between">
-            <div>
-              <p className="font-extrabold text-lg text-white">{t.footer.newsletter}</p>
-              <p className="text-sm text-[#888] mt-0.5">{t.footer.newsletterSub}</p>
-            </div>
-            {subscribed ? (
-              <div className="text-[#1A1A1A] font-bold text-sm">{t.footer.newsletterDone}</div>
-            ) : (
-              <form onSubmit={handleSubscribe} className="flex gap-2 w-full md:w-auto">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={t.footer.newsletterPlaceholder}
-                  required
-                  className="flex-1 md:w-72 h-10 px-4 text-sm bg-[#2A2A2A] border border-[#3A3A3A] rounded-full text-white placeholder:text-[#666] focus:outline-none focus:border-[#1A1A1A] transition-colors"
-                />
-                <button
-                  type="submit"
-                  className="h-10 px-6 bg-[#1A1A1A] text-white text-sm font-bold rounded-full hover:bg-[#333333] transition-colors whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                >
-                  {t.footer.newsletterSend}
-                </button>
-              </form>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Main footer */}
       <div className="yody-container py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -166,7 +98,7 @@ export function Footer() {
                 return (
                   <a
                     key={s.name}
-                    href={s.name === "Facebook" ? "https://www.facebook.com/" : s.href}
+                    href={s.href}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={s.name}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useLocale, type Locale } from "@/context/LocaleContext";
 
 interface LanguageSwitcherProps {
@@ -15,10 +16,16 @@ const LANGUAGES: { code: Locale; label: string; flag: string }[] = [
  * Compact language switcher — renders two flag+label buttons.
  * Designed to fit inside the Header right-actions row.
  *
- * Active language is highlighted with yellow accent.
+ * Active language is highlighted with dark accent.
  */
 export function LanguageSwitcher({ className = "" }: LanguageSwitcherProps) {
   const { locale, setLocale } = useLocale();
+  const router = useRouter();
+
+  const handleSwitch = (code: Locale) => {
+    setLocale(code);
+    router.refresh();
+  };
 
   return (
     <div
@@ -31,7 +38,7 @@ export function LanguageSwitcher({ className = "" }: LanguageSwitcherProps) {
         return (
           <button
             key={code}
-            onClick={() => setLocale(code)}
+            onClick={() => handleSwitch(code)}
             aria-pressed={isActive}
             aria-label={`Switch to ${code === "vi" ? "Vietnamese" : "English"}`}
             className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-black tracking-wide transition-all duration-200 ${
