@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -9,13 +8,6 @@ import { TranslationBanner } from "@/components/TranslationBanner";
 import { VisitorTracker } from "@/components/VisitorTracker";
 
 import { OAuthProviders } from "@/components/OAuthProviders";
-
-const manrope = Manrope({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-manrope",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Vie'Co - Look Good - Feel Good",
@@ -41,10 +33,18 @@ export default function RootLayout({
     // lang attribute is "vi" statically for SEO (Vietnamese is the primary indexed language).
     // The LocaleProvider client component switches UI strings without changing this attribute.
     // Phase 2 (URL-based routing) will make this dynamic.
-    <html lang="vi" className={`h-full ${manrope.variable}`}>
+    <html lang="vi" className="h-full">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body
-        className="min-h-full flex flex-col bg-white antialiased"
-        style={{ fontFamily: "var(--font-manrope), Manrope, sans-serif" }}
+        className="min-h-full flex flex-col bg-white antialiased font-sans"
+        style={{ fontFamily: "'Manrope', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}
       >
         <OAuthProviders>
           <LocaleProvider>
