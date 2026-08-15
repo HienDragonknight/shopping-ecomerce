@@ -8,7 +8,7 @@ import { useLocale } from "@/context/LocaleContext";
 import { useT } from "@/hooks/useT";
 import {
   Calendar, Clock, Share2, ArrowLeft,
-  Facebook, Copy, Check, BookOpen, ChevronRight
+  Copy, Check, BookOpen, ChevronRight
 } from "lucide-react";
 
 interface PageProps {

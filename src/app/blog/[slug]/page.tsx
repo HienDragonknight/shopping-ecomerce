@@ -8,7 +8,7 @@ import { useLocale } from "@/context/LocaleContext";
 import { useT } from "@/hooks/useT";
 import {
   Calendar, Clock, Share2, ArrowLeft,
-  Facebook, Copy, Check, BookOpen, ChevronRight
+  Copy, Check, BookOpen, ChevronRight
 } from "lucide-react";
 
 interface PageProps {
@@ -179,7 +179,9 @@ export default function BlogDetailPage({ params }: PageProps) {
               className="w-9 h-9 rounded-full bg-slate-100 hover:bg-[#1877F2] hover:text-white flex items-center justify-center text-slate-600 transition-colors"
               title="Share on Facebook"
             >
-              <Facebook size={15} />
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+              </svg>
             </button>
             <button
               onClick={handleCopyLink}
