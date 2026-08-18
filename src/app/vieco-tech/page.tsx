@@ -58,12 +58,14 @@ export default function ViecoTechPage() {
             </div>
 
             <div className="pt-10">
-              <Link
-                href="/ar/"
+              <a
+                href="https://ar-ashen-nine.vercel.app/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center justify-center w-full py-4 text-sm font-bold bg-[#530000] text-white rounded-xl group-hover:bg-white group-hover:text-[#530000] shadow-sm hover:shadow-md transition-all"
               >
                 {isEn ? "Launch AR Scan →" : "Trải nghiệm AR Scan →"}
-              </Link>
+              </a>
             </div>
           </div>
 
