@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindAR Compiler - Tạo file .mind</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="/ar/mindar-image-aframe.prod.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #0f172a; color: #f1f5f9; font-family: 'Segoe UI', sans-serif; min-height: 100vh; padding: 32px 16px; }
+        h1 { text-align: center; font-size: 1.5rem; font-weight: 700; color: #38bdf8; margin-bottom: 6px; }
+        p.sub { text-align: center; font-size: 0.85rem; color: #94a3b8; margin-bottom: 32px; }
+        .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 24px; max-width: 600px; margin: 0 auto 24px; }
+        .card h2 { font-size: 1rem; font-weight: 600; color: #e2e8f0; margin-bottom: 16px; }
+        .drop-zone {
+            border: 2px dashed #475569; border-radius: 12px; padding: 32px;
+            text-align: center; cursor: pointer; transition: all 0.2s;
+            background: #0f172a;
+        }
+        .drop-zone:hover, .drop-zone.drag-over { border-color: #38bdf8; background: #0f172a; }
+        .drop-zone input[type=file] { display: none; }
+        .drop-zone svg { display: block; margin: 0 auto 12px; color: #475569; }
+        .drop-zone p { font-size: 0.85rem; color: #64748b; }
+        .drop-zone p strong { color: #38bdf8; }
+        
+        #preview-list { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+        .preview-item {
+            position: relative; width: 100px; background: #0f172a;
+            border: 1px solid #334155; border-radius: 10px; overflow: hidden; text-align: center;
+        }
+        .preview-item img { width: 100%; height: 80px; object-fit: cover; }
+        .preview-item p { font-size: 10px; color: #94a3b8; padding: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .preview-item .remove-btn {
+            position: absolute; top: 2px; right: 2px;
+            background: #ef4444; color: white; border: none; border-radius: 50%;
+            width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        
+        button.primary {
+            width: 100%; padding: 14px; background: #0ea5e9; color: white; font-size: 1rem;
+            font-weight: 700; border: none; border-radius: 12px; cursor: pointer; transition: all 0.2s;
+        }
+        button.primary:hover:not(:disabled) { background: #0284c7; transform: translateY(-1px); }
+        button.primary:disabled { background: #334155; color: #64748b; cursor: not-allowed; transform: none; }
+        
+        #log-box {
+            background: #020617; border: 1px solid #334155; border-radius: 10px;
+            padding: 12px; font-family: monospace; font-size: 0.78rem;
+            height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;
+        }
+        .log-info { color: #94a3b8; }
+        .log-success { color: #4ade80; font-weight: bold; }
+        .log-error { color: #f87171; font-weight: bold; }
+        .log-warn { color: #fbbf24; }
+        
+        .progress-bar { width: 100%; height: 8px; background: #1e293b; border-radius: 99px; overflow: hidden; margin-top: 12px; }
+        .progress-bar-inner { height: 100%; background: #0ea5e9; width: 0%; transition: width 0.2s; border-radius: 99px; }
+        
+        #download-btn { display: none; }
+        #download-btn.visible { display: block; }
+    </style>
+</head>
+<body>
+    <h1>MindAR .mind Compiler</h1>
+    <p class="sub">Chọn ảnh marker → Compile → Tải file <code>targets.mind</code> về thư mục dự án</p>
+
+    <div class="card">
+        <h2>1. Chọn ảnh marker (có thể chọn nhiều ảnh)</h2>
+        <div class="drop-zone" id="drop-zone">
+            <input type="file" id="file-input" accept="image/*" multiple>
+            <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            </svg>
+            <p><strong>Nhấn để chọn ảnh</strong> hoặc kéo thả vào đây</p>
+            <p style="margin-top:4px;font-size:11px;">Hỗ trợ: JPG, PNG, WebP</p>
+        </div>
+        <div id="preview-list"></div>
+    </div>
+
+    <div class="card">
+        <h2>2. Compile & Tải về</h2>
+        <button class="primary" id="compile-btn" disabled>
+            ⚙️ Bắt đầu Compile targets.mind
+        </button>
+        <div class="progress-bar" style="margin-top:12px;"><div class="progress-bar-inner" id="progress-bar"></div></div>
+        <div id="log-box" style="margin-top:12px;">
+            <div class="log-info">Đang chờ bạn chọn ảnh marker...</div>
+        </div>
+        <button class="primary" id="download-btn" style="margin-top:12px;background:#16a34a;">
+            ⬇️ Tải về targets.mind
+        </button>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const previewList = document.getElementById('preview-list');
+        const compileBtn = document.getElementById('compile-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const logBox = document.getElementById('log-box');
+        const progressBar = document.getElementById('progress-bar');
+
+        let selectedFiles = [];
+
+        function addLog(msg, type = 'info') {
+            const el = document.createElement('div');
+            el.className = `log-${type}`;
+            el.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            logBox.appendChild(el);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        function renderPreviews() {
+            previewList.innerHTML = '';
+            selectedFiles.forEach((f, i) => {
+                const url = URL.createObjectURL(f);
+                const item = document.createElement('div');
+                item.className = 'preview-item';
+                item.innerHTML = `
+                    <img src="${url}" alt="${f.name}">
+                    <p title="${f.name}">${f.name}</p>
+                    <button class="remove-btn" data-idx="${i}">✕</button>
+                `;
+                previewList.appendChild(item);
+            });
+            compileBtn.disabled = selectedFiles.length === 0;
+            document.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    selectedFiles.splice(Number(btn.dataset.idx), 1);
+                    renderPreviews();
+                });
+            });
+        }
+
+        function handleFiles(files) {
+            const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+            if (imageFiles.length === 0) { addLog('Không tìm thấy ảnh hợp lệ!', 'error'); return; }
+            selectedFiles = [...selectedFiles, ...imageFiles];
+            renderPreviews();
+            addLog(`Đã thêm ${imageFiles.length} ảnh. Tổng: ${selectedFiles.length} ảnh.`, 'success');
+        }
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        function loadImage(file) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        compileBtn.addEventListener('click', async () => {
+            if (selectedFiles.length === 0) return;
+            
+            compileBtn.disabled = true;
+            downloadBtn.classList.remove('visible');
+            progressBar.style.width = '0%';
+            logBox.innerHTML = '';
+            addLog(`Bắt đầu compile ${selectedFiles.length} ảnh marker...`, 'info');
+
+            try {
+                const compiler = new MINDAR.IMAGE.Compiler();
+                const images = [];
+
+                for (let i = 0; i < selectedFiles.length; i++) {
+                    addLog(`Đang tải ảnh [${i + 1}/${selectedFiles.length}]: ${selectedFiles[i].name}`, 'info');
+                    progressBar.style.width = `${((i + 1) / selectedFiles.length) * 30}%`;
+                    const img = await loadImage(selectedFiles[i]);
+                    images.push(img);
+                    addLog(`✓ Tải thành công ảnh: ${selectedFiles[i].name} (${img.width}x${img.height})`, 'success');
+                }
+
+                addLog('Đang khởi chạy compiler engine (TensorFlow.js)... vui lòng chờ...', 'warn');
+                progressBar.style.width = '40%';
+
+                await compiler.compileImageTargets(images, (progress) => {
+                    const pct = 40 + Math.round(progress * 55);
+                    progressBar.style.width = `${pct}%`;
+                    addLog(`Compile progress: ${Math.round(progress * 100)}%`, 'info');
+                });
+
+                progressBar.style.width = '98%';
+                addLog('Compile hoàn tất! Đang xuất file nhị phân...', 'warn');
+
+                const exportedBuffer = await compiler.exportData();
+                const blob = new Blob([exportedBuffer]);
+                const url = URL.createObjectURL(blob);
+
+                downloadBtn.classList.add('visible');
+                downloadBtn.onclick = () => {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'targets.mind';
+                    a.click();
+                };
+
+                progressBar.style.width = '100%';
+                addLog(`✅ THÀNH CÔNG! File targets.mind đã sẵn sàng để tải về (${(blob.size / 1024).toFixed(1)} KB).`, 'success');
+                addLog('👉 Nhấn nút "Tải về targets.mind" bên dưới, rồi ghi đè file cũ trong thư mục dự án.', 'success');
+
+            } catch (err) {
+                addLog(`❌ LỖI: ${err.message || err}`, 'error');
+                console.error(err);
+                progressBar.style.width = '0%';
+            }
+
+            compileBtn.disabled = false;
+        });
+    </script>
+</body>
+</html>

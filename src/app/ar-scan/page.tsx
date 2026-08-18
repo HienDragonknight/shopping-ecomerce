@@ -145,7 +145,14 @@ export default function ArScanPage() {
             </p>
           </div>
 
-          <div className="flex gap-3 justify-center">
+          <div className="flex flex-wrap gap-3 justify-center">
+            <Link
+              href="/ar/"
+              className="px-6 py-3 rounded-full text-xs font-black tracking-wider uppercase transition-all shadow-lg hover:-translate-y-0.5 active:translate-y-0 bg-gradient-to-r from-red-600 to-amber-600 text-white hover:opacity-90 flex items-center gap-1.5"
+            >
+              <span>📷</span>
+              <span>{isEn ? "MindAR Scanner (Full 3D)" : "Quét AR Nhận Diện Thực (MindAR)"}</span>
+            </Link>
             <button
               onClick={() => {
                 if (isCameraActive) {

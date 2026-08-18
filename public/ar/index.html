@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vieco Dragon AR - Video Overlay</title>
+    <!-- Nhúng thư viện A-Frame và MindAR (Bản tích hợp A-Frame) từ CDN và cục bộ -->
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="/ar/mindar-image-aframe.prod.js"></script>
+    <!-- Nhúng Tailwind CSS để làm UI overlay -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        .a-enter-vr { display: none !important; } /* Ẩn nút VR mặc định */
+        
+        /* Hiệu ứng quét laser chuyển động */
+        @keyframes scan {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
+        .scan-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(to right, transparent, #22c55e, transparent);
+            animation: scan 3s linear infinite;
+            box-shadow: 0 0 10px #22c55e;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- GIAO DIỆN OVERLAY (GIỐNG 100% WEB GỐC & CẢI TIẾN UX) -->
+    <div class="fixed inset-0 z-40 pointer-events-none">
+        <!-- Nút đóng góc trên bên phải -->
+        <button id="close-app-btn" class="absolute top-4 right-4 pointer-events-auto bg-black/50 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/80 transition active:scale-95">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+
+        <!-- Khung vuông bo góc hướng dẫn quét giữa màn hình -->
+        <div class="absolute inset-0 flex items-center justify-center">
+            <div id="scan-boundary" class="relative w-64 h-64 border-4 border-white/80 rounded-3xl shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all duration-300 overflow-hidden">
+                <!-- Đường quét laser -->
+                <div id="scan-line" class="scan-line"></div>
+            </div>
+        </div>
+
+        <!-- Trạng thái thông báo cho người dùng hiển thị động -->
+        <div class="absolute top-20 inset-x-0 flex justify-center">
+            <span id="status-text" class="bg-black/60 text-white px-4 py-1.5 rounded-full text-xs font-medium tracking-wide shadow-md transition-all duration-300">
+                ĐANG KHỞI TẠO CAMERA...
+            </span>
+        </div>
+
+        <!-- Nút xem ảnh mẫu quét ở góc dưới bên trái -->
+        <div class="absolute bottom-4 left-4 pointer-events-auto flex flex-col items-start gap-2">
+            <button id="toggle-preview-btn" class="bg-black/60 hover:bg-black/80 text-white p-2.5 rounded-full border border-white/20 shadow-lg transition active:scale-95 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span class="text-xs font-medium pr-1">Xem ảnh mẫu</span>
+            </button>
+            <!-- Khung hiển thị ảnh mẫu (mặc định ẩn) -->
+            <div id="marker-preview-card" class="hidden bg-black/80 border border-white/20 rounded-xl p-2 shadow-2xl max-w-[150px] transition-all duration-300">
+                <div class="relative">
+                    <img src="/ar/marker1.jpg" alt="Marker" class="w-full h-auto rounded-lg border border-white/10">
+                    <button id="close-preview-btn" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] hover:bg-red-600 transition">✕</button>
+                </div>
+                <p class="text-[10px] text-white/80 text-center mt-1.5 font-medium">Quét hình ảnh này</p>
+            </div>
+        </div>
+
+        <!-- Nút bấm quét ảnh phía dưới -->
+        <div class="absolute bottom-10 inset-x-0 flex justify-center">
+            <button id="scan-btn" class="pointer-events-auto bg-black/60 hover:bg-black/80 text-white px-6 py-3 rounded-full flex items-center gap-2 border border-white/20 shadow-lg transition active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.12-1.12A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                </svg>
+                <span class="font-medium text-sm">Quét ảnh</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- BẢNG ĐIỀU KHIỂN DEBUG TRÊN MÀN HÌNH (Z-INDEX 50) -->
+    <div class="fixed top-4 left-4 z-50 pointer-events-auto flex flex-col gap-2 max-w-[90%] md:max-w-md">
+        <!-- Nút bật/tắt Debug Panel -->
+        <button id="toggle-debug-btn" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg border border-red-500 flex items-center gap-1 transition active:scale-95">
+            <span class="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span>
+            <span>BẬT/TẮT DEBUG PANEL</span>
+        </button>
+
+        <!-- Khung nội dung Debug (Mặc định hiển thị để hỗ trợ kiểm tra ngay) -->
+        <div id="debug-panel" class="bg-black/90 text-white border border-red-500/30 rounded-xl p-3 shadow-2xl flex flex-col gap-2 text-xs font-mono max-h-[350px] overflow-y-auto w-80 md:w-96">
+            <div class="flex justify-between items-center border-b border-white/10 pb-1.5">
+                <span class="font-bold text-red-400">AR SYSTEM DEBUGGER</span>
+                <button id="clear-log-btn" class="bg-white/10 hover:bg-white/20 text-[10px] px-2 py-0.5 rounded">Clear Logs</button>
+            </div>
+
+            <!-- Trạng thái các thành phần -->
+            <div class="grid grid-cols-2 gap-1.5 bg-white/5 p-2 rounded-lg text-[11px]">
+                <div>MindAR: <span id="db-mindar" class="text-yellow-400 font-bold">Initializing...</span></div>
+                <div>Target: <span id="db-target" class="text-yellow-400 font-bold">Searching...</span></div>
+                <div>Video State: <span id="db-video-ready" class="text-yellow-400">0</span></div>
+                <div>Video Paused: <span id="db-video-paused" class="text-yellow-400">true</span></div>
+                <div class="col-span-2 text-yellow-300 font-bold">Targets loaded: <span id="db-target-count" class="text-white">4</span> (idx 0–3)</div>
+                <div class="col-span-2 border-t border-white/5 pt-1 mt-1">
+                    Video Source: <span id="db-video-src" class="text-blue-300 break-all">Checking...</span>
+                </div>
+            </div>
+
+            <!-- Các nút hỗ trợ Test nhanh (Force Trigger) -->
+            <div class="grid grid-cols-2 gap-2 my-1">
+                <button id="btn-force-found" class="bg-green-600 hover:bg-green-700 text-white text-[10px] font-bold py-1.5 px-2 rounded transition active:scale-95">
+                    ⚡ GIẢ LẬP NHẬN DIỆN (FOUND)
+                </button>
+                <button id="btn-force-lost" class="bg-yellow-600 hover:bg-yellow-700 text-white text-[10px] font-bold py-1.5 px-2 rounded transition active:scale-95">
+                    🔄 GIẢ LẬP MẤT DẤU (LOST)
+                </button>
+                <button id="btn-force-play" class="col-span-2 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold py-1.5 px-2 rounded transition active:scale-95">
+                    ▶️ BẮT BUỘC PHÁT VIDEO (FORCE PLAY)
+                </button>
+            </div>
+
+            <!-- Khu vực hiển thị Console Logs -->
+            <div class="border-t border-white/10 pt-1.5">
+                <div class="text-[10px] text-gray-400 mb-1">CONSOLE LOGS:</div>
+                <div id="debug-logs" class="bg-black/50 border border-white/5 rounded p-1.5 h-32 overflow-y-auto flex flex-col gap-1 text-[10px] leading-tight">
+                    <!-- Logs will be appended here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KHÔNG GIAN THỰC TẾ ẢO (AR SCENE) -->
+    <!-- Đường dẫn file .mind tại thư mục gốc -->
+    <a-scene id="ar-scene" mindar-image="imageTargetSrc: /ar/targets.mind; autoStart: true;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+        
+        <a-assets>
+            <!-- Khai báo file video mp4 chuẩn bị sẵn ở thư mục gốc. Bắt buộc phải có muted và playsinline để trình duyệt cho chạy tự động -->
+            <video id="dragon-video" src="/ar/video1.mp4" preload="auto" loop="true" muted playsinline webkit-playsinline></video>
+        </a-assets>
+
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <!-- Target Index 0 -->
+        <a-entity id="ar-target-0" mindar-image-target="targetIndex: 0">
+            <a-video src="#dragon-video" width="1" height="0.5625" position="0 0 0" rotation="0 0 0"></a-video>
+        </a-entity>
+        <!-- Target Index 1 -->
+        <a-entity id="ar-target-1" mindar-image-target="targetIndex: 1">
+            <a-video src="#dragon-video" width="1" height="0.5625" position="0 0 0" rotation="0 0 0"></a-video>
+        </a-entity>
+        <!-- Target Index 2 -->
+        <a-entity id="ar-target-2" mindar-image-target="targetIndex: 2">
+            <a-video src="#dragon-video" width="1" height="0.5625" position="0 0 0" rotation="0 0 0"></a-video>
+        </a-entity>
+        <!-- Target Index 3 -->
+        <a-entity id="ar-target-3" mindar-image-target="targetIndex: 3">
+            <a-video src="#dragon-video" width="1" height="0.5625" position="0 0 0" rotation="0 0 0"></a-video>
+        </a-entity>
+    </a-scene>
+
+    <!-- LOGIC ĐIỀU KHIỂN SỰ KIỆN PHÁT/DỪNG VIDEO & DEBUGGER -->
+    <script>
+        // --- HỆ THỐNG GHI LOG DEBUG TRÊN MÀN HÌNH ---
+        const debugLogsContainer = document.getElementById('debug-logs');
+        const dbMindar = document.getElementById('db-mindar');
+        const dbTarget = document.getElementById('db-target');
+        const dbVideoReady = document.getElementById('db-video-ready');
+        const dbVideoPaused = document.getElementById('db-video-paused');
+        const dbVideoSrc = document.getElementById('db-video-src');
+        const debugPanel = document.getElementById('debug-panel');
+        const toggleDebugBtn = document.getElementById('toggle-debug-btn');
+        const clearLogBtn = document.getElementById('clear-log-btn');
+
+        // Hàm ghi log ra màn hình
+        function addScreenLog(message, type = 'info') {
+            const logItem = document.createElement('div');
+            let colorClass = 'text-gray-300';
+            let prefix = 'ℹ️ ';
+            if (type === 'error') {
+                colorClass = 'text-red-400 font-bold';
+                prefix = '❌ ';
+            } else if (type === 'warn') {
+                colorClass = 'text-yellow-400';
+                prefix = '⚠️ ';
+            } else if (type === 'success') {
+                colorClass = 'text-green-400 font-bold';
+                prefix = '✅ ';
+            }
+            
+            const time = new Date().toLocaleTimeString();
+            logItem.className = `${colorClass} border-b border-white/5 pb-0.5`;
+            logItem.innerText = `[${time}] ${prefix}${message}`;
+            debugLogsContainer.appendChild(logItem);
+            debugLogsContainer.scrollTop = debugLogsContainer.scrollHeight;
+        }
+
+        // Ghi đè console để bắt log tự động
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addScreenLog(args.join(' '), 'info');
+        };
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addScreenLog(args.join(' '), 'error');
+        };
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addScreenLog(args.join(' '), 'warn');
+        };
+
+        // Bật/Tắt bảng Debug
+        toggleDebugBtn.addEventListener('click', () => {
+            debugPanel.classList.toggle('hidden');
+        });
+
+        // Xóa log
+        clearLogBtn.addEventListener('click', () => {
+            debugLogsContainer.innerHTML = '';
+            addScreenLog('Logs cleared.', 'info');
+        });
+
+        // --- KHAI BÁO CÁC PHẦN TỬ CHÍNH ---
+        const videoEl = document.querySelector('#dragon-video');
+        const statusText = document.querySelector('#status-text');
+        const scanBoundary = document.querySelector('#scan-boundary');
+        const scanLine = document.querySelector('#scan-line');
+        const sceneEl = document.querySelector('#ar-scene');
+        
+        const scanBtn = document.getElementById('scan-btn');
+        const togglePreviewBtn = document.getElementById('toggle-preview-btn');
+        const markerPreviewCard = document.getElementById('marker-preview-card');
+        const closePreviewBtn = document.getElementById('close-preview-btn');
+        const closeAppBtn = document.getElementById('close-app-btn');
+
+        // Lắng nghe tất cả 4 target
+        const TARGET_COUNT = 4;
+        const targetEls = Array.from({ length: TARGET_COUNT }, (_, i) => document.querySelector(`#ar-target-${i}`));
+
+        // Hiển thị thông tin video ban đầu
+        if (videoEl) {
+            dbVideoSrc.innerText = videoEl.src || 'No src';
+            setInterval(() => {
+                dbVideoReady.innerText = videoEl.readyState;
+                dbVideoPaused.innerText = videoEl.paused;
+                
+                // Cập nhật màu sắc trạng thái video trên debug panel
+                if (videoEl.readyState === 4) {
+                    dbVideoReady.className = "text-green-400 font-bold";
+                } else {
+                    dbVideoReady.className = "text-yellow-400";
+                }
+                
+                if (videoEl.paused) {
+                    dbVideoPaused.className = "text-yellow-400";
+                } else {
+                    dbVideoPaused.className = "text-green-400 font-bold";
+                }
+            }, 500);
+        }
+
+        // Mở khóa âm thanh/video trên thiết bị di động bằng tương tác đầu tiên của người dùng
+        let videoUnlocked = false;
+        const unlockVideo = () => {
+            if (videoUnlocked) return;
+            console.log("Attempting to unlock video via user gesture...");
+            videoEl.play().then(() => {
+                videoEl.pause();
+                videoUnlocked = true;
+                console.log("Video unlocked successfully!");
+            }).catch(err => {
+                console.error("Failed to unlock video:", err.message);
+            });
+            // Hủy lắng nghe sau tương tác đầu tiên
+            document.removeEventListener('click', unlockVideo);
+            document.removeEventListener('touchstart', unlockVideo);
+        };
+        document.addEventListener('click', unlockVideo);
+        document.addEventListener('touchstart', unlockVideo);
+
+        // --- LẮNG NGHE SỰ KIỆN MINDAR ---
+        
+        // Khi toàn bộ hệ thống AR và camera đã sẵn sàng
+        sceneEl.addEventListener("arReady", (event) => {
+            console.log("MindAR event: arReady triggered!");
+            dbMindar.innerText = "Ready";
+            dbMindar.className = "text-green-400 font-bold";
+            statusText.innerText = "HÃY ĐƯA CAMERA VÀO LOGO ÁO";
+        });
+
+        // Khi xảy ra lỗi khởi tạo MindAR
+        sceneEl.addEventListener("arError", (event) => {
+            console.error("MindAR event: arError triggered!", event);
+            dbMindar.innerText = "Error";
+            dbMindar.className = "text-red-500 font-bold";
+            statusText.innerText = "LỖI KHỞI TẠO CAMERA / AR";
+        });
+
+        // Hàm xử lý khi tìm thấy hình ảnh mục tiêu
+        function handleTargetFound(idx = '?') {
+            console.log("MindAR event: targetFound (Logo áo)!");
+            dbTarget.innerText = `FOUND (idx: ${idx})`;
+            dbTarget.className = "text-green-400 font-bold";
+            
+            statusText.innerText = "ĐÃ NHẬN DIỆN - ĐANG PHÁT VIDEO";
+            statusText.classList.remove('bg-black/60', 'bg-yellow-600');
+            statusText.classList.add('bg-green-600');
+            scanBoundary.classList.remove('border-white/80');
+            scanBoundary.classList.add('border-green-500', 'scale-105');
+            
+            // Ẩn đường quét laser khi đã nhận diện
+            if (scanLine) scanLine.classList.add('hidden');
+            
+            // Kích hoạt phát video
+            videoEl.play().then(() => {
+                console.log("Video is playing smoothly!");
+            }).catch(err => {
+                console.error("Browser blocked autoplay:", err.message);
+                // Fallback: nếu bị chặn, hiển thị thông báo chạm để phát
+                statusText.innerText = "CHẠM MÀN HÌNH ĐỂ PHÁT VIDEO";
+                statusText.classList.remove('bg-green-600');
+                statusText.classList.add('bg-yellow-600');
+            });
+        }
+
+        // Hàm xử lý khi mất dấu mục tiêu
+        function handleTargetLost(idx = '?') {
+            console.log("MindAR event: targetLost!");
+            dbTarget.innerText = "Searching...";
+            dbTarget.className = "text-yellow-400 font-bold";
+            
+            statusText.innerText = "HÃY ĐƯA CAMERA VÀO LOGO ÁO";
+            statusText.classList.remove('bg-green-600', 'bg-yellow-600');
+            statusText.classList.add('bg-black/60');
+            scanBoundary.classList.remove('border-green-500', 'scale-105');
+            scanBoundary.classList.add('border-white/80');
+            
+            // Hiện lại đường quét laser
+            if (scanLine) scanLine.classList.remove('hidden');
+            
+            // Tạm dừng video để tiết kiệm hiệu năng
+            videoEl.pause();
+            console.log("Video paused because target was lost.");
+        }
+
+        // Đăng ký sự kiện thực tế từ MindAR — cả 4 target
+        targetEls.forEach((el, i) => {
+            if (!el) { console.warn(`Không tìm thấy ar-target-${i} trong DOM`); return; }
+            el.addEventListener("targetFound", () => {
+                console.log(`MindAR event: targetFound (index ${i})!`);
+                handleTargetFound(i);
+            });
+            el.addEventListener("targetLost", () => {
+                console.log(`MindAR event: targetLost (index ${i})!`);
+                handleTargetLost(i);
+            });
+        });
+
+        // --- CÁC NÚT GIẢ LẬP TRÊN DEBUG PANEL ---
+        document.getElementById('btn-force-found').addEventListener('click', (e) => {
+            e.stopPropagation();
+            console.log("Triggering simulated Target Found (idx 0)...");
+            handleTargetFound(0);
+        });
+
+        document.getElementById('btn-force-lost').addEventListener('click', (e) => {
+            e.stopPropagation();
+            console.log("Triggering simulated Target Lost (idx 0)...");
+            handleTargetLost(0);
+        });
+
+        document.getElementById('btn-force-play').addEventListener('click', (e) => {
+            e.stopPropagation();
+            console.log("Force playing video...");
+            videoEl.play().then(() => {
+                console.log("Force play successful!");
+            }).catch(err => {
+                console.error("Force play failed:", err.message);
+            });
+        });
+
+        // --- XỬ LÝ CÁC SỰ KIỆN GIAO DIỆN KHÁC ---
+        const showPreview = () => {
+            markerPreviewCard.classList.remove('hidden');
+            togglePreviewBtn.classList.add('hidden');
+        };
+
+        const hidePreview = () => {
+            markerPreviewCard.classList.add('hidden');
+            togglePreviewBtn.classList.remove('hidden');
+        };
+
+        if (togglePreviewBtn) togglePreviewBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showPreview();
+        });
+        if (closePreviewBtn) closePreviewBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            hidePreview();
+        });
+        if (scanBtn) {
+            scanBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showPreview();
+                unlockVideo();
+            });
+        }
+
+        // Đóng ứng dụng
+        if (closeAppBtn) {
+            closeAppBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (confirm("Bạn có muốn đóng ứng dụng AR này không?")) {
+                    if (window.history.length > 1) {
+                        window.history.back();
+                    } else {
+                        window.location.href = "/";
+                    }
+                }
+            });
+        }
+
+        // Log một số thông tin ban đầu
+        console.log("System initialized.");
+        console.log("User Agent: " + navigator.userAgent);
+        console.log("HTTPS: " + (location.protocol === 'https:'));
+        console.log("Hostname: " + location.hostname);
+    </script>
+</body>
+</html>
