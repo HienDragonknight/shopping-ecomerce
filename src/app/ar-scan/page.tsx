@@ -145,7 +145,15 @@ export default function ArScanPage() {
             </p>
           </div>
 
-          <div className="flex gap-3 justify-center">
+          <div className="flex flex-wrap gap-3 justify-center">
+            <a
+              href="https://arvieco.netlify.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-6 py-3 rounded-full text-xs font-black tracking-wider uppercase transition-all shadow-lg hover:-translate-y-0.5 active:translate-y-0 bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 hover:brightness-110 flex items-center gap-1.5"
+            >
+              🚀 {isEn ? "Open AR Vie'Co App ↗" : "Mở Trải Nghiệm AR Web ↗"}
+            </a>
             <button
               onClick={() => {
                 if (isCameraActive) {
@@ -154,15 +162,15 @@ export default function ArScanPage() {
                   startCamera();
                 }
               }}
-              className={`px-6 py-3 rounded-full text-xs font-black tracking-wider uppercase transition-all shadow-lg hover:-translate-y-0.5 active:translate-y-0 ${
+              className={`px-5 py-3 rounded-full text-xs font-black tracking-wider uppercase transition-all shadow-lg hover:-translate-y-0.5 active:translate-y-0 ${
                 isCameraActive
                   ? "bg-red-600 text-white hover:bg-red-500"
-                  : "bg-amber-500 text-slate-950 hover:bg-amber-400"
+                  : "bg-slate-800 text-white hover:bg-slate-700"
               }`}
             >
               {isCameraActive
-                ? (isEn ? "✕ Close AR Camera" : "✕ Tắt Gương AR")
-                : (isEn ? "✦ Open AR Camera" : "✦ Bật Gương AR")}
+                ? (isEn ? "✕ Close Camera" : "✕ Tắt Gương AR")
+                : (isEn ? "✦ Quick Camera" : "✦ Bật Gương Nhanh")}
             </button>
             <button
               onClick={resetView}

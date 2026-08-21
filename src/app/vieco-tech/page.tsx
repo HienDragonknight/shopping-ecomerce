@@ -10,8 +10,7 @@ export default function ViecoTechPage() {
   return (
     <div className="min-h-screen bg-white text-neutral-900">
       {/* Hero */}
-      <section className="relative overflow-hidden bg-[#530000] text-white">
-        <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#5c0000] via-[#530000] to-[#480000] text-white">
         <div className="yody-container relative z-10 py-24 md:py-32 text-center max-w-4xl mx-auto space-y-6">
           <p className="text-[11px] font-bold uppercase tracking-[0.35em] text-red-200/80">
             {isEn ? "Innovation Hub" : "Trung tâm đổi mới"}
@@ -59,7 +58,7 @@ export default function ViecoTechPage() {
 
             <div className="pt-10">
               <a
-                href="https://ar-ashen-nine.vercel.app/"
+                href="https://arvieco.netlify.app/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center w-full py-4 text-sm font-bold bg-[#530000] text-white rounded-xl group-hover:bg-white group-hover:text-[#530000] shadow-sm hover:shadow-md transition-all"

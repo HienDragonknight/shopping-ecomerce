@@ -122,14 +122,13 @@ export default function BlogPage() {
   return (
     <div className="min-h-screen bg-[#FCFBFA] text-slate-900 pb-28">
       {/* ── HERO BANNER ── */}
-      <section className="relative overflow-hidden bg-[#530000] text-white py-20 md:py-28 text-center">
-        <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#5c0000] via-[#530000] to-[#480000] text-white py-20 md:py-28 text-center">
         <div className="yody-container relative z-10 max-w-4xl mx-auto space-y-4 px-4">
           <span className="inline-block px-3.5 py-1 rounded-full text-[10px] font-bold bg-white/10 text-red-200 border border-white/20 uppercase tracking-widest">
-            {isEn ? "Vie'Co Journal" : "Tạp chí &amp; Tin tức"}
+            {isEn ? "Vie'Co Journal" : "Tạp chí & Tin tức"}
           </span>
           <h1 className="text-3xl md:text-6xl font-black tracking-tight text-white leading-tight">
-            {isEn ? "Stories of Heritage &amp; Innovation" : "Câu Chuyện Di Sản &amp; Đổi Mới"}
+            {isEn ? "Stories of Heritage & Innovation" : "Câu Chuyện Di Sản & Đổi Mới"}
           </h1>
           <p className="text-white/85 text-sm md:text-lg max-w-2xl mx-auto leading-relaxed font-light pt-1">
             {isEn

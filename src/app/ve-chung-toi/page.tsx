@@ -77,8 +77,7 @@ export default function AboutUsPage() {
   return (
     <div className="min-h-screen bg-white text-neutral-900">
       {/* Hero */}
-      <section className="relative overflow-hidden bg-[#530000] text-white">
-        <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#5c0000] via-[#530000] to-[#480000] text-white">
         <div className="yody-container relative z-10 py-28 md:py-36">
           <div className="max-w-4xl">
             <p className="text-[11px] font-bold uppercase tracking-[0.35em] text-red-200/80 mb-6">
@@ -147,7 +146,6 @@ export default function AboutUsPage() {
 
       {/* Tầm nhìn & Sứ mệnh */}
       <section id="tam-nhin" className="bg-[#530000] text-white scroll-mt-24 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-5 bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] bg-[size:3rem_3rem]" />
         <div className="yody-container py-20 md:py-28 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-white/20 border border-white/20 rounded-2xl overflow-hidden bg-black/10 backdrop-blur-sm">
             <div className="p-10 md:p-14 space-y-6">

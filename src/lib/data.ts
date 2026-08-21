@@ -168,7 +168,7 @@ export const navCategories: NavCategory[] = [
         title: "Công nghệ thời trang",
         titleEn: "Fashion Technology",
         items: [
-          { name: "AR Heritage Scan", nameEn: "AR Heritage Scan", href: "/ar-scan" },
+          { name: "AR Heritage Scan", nameEn: "AR Heritage Scan", href: "https://arvieco.netlify.app/" },
           { name: "AI Virtual Try-On", nameEn: "AI Virtual Try-On", href: "/try-on" },
         ]
       }

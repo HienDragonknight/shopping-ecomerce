@@ -328,7 +328,7 @@ export default function AdminBlogPage() {
                 <tr className="border-b border-slate-100 text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50/50">
                   <th className="py-3.5 px-4 w-16">ID</th>
                   <th className="py-3.5 px-4 w-24">Ảnh</th>
-                  <th className="py-3.5 px-4">Tiêu đề &amp; Slug</th>
+                  <th className="py-3.5 px-4">Tiêu đề & Slug</th>
                   <th className="py-3.5 px-4 w-32">Ngày đăng</th>
                   <th className="py-3.5 px-4 w-24 text-center">Thứ tự</th>
                   <th className="py-3.5 px-4 w-28 text-center">Trạng thái</th>
@@ -527,7 +527,7 @@ export default function AdminBlogPage() {
                     : "border-transparent text-slate-400 hover:text-slate-700"
                 }`}
               >
-                ⚙️ Cài đặt &amp; Ảnh
+                ⚙️ Cài đặt & Ảnh
               </button>
             </div>
 

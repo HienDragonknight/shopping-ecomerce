@@ -101,8 +101,7 @@ export default function StoreNetworkPage() {
   return (
     <div className="min-h-screen bg-neutral-50 pb-20">
       {/* Header banner */}
-      <div className="bg-[#530000] text-white py-14 md:py-20 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] bg-[size:3rem_3rem]" />
+      <div className="bg-gradient-to-b from-[#5c0000] via-[#530000] to-[#480000] text-white py-14 md:py-20 relative overflow-hidden">
         <div className="yody-container relative z-10 text-center max-w-3xl mx-auto">
           <p className="text-xs uppercase tracking-[0.3em] font-bold text-red-200/80 mb-3">
             VIE&apos;CO • {isEn ? "Store Locations" : "Hệ Thống Cửa Hàng"}

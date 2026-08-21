@@ -90,7 +90,7 @@ export function BottomNavigation() {
     },
     {
       label: "AR Quét",
-      href: "https://ar-ashen-nine.vercel.app/",
+      href: "https://arvieco.netlify.app/",
       icon: SparklesIcon,
       active: false,
       special: true, // Center highlighted button

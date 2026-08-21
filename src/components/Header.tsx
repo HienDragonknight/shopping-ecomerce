@@ -40,16 +40,21 @@ function MegaMenuDropdown({ category }: { category: NavCategory }) {
                 {isEn ? group.titleEn || group.title : group.title}
               </h4>
               <ul className="space-y-2.5">
-                {group.items.map((item) => (
-                  <li key={item.name}>
-                    <Link
-                      href={item.href}
-                      className="text-[13px] text-slate-500 hover:text-[#1A1A1A] hover:font-bold transition-all duration-200 block w-fit"
-                    >
-                      {isEn ? item.nameEn || item.name : item.name}
-                    </Link>
-                  </li>
-                ))}
+                {group.items.map((item) => {
+                  const isExternal = item.href.startsWith("http");
+                  return (
+                    <li key={item.name}>
+                      <Link
+                        href={item.href}
+                        target={isExternal ? "_blank" : undefined}
+                        rel={isExternal ? "noopener noreferrer" : undefined}
+                        className="text-[13px] text-slate-500 hover:text-[#1A1A1A] hover:font-bold transition-all duration-200 block w-fit"
+                      >
+                        {isEn ? item.nameEn || item.name : item.name}
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ))}
@@ -204,7 +209,7 @@ export function Header() {
                 {/* AR Scan Link */}
                 <li className="relative">
                   <Link
-                    href="https://ar-ashen-nine.vercel.app/"
+                    href="https://arvieco.netlify.app/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block py-5 text-[13px] font-bold text-[#1A1A1A] hover:text-slate-500 transition-colors whitespace-nowrap tracking-wide relative after:absolute after:bottom-0 after:left-0 after:w-full after:h-[2px] after:bg-[#1A1A1A] after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300 after:origin-center"
@@ -371,17 +376,22 @@ export function Header() {
                                 {isEn ? group.titleEn || group.title : group.title}
                               </p>
                               <ul className="space-y-1.5">
-                                {group.items.map((item) => (
-                                  <li key={item.name}>
-                                    <Link
-                                      href={item.href}
-                                      className="block text-[14px] text-slate-500 hover:text-black py-1"
-                                      onClick={() => setMobileOpen(false)}
-                                    >
-                                      {isEn ? item.nameEn || item.name : item.name}
-                                    </Link>
-                                  </li>
-                                ))}
+                                {group.items.map((item) => {
+                                  const isExternal = item.href.startsWith("http");
+                                  return (
+                                    <li key={item.name}>
+                                      <Link
+                                        href={item.href}
+                                        target={isExternal ? "_blank" : undefined}
+                                        rel={isExternal ? "noopener noreferrer" : undefined}
+                                        className="block text-[14px] text-slate-500 hover:text-black py-1"
+                                        onClick={() => setMobileOpen(false)}
+                                      >
+                                        {isEn ? item.nameEn || item.name : item.name}
+                                      </Link>
+                                    </li>
+                                  );
+                                })}
                               </ul>
                             </li>
                           ))}
@@ -392,7 +402,7 @@ export function Header() {
                   {/* Mobile Menu AR Scan Link */}
                   <li className="border-b border-slate-200/70 py-4">
                     <a
-                      href="https://ar-ashen-nine.vercel.app/"
+                      href="https://arvieco.netlify.app/"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="block text-[17px] tracking-tight font-semibold text-[#1A1A1A] mb-1"
