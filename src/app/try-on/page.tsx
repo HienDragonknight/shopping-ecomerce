@@ -12,7 +12,7 @@ import CameraCaptureModal from "@/components/try-on/CameraCaptureModal";
 import QrCodeModal from "@/components/try-on/QrCodeModal";
 import { RippleLoader, WaveBars, RotatingTip } from "@/components/try-on/TryOnLoaders";
 
-const PINK = "#FF2D78";
+const ACCENT = "#1A1A1A";
 
 interface VariantInfo {
   id: number;
@@ -250,7 +250,7 @@ function TryOnContent() {
           <span className="font-semibold text-gray-700">Virtual Try-On</span>
           <span
             className="ml-auto inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full text-white shadow-sm"
-            style={{ background: PINK }}
+            style={{ background: ACCENT }}
           >
             ✦ AI Try-On Studio
           </span>
@@ -262,7 +262,7 @@ function TryOnContent() {
         <div className="mb-8 text-center">
           <span
             className="inline-block rounded-full px-4 py-1 text-xs font-bold uppercase tracking-widest text-white mb-2"
-            style={{ background: PINK }}
+            style={{ background: ACCENT }}
           >
             AI Virtual Try-On Studio
           </span>
@@ -284,7 +284,7 @@ function TryOnContent() {
                 <div className="flex items-center gap-2">
                   <span
                     className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-black text-white"
-                    style={{ background: PINK }}
+                    style={{ background: ACCENT }}
                   >
                     1
                   </span>
@@ -309,9 +309,9 @@ function TryOnContent() {
                 onDrop={handleDrop}
                 onDragOver={(e) => e.preventDefault()}
                 className={`relative overflow-hidden rounded-xl border-2 border-dashed transition-all ${
-                  personPreview ? "border-gray-200" : "cursor-pointer hover:border-[#FF2D78]"
+                  personPreview ? "border-gray-200" : "cursor-pointer hover:border-black"
                 }`}
-                style={{ borderColor: personPreview ? "#e5e7eb" : PINK, minHeight: 240 }}
+                style={{ borderColor: personPreview ? "#e5e7eb" : ACCENT, minHeight: 240 }}
               >
                 {personPreview ? (
                   <div className="relative flex min-h-[240px] max-h-[380px] w-full items-center justify-center bg-[#f9f9f9]">
@@ -323,7 +323,7 @@ function TryOnContent() {
                     />
                     <div
                       className="absolute bottom-2 left-2 rounded-full px-2.5 py-1 text-[11px] font-bold text-white shadow"
-                      style={{ background: PINK }}
+                      style={{ background: ACCENT }}
                     >
                       ✓ Đã chọn ảnh
                     </div>
@@ -350,8 +350,8 @@ function TryOnContent() {
                   <button
                     type="button"
                     onClick={() => fileRef.current?.click()}
-                    className="flex items-center justify-center gap-1.5 rounded-xl border py-2.5 text-xs font-bold transition-all hover:bg-pink-50 active:scale-[0.98]"
-                    style={{ borderColor: PINK, color: PINK }}
+                    className="flex items-center justify-center gap-1.5 rounded-xl border py-2.5 text-xs font-bold transition-all hover:bg-gray-50 active:scale-[0.98]"
+                    style={{ borderColor: ACCENT, color: ACCENT }}
                   >
                     <span>📤 Tải ảnh lên</span>
                   </button>
@@ -360,7 +360,7 @@ function TryOnContent() {
                     type="button"
                     onClick={() => setIsCameraOpen(true)}
                     className="flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold text-white transition-all hover:opacity-90 active:scale-[0.98] shadow-sm"
-                    style={{ background: PINK }}
+                    style={{ background: ACCENT }}
                   >
                     <span>📸 Chụp Camera</span>
                   </button>
@@ -374,7 +374,7 @@ function TryOnContent() {
                 <div className="flex items-center gap-2">
                   <span
                     className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-black text-white"
-                    style={{ background: PINK }}
+                    style={{ background: ACCENT }}
                   >
                     2
                   </span>
@@ -385,7 +385,7 @@ function TryOnContent() {
                     type="button"
                     onClick={() => setUseCustomProduct(!useCustomProduct)}
                     className="text-xs font-semibold underline"
-                    style={{ color: PINK }}
+                    style={{ color: ACCENT }}
                   >
                     {useCustomProduct ? "Dùng trang phục mẫu" : "Dùng sản phẩm đang xem"}
                   </button>
@@ -394,7 +394,7 @@ function TryOnContent() {
 
               {/* Product mode vs Preset mode */}
               {useCustomProduct && product ? (
-                <div className="flex flex-col gap-3 rounded-xl border border-pink-200 bg-pink-50/30 p-3">
+                <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50/50 p-3">
                   <div className="flex gap-3">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -408,14 +408,14 @@ function TryOnContent() {
                     />
                     <div className="flex flex-col justify-center gap-1 min-w-0 flex-1">
                       <p className="text-xs font-bold text-[#1A1A1A] line-clamp-2">{product.name}</p>
-                      <p className="text-xs font-black" style={{ color: PINK }}>
+                      <p className="text-xs font-black" style={{ color: ACCENT }}>
                         {product.effectivePrice.toLocaleString("vi-VN")}đ
                       </p>
                       <span className="text-[10px] text-gray-500">Danh mục: {product.category?.name || "Khác"}</span>
 
                       {/* Color swatches selection */}
                       {product.variants && Array.from(new Map(product.variants.filter(v => v.color).map(v => [v.color!, v])).values()).length > 0 && (
-                        <div className="mt-1 pt-1 border-t border-pink-100 flex items-center gap-1.5 flex-wrap">
+                        <div className="mt-1 pt-1 border-t border-gray-200 flex items-center gap-1.5 flex-wrap">
                           <span className="text-[10px] font-bold text-gray-500">Màu sắc:</span>
                           {Array.from(new Map(product.variants.filter(v => v.color).map(v => [v.color!, v])).values()).map((v) => {
                             const isSel = selectedVariant?.color === v.color;
@@ -426,14 +426,14 @@ function TryOnContent() {
                                 onClick={() => setSelectedVariant(v)}
                                 title={v.color!}
                                 className={`w-5 h-5 rounded-full border transition-all ${
-                                  isSel ? "ring-2 ring-[#FF2D78] border-white scale-110" : "border-gray-300 opacity-70 hover:opacity-100"
+                                  isSel ? "ring-2 ring-black border-white scale-110" : "border-gray-300 opacity-70 hover:opacity-100"
                                 }`}
                                 style={{ backgroundColor: v.colorHex || "#ccc" }}
                               />
                             );
                           })}
                           {selectedVariant?.color && (
-                            <span className="text-[10px] font-semibold text-[#FF2D78] ml-1">
+                            <span className="text-[10px] font-semibold text-black ml-1">
                               {selectedVariant.color}
                             </span>
                           )}
@@ -461,8 +461,8 @@ function TryOnContent() {
                           }}
                           className="group relative overflow-hidden rounded-xl border-2 transition-all duration-200 focus:outline-none"
                           style={{
-                            borderColor: isSelected ? PINK : "#e5e7eb",
-                            boxShadow: isSelected ? `0 0 0 3px ${PINK}30` : "none",
+                            borderColor: isSelected ? ACCENT : "#e5e7eb",
+                            boxShadow: isSelected ? `0 0 0 3px rgba(0,0,0,0.15)` : "none",
                           }}
                         >
                           <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#f9f9f9]">
@@ -475,11 +475,11 @@ function TryOnContent() {
                             {isSelected && (
                               <div
                                 className="absolute inset-0 flex items-center justify-center"
-                                style={{ background: `${PINK}22` }}
+                                style={{ background: `rgba(0,0,0,0.2)` }}
                               >
                                 <div
                                   className="flex h-9 w-9 items-center justify-center rounded-full text-white shadow-lg text-lg"
-                                  style={{ background: PINK }}
+                                  style={{ background: ACCENT }}
                                 >
                                   ✓
                                 </div>
@@ -488,7 +488,7 @@ function TryOnContent() {
                           </div>
                           <div
                             className="py-2 text-center text-xs font-semibold"
-                            style={{ color: isSelected ? PINK : "#555" }}
+                            style={{ color: isSelected ? ACCENT : "#555" }}
                           >
                             {outfit.label}
                           </div>
@@ -517,14 +517,14 @@ function TryOnContent() {
 
           {/* Requirements & Tips Banner */}
           <div className="rounded-2xl border border-amber-200/60 bg-amber-50/50 p-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-[#FF2D78] mb-2 flex items-center gap-1.5">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#1A1A1A] mb-2 flex items-center gap-1.5">
               <span>💡</span>
               Hướng dẫn chụp & tải ảnh để AI xử lý đẹp nhất:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-700">
               {TIPS.map((tip, index) => (
                 <div key={index} className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: PINK }} />
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: ACCENT }} />
                   <span>{tip}</span>
                 </div>
               ))}
@@ -547,7 +547,7 @@ function TryOnContent() {
               onClick={handleTryOn}
               className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl py-4 text-sm font-bold uppercase tracking-widest text-white shadow-md transition-all active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
               style={{
-                background: personFile && !isProcessing ? `linear-gradient(135deg, ${PINK}, #e02669)` : "#ccc",
+                background: personFile && !isProcessing ? ACCENT : "#ccc",
               }}
             >
               {isProcessing ? (
@@ -580,7 +580,7 @@ function TryOnContent() {
 
           {/* AI Result Card */}
           {isDone && resultUrl && (
-            <div className="flex flex-col gap-5 rounded-2xl border bg-white p-6 shadow-md" style={{ borderColor: `${PINK}40` }}>
+            <div className="flex flex-col gap-5 rounded-2xl border bg-white p-6 shadow-md" style={{ borderColor: `rgba(0,0,0,0.15)` }}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-xl">🎉</span>
@@ -606,21 +606,21 @@ function TryOnContent() {
 
               {/* QR Code Section */}
               <div
-                className="flex flex-col sm:flex-row items-center gap-4 rounded-2xl border p-4"
-                style={{ borderColor: `${PINK}30`, background: `linear-gradient(135deg, ${PINK}08, ${PINK}04)` }}
+                className="flex flex-col sm:flex-row items-center gap-4 rounded-2xl border p-4 bg-gray-50"
+                style={{ borderColor: `rgba(0,0,0,0.1)` }}
               >
                 {/* QR Code */}
                 <div className="flex flex-col items-center gap-2 flex-shrink-0">
                   <div
                     className="rounded-xl p-3 bg-white shadow-sm border cursor-pointer hover:shadow-md transition-shadow"
-                    style={{ borderColor: `${PINK}30` }}
+                    style={{ borderColor: `rgba(0,0,0,0.1)` }}
                     onClick={() => setIsQrModalOpen(true)}
                     title="Bấm để phóng to QR"
                   >
                     <QRCodeSVG
                       value={resultUrl}
                       size={100}
-                      fgColor={PINK}
+                      fgColor={ACCENT}
                       bgColor="#ffffff"
                       level="M"
                       includeMargin={false}
@@ -643,7 +643,7 @@ function TryOnContent() {
                       type="button"
                       onClick={() => setIsQrModalOpen(true)}
                       className="flex items-center gap-1.5 rounded-xl py-2 px-4 text-xs font-bold text-white shadow transition hover:opacity-90"
-                      style={{ background: PINK }}
+                      style={{ background: ACCENT }}
                     >
                       🔍 Phóng to QR
                     </button>
@@ -651,7 +651,7 @@ function TryOnContent() {
                       type="button"
                       onClick={handleCopyLink}
                       className="flex items-center gap-1.5 rounded-xl py-2 px-4 text-xs font-bold border transition hover:bg-gray-50"
-                      style={{ borderColor: `${PINK}50`, color: copied ? "#22c55e" : PINK }}
+                      style={{ borderColor: ACCENT, color: copied ? "#22c55e" : ACCENT }}
                     >
                       <span>{copied ? "✓" : "📋"}</span>
                       {copied ? "Đã sao chép!" : "Sao chép link"}
@@ -668,7 +668,7 @@ function TryOnContent() {
                   rel="noreferrer"
                   download="virtual-tryon.jpg"
                   className="flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl py-3 px-6 text-xs font-bold uppercase tracking-widest text-white shadow transition hover:opacity-90"
-                  style={{ background: PINK }}
+                  style={{ background: ACCENT }}
                 >
                   📥 Tải ảnh về máy
                 </a>

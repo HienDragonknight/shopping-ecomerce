@@ -9,7 +9,7 @@ interface QrCodeModalProps {
   resultUrl: string;
 }
 
-const ACCENT = "#FF2D78";
+const ACCENT = "#1A1A1A";
 
 export default function QrCodeModal({ isOpen, onClose, resultUrl }: QrCodeModalProps) {
   const [copied, setCopied] = useState(false);

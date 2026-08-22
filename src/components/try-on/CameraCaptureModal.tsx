@@ -276,10 +276,10 @@ export default function CameraCaptureModal({ isOpen, onClose, onCapture }: Camer
 
               {/* Countdown Big Display */}
               {countdown !== null && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
                   <span
                     key={countdown}
-                    className="font-serif text-9xl font-extrabold text-[#FF2D78] drop-shadow-[0_0_35px_rgba(255,45,120,0.8)] animate-pulse"
+                    className="font-serif text-9xl font-extrabold text-white drop-shadow-[0_0_35px_rgba(255,255,255,0.8)] animate-pulse"
                   >
                     {countdown}
                   </span>
@@ -303,7 +303,7 @@ export default function CameraCaptureModal({ isOpen, onClose, onCapture }: Camer
           <button
             onClick={startCountdown}
             disabled={countdown !== null || hasPermission !== true}
-            className="flex items-center gap-3 rounded-full bg-[#FF2D78] px-8 py-3 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-[#e02669] hover:scale-105 disabled:opacity-50 shadow-lg"
+            className="flex items-center gap-3 rounded-full bg-white text-black px-8 py-3 text-xs font-bold uppercase tracking-widest transition hover:bg-gray-100 hover:scale-105 disabled:opacity-50 shadow-lg"
           >
             <span>⏱️</span>
             <span>{countdown !== null ? `Đang đếm ngược (${countdown}s)...` : "Chụp Ảnh (Đếm ngược 3s)"}</span>

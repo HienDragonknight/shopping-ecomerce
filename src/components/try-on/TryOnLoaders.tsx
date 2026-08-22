@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const ACCENT = "#FF2D78";
+const ACCENT = "#1A1A1A";
 
 const AI_TIPS = [
   "AI đang phân tích khuôn mặt & vóc dáng của bạn...",
@@ -47,7 +47,7 @@ export function RippleLoader() {
       <div
         className="relative z-10 flex h-14 w-14 items-center justify-center rounded-full text-white text-2xl shadow-lg"
         style={{
-          background: `radial-gradient(circle at 35% 35%, #ff6aa2, ${ACCENT})`,
+          background: `radial-gradient(circle at 35% 35%, #4b5563, ${ACCENT})`,
           boxShadow: `0 0 24px ${ACCENT}60`,
           animation: "tryon-pulse-orb 1.5s ease-in-out infinite",
         }}

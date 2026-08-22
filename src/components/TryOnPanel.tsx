@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { getAccessToken } from "@/lib/auth";
 
-const PINK = "#FF2D78";
+const BLACK = "#1A1A1A";
 
 interface Props {
   productId: number;
@@ -41,7 +41,7 @@ function RippleLoader() {
           style={{
             width: `${(i + 1) * 28}%`,
             height: `${(i + 1) * 28}%`,
-            borderColor: PINK,
+            borderColor: BLACK,
             opacity: 1 - i * 0.2,
             animation: `ripple 2s ease-out ${i * 0.4}s infinite`,
           }}
@@ -52,8 +52,8 @@ function RippleLoader() {
       <div
         className="relative z-10 w-14 h-14 rounded-full flex items-center justify-center"
         style={{
-          background: `radial-gradient(circle at 35% 35%, #ff6fa8, ${PINK})`,
-          boxShadow: `0 0 24px ${PINK}60`,
+          background: `radial-gradient(circle at 35% 35%, #4b5563, ${BLACK})`,
+          boxShadow: `0 0 24px ${BLACK}60`,
           animation: "pulse-orb 1.5s ease-in-out infinite",
         }}
       >
@@ -68,8 +68,8 @@ function RippleLoader() {
       <span
         className="absolute w-3 h-3 rounded-full"
         style={{
-          background: PINK,
-          boxShadow: `0 0 8px ${PINK}`,
+          background: BLACK,
+          boxShadow: `0 0 8px ${BLACK}`,
           animation: "orbit 2s linear infinite",
           top: "50%",
           left: "50%",
@@ -91,7 +91,7 @@ function WaveBars() {
           key={i}
           className="w-1.5 rounded-full"
           style={{
-            background: `linear-gradient(to top, ${PINK}, #ff9cc0)`,
+            background: `linear-gradient(to top, ${BLACK}, #6b7280)`,
             animation: `wave-bar 1.2s ease-in-out ${i * 0.1}s infinite`,
             height: "100%",
           }}
@@ -120,7 +120,7 @@ function RotatingTip() {
   return (
     <p
       className="text-xs text-center font-medium max-w-[180px] leading-relaxed transition-opacity duration-300"
-      style={{ color: PINK, opacity: fade ? 1 : 0 }}
+      style={{ color: BLACK, opacity: fade ? 1 : 0 }}
     >
       {AI_TIPS[idx]}
     </p>
@@ -198,8 +198,8 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
           100% { transform: scale(2.2); opacity: 0; }
         }
         @keyframes pulse-orb {
-          0%, 100% { transform: scale(1);    box-shadow: 0 0 24px #FF2D7860; }
-          50%       { transform: scale(1.12); box-shadow: 0 0 40px #FF2D7890; }
+          0%, 100% { transform: scale(1);    box-shadow: 0 0 24px #1A1A1A60; }
+          50%       { transform: scale(1.12); box-shadow: 0 0 40px #1A1A1A90; }
         }
         @keyframes orbit {
           from { transform: rotate(0deg)   translateX(48px) rotate(0deg); }
@@ -221,7 +221,7 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-2">
             <span className="w-7 h-7 rounded-full text-white text-xs font-black flex items-center justify-center flex-shrink-0"
-              style={{ background: PINK }}>1</span>
+              style={{ background: BLACK }}>1</span>
             <p className="font-bold text-sm text-[#1A1A1A]">Upload Photo</p>
           </div>
 
@@ -230,8 +230,8 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
             onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
             onDragOver={e => e.preventDefault()}
             className={`relative border-2 border-dashed rounded-xl overflow-hidden transition-all
-              ${personPreview ? "border-gray-200" : "cursor-pointer"}`}
-            style={{ borderColor: personPreview ? "#e5e7eb" : PINK, minHeight: 220 }}
+              ${personPreview ? "border-gray-200" : "cursor-pointer hover:border-black"}`}
+            style={{ borderColor: personPreview ? "#e5e7eb" : BLACK, minHeight: 220 }}
           >
             {personPreview ? (
               <>
@@ -239,13 +239,13 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
                 <img src={personPreview} alt="Ảnh của bạn" className="w-full object-contain" style={{ maxHeight: 480, background: '#f9f9f9' }} />
                 <button onClick={e => { e.stopPropagation(); reset(); }}
                   className="absolute top-2 right-2 w-6 h-6 bg-black/60 text-white rounded-full flex items-center justify-center text-[11px] hover:bg-black transition-colors">✕</button>
-                <div className="absolute bottom-2 left-2 text-[11px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: PINK }}>
+                <div className="absolute bottom-2 left-2 text-[11px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: BLACK }}>
                   ✓ Đã chọn
                 </div>
               </>
             ) : (
               <div className="flex flex-col items-center justify-center h-56 gap-2 px-4">
-                <svg className="w-10 h-10 opacity-60" style={{ color: PINK }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-10 h-10 opacity-60" style={{ color: BLACK }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
                 <p className="font-bold text-sm text-[#1A1A1A] text-center">Upload your photo</p>
@@ -258,8 +258,8 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
 
           {!personPreview && (
             <button onClick={() => fileRef.current?.click()}
-              className="w-full py-2.5 text-sm font-bold text-white rounded-xl transition-all active:scale-[0.98]"
-              style={{ background: PINK }}>
+              className="w-full py-2.5 text-sm font-bold text-white rounded-xl transition-all hover:bg-black/90 active:scale-[0.98] shadow-sm"
+              style={{ background: BLACK }}>
               Chọn ảnh
             </button>
           )}
@@ -269,7 +269,7 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
             <div className="space-y-1.5">
               {TIPS.map((tip, i) => (
                 <div key={i} className="flex items-center gap-2 text-xs text-gray-500">
-                  <svg className="w-3.5 h-3.5 shrink-0" style={{ color: PINK }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 shrink-0" style={{ color: BLACK }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                   </svg>
                   {tip}
@@ -283,7 +283,7 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-2">
             <span className="w-7 h-7 rounded-full text-xs font-black flex items-center justify-center flex-shrink-0"
-              style={{ background: isProcessing ? PINK : "#f3f4f6", color: isProcessing ? "white" : "#9ca3af" }}>2</span>
+              style={{ background: isProcessing ? BLACK : "#f3f4f6", color: isProcessing ? "white" : "#9ca3af" }}>2</span>
             <p className={`font-bold text-sm ${isProcessing ? "text-[#1A1A1A]" : "text-gray-400"}`}>AI Processing</p>
           </div>
 
@@ -291,9 +291,9 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
             className="border-2 rounded-xl flex flex-col items-center justify-center gap-4 py-8 px-4 transition-all duration-500"
             style={{
               minHeight: 220,
-              borderColor: isProcessing ? `${PINK}40` : "#f3f4f6",
+              borderColor: isProcessing ? `${BLACK}40` : "#f3f4f6",
               borderStyle: isProcessing ? "solid" : "dashed",
-              background: isProcessing ? `linear-gradient(135deg, #fff5f8 0%, #fff 100%)` : "transparent",
+              background: isProcessing ? `linear-gradient(135deg, #f9fafb 0%, #fff 100%)` : "transparent",
             }}
           >
             {isProcessing ? (
@@ -308,11 +308,11 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
                 <RotatingTip />
 
                 {/* Shimmer progress bar */}
-                <div className="w-full max-w-[180px] h-1.5 rounded-full overflow-hidden bg-pink-100">
+                <div className="w-full max-w-[180px] h-1.5 rounded-full overflow-hidden bg-gray-100">
                   <div
                     className="h-full rounded-full"
                     style={{
-                      background: `linear-gradient(90deg, transparent 0%, ${PINK} 50%, transparent 100%)`,
+                      background: `linear-gradient(90deg, transparent 0%, ${BLACK} 50%, transparent 100%)`,
                       backgroundSize: "200% 100%",
                       animation: "shimmer-slide 1.5s linear infinite",
                     }}
@@ -321,8 +321,8 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
               </>
             ) : isDone ? (
               <div className="flex flex-col items-center gap-2">
-                <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: `${PINK}15` }}>
-                  <svg className="w-7 h-7" style={{ color: PINK }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: `${BLACK}15` }}>
+                  <svg className="w-7 h-7" style={{ color: BLACK }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
@@ -342,7 +342,7 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
           {(step === "idle" || step === "error") && (
             <>
               {productImageUrl && (
-                <div className="flex items-center gap-3 p-2 bg-pink-50/50 border border-pink-100 rounded-xl">
+                <div className="flex items-center gap-3 p-2 bg-gray-50 border border-gray-200 rounded-xl">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={productImageUrl} alt={productName} className="w-12 h-14 object-contain rounded-lg bg-white border border-gray-100 shrink-0" />
                   <div className="min-w-0 flex-1">
@@ -355,14 +355,14 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
               <button
                 onClick={handleTryOn}
                 disabled={!personFile}
-                className="w-full py-4 rounded-xl font-bold text-white text-sm transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
-                style={{ background: personFile ? PINK : "#d1d5db" }}
+                className="w-full py-4 rounded-xl font-bold text-white text-sm transition-all hover:bg-black/90 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                style={{ background: personFile ? BLACK : "#d1d5db" }}
               >
                 Try On Now ✦
               </button>
               <p className="text-center text-[10px] text-gray-400">
                 By using Try On, you agree to our{" "}
-                <span className="underline cursor-pointer" style={{ color: PINK }}>Terms of Service</span>
+                <span className="underline cursor-pointer" style={{ color: BLACK }}>Terms of Service</span>
               </p>
             </>
           )}
@@ -372,7 +372,7 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-2">
             <span className="w-7 h-7 rounded-full text-xs font-black flex items-center justify-center flex-shrink-0"
-              style={{ background: isDone ? PINK : "#f3f4f6", color: isDone ? "white" : "#9ca3af" }}>3</span>
+              style={{ background: isDone ? BLACK : "#f3f4f6", color: isDone ? "white" : "#9ca3af" }}>3</span>
             <p className={`font-bold text-sm ${isDone ? "text-[#1A1A1A]" : "text-gray-400"}`}>Try-On Result</p>
           </div>
 
@@ -400,8 +400,8 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
                 </button>
               </div>
               <button onClick={reset}
-                className="w-full py-2.5 border-2 rounded-xl text-sm font-bold transition-all"
-                style={{ borderColor: PINK, color: PINK }}>
+                className="w-full py-2.5 border-2 rounded-xl text-sm font-bold transition-all hover:bg-black hover:text-white"
+                style={{ borderColor: BLACK, color: BLACK }}>
                 Try another photo
               </button>
             </div>
@@ -413,10 +413,10 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
                   <div className="relative w-12 h-12">
                     {[0, 1].map(i => (
                       <span key={i} className="absolute inset-0 rounded-full border"
-                        style={{ borderColor: PINK, animation: `ripple 1.8s ease-out ${i * 0.6}s infinite` }} />
+                        style={{ borderColor: BLACK, animation: `ripple 1.8s ease-out ${i * 0.6}s infinite` }} />
                     ))}
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-xs font-black" style={{ color: PINK }}>✦</span>
+                      <span className="text-xs font-black" style={{ color: BLACK }}>✦</span>
                     </div>
                   </div>
                   <p className="text-xs text-gray-400">Generating...</p>

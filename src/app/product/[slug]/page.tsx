@@ -461,8 +461,7 @@ export default function ProductDetailPage({ params }: PageProps) {
             <button
               id="try-on-scroll-btn"
               onClick={() => tryOnRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-              className="group w-full flex items-center justify-between py-3 px-4 border-2 rounded-xl font-bold text-sm transition-all active:scale-[0.98]"
-              style={{ borderColor: "#FF2D78", color: "#FF2D78" }}
+              className="group w-full flex items-center justify-between py-3 px-4 border-2 border-[#1A1A1A] rounded-xl font-bold text-sm text-[#1A1A1A] transition-all active:scale-[0.98] hover:bg-[#1A1A1A] hover:text-white"
             >
               <div className="flex items-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -470,7 +469,7 @@ export default function ProductDetailPage({ params }: PageProps) {
                 </svg>
                 Try On
               </div>
-              <span className="text-[10px] font-black bg-[#FF2D78] text-white px-1.5 py-0.5 rounded-full animate-pulse">NEW</span>
+              <span className="text-[10px] font-black bg-[#1A1A1A] text-white px-1.5 py-0.5 rounded-full group-hover:bg-white group-hover:text-black transition-colors">NEW</span>
             </button>
 
             {addError && (
@@ -566,16 +565,16 @@ export default function ProductDetailPage({ params }: PageProps) {
         {/* ── AI Virtual Try-On Section ── */}
         <div ref={tryOnRef} id="try-on-section" className="mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           {/* Section header */}
-          <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100" style={{ background: "#fff5f8" }}>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "#FF2D7820" }}>
-              <svg className="w-5 h-5" style={{ color: "#FF2D78" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100 bg-gray-50">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-black/10">
+              <svg className="w-5 h-5 text-[#1A1A1A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.57a1 1 0 00.99.86H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.86l.58-3.57a2 2 0 00-1.34-2.23z" />
               </svg>
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-bold text-[#1A1A1A]">AI Virtual Try-On</h2>
-                <span className="text-[10px] font-black text-white px-2 py-0.5 rounded-full" style={{ background: "#FF2D78" }}>NEW</span>
+                <span className="text-[10px] font-black text-white px-2 py-0.5 rounded-full bg-[#1A1A1A]">NEW</span>
               </div>
               <p className="text-xs text-gray-400 mt-0.5">Upload your photo and see how this outfit looks on you</p>
             </div>
@@ -617,7 +616,7 @@ export default function ProductDetailPage({ params }: PageProps) {
         <div className="flex gap-2">
           <button
             onClick={() => tryOnRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-            className="w-11 h-11 border border-[#FF2D78]/30 rounded-full flex items-center justify-center text-[#FF2D78] bg-[#FF2D78]/5 active:scale-95 transition-all"
+            className="w-11 h-11 border border-black/20 rounded-full flex items-center justify-center text-[#1A1A1A] bg-black/5 active:scale-95 transition-all hover:bg-[#1A1A1A] hover:text-white"
             title="Thử đồ AI"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
