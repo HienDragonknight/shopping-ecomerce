@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
-const INITIAL_BASE_OFFSET = 1500;
+const INITIAL_BASE_OFFSET = 4270;
 
 function getStartOfToday() {
   const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  return now.toISOString();
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const vnDateStr = formatter.format(now); // "YYYY-MM-DD"
+  return new Date(`${vnDateStr}T00:00:00+07:00`).toISOString();
 }
 
 export async function GET() {

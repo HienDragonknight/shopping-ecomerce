@@ -9,7 +9,7 @@ interface VisitorStatsProps {
   initialBaseOffset?: number;
 }
 
-export function VisitorStatsCard({ initialBaseOffset = 1500 }: VisitorStatsProps) {
+export function VisitorStatsCard({ initialBaseOffset = 4270 }: VisitorStatsProps) {
   const [totalVisits, setTotalVisits] = useState<number>(initialBaseOffset);
   const [todayVisits, setTodayVisits] = useState<number>(0);
   const [isRealtime, setIsRealtime] = useState<boolean>(true);
