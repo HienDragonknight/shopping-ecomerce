@@ -135,7 +135,23 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
   const [personPreview, setPersonPreview] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [elapsed, setElapsed] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+    if (step === "processing") {
+      setElapsed(0);
+      timer = setInterval(() => {
+        setElapsed((s) => s + 1);
+      }, 1000);
+    } else {
+      setElapsed(0);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [step]);
 
   const handleFile = (file: File) => {
     if (!file.type.startsWith("image/")) { setError("Vui lòng chọn file ảnh"); return; }
@@ -371,16 +387,30 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
                 {/* Rotating tips */}
                 <RotatingTip />
 
-                {/* Shimmer progress bar */}
-                <div className="w-full max-w-[180px] h-1.5 rounded-full overflow-hidden bg-gray-100">
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      background: `linear-gradient(90deg, transparent 0%, ${BLACK} 50%, transparent 100%)`,
-                      backgroundSize: "200% 100%",
-                      animation: "shimmer-slide 1.5s linear infinite",
-                    }}
-                  />
+                {/* Live progress and timer */}
+                <div className="w-full max-w-[210px] space-y-1.5 text-center">
+                  <div className="flex justify-between items-center text-[11px] font-semibold text-gray-500 px-0.5">
+                    <span>Đang xử lý: {elapsed}s</span>
+                    <span>~20s</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full overflow-hidden bg-gray-100 p-0.5 border border-gray-200">
+                    <div
+                      className="h-full rounded-full transition-all duration-300"
+                      style={{
+                        width: `${Math.min(95, Math.max(8, Math.round((elapsed / 22) * 95)))}%`,
+                        background: `linear-gradient(90deg, #374151, ${BLACK})`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-gray-400">
+                    {elapsed < 5
+                      ? "Đang tải & chuẩn hóa ảnh..."
+                      : elapsed < 12
+                      ? "Đang phân tích khung xương & tư thế..."
+                      : elapsed < 18
+                      ? "Đang ghép vải & chi tiết trang phục..."
+                      : "Đang kết xuất ảnh nét cuối cùng..."}
+                  </p>
                 </div>
               </>
             ) : isDone ? (
