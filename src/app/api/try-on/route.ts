@@ -22,6 +22,30 @@ interface HumanMetadata {
   contentHeight: number;
 }
 
+function formatFriendlyAiError(rawError: string | null | undefined): string {
+  if (!rawError) return "AI không thể hoàn tất thử đồ. Vui lòng thử lại với ảnh khác.";
+  const lower = rawError.toLowerCase();
+  if (
+    lower.includes("list index out of range") ||
+    lower.includes("openpose") ||
+    lower.includes("no person") ||
+    lower.includes("detect") ||
+    lower.includes("keypoint")
+  ) {
+    return "AI không nhận diện được người hoặc dáng đứng trong ảnh. Vui lòng chọn ảnh chụp rõ toàn thân hoặc nửa thân trên với dáng đứng thẳng, nhìn thẳng vào camera.";
+  }
+  if (lower.includes("out of memory") || lower.includes("cuda") || lower.includes("resource") || lower.includes("capacity")) {
+    return "Hệ thống AI hiện đang bận hoặc quá tải. Vui lòng thử lại sau giây lát.";
+  }
+  if (lower.includes("timeout") || lower.includes("timed out")) {
+    return "Quá thời gian xử lý của AI. Vui lòng thử lại.";
+  }
+  if (lower.includes("nsfw") || lower.includes("safety") || lower.includes("inappropriate")) {
+    return "Ảnh bị hệ thống an toàn AI từ chối. Vui lòng chọn ảnh trang phục và chân dung phù hợp.";
+  }
+  return rawError;
+}
+
 /**
  * GET /api/try-on?predictionId=...&historyId=...&authToken=...&meta=...
  * Async polling endpoint for checking Replicate AI prediction status.
@@ -55,7 +79,7 @@ export async function GET(req: NextRequest) {
       const errText = await getRes.text();
       return NextResponse.json(
         { status: "failed", error: `Replicate error (${getRes.status}): ${errText}` },
-        { status: getRes.status }
+        { status: 200 }
       );
     }
 
@@ -97,20 +121,20 @@ export async function GET(req: NextRequest) {
     }
 
     if (status === "failed" || status === "canceled") {
-      const errorMsg = predData.error || "AI xử lý thất bại.";
+      const friendlyError = formatFriendlyAiError(predData.error);
       if (historyIdStr && authToken) {
         const historyId = parseInt(historyIdStr, 10);
         if (!isNaN(historyId)) {
-          await updateBackendRecord(historyId, authToken, "", "FAILED", errorMsg, BACKEND_URL);
+          await updateBackendRecord(historyId, authToken, "", "FAILED", friendlyError, BACKEND_URL);
         }
       }
-      return NextResponse.json({ status: "failed", error: errorMsg }, { status: 500 });
+      return NextResponse.json({ status: "failed", error: friendlyError }, { status: 200 });
     }
 
     return NextResponse.json({ status });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Lỗi khi kiểm tra tiến trình thử đồ";
-    return NextResponse.json({ status: "failed", error: msg }, { status: 500 });
+    return NextResponse.json({ status: "failed", error: msg }, { status: 200 });
   }
 }
 
@@ -132,8 +156,8 @@ export async function POST(req: NextRequest) {
     const modelType = (formData.get("modelType") as string | null) || "IDM_VTON";
     const authToken = formData.get("authToken") as string | null;
 
-    if (!personImageFile) {
-      return NextResponse.json({ error: "Thiếu ảnh cá nhân của bạn" }, { status: 400 });
+    if (!personImageFile || personImageFile.size === 0) {
+      return NextResponse.json({ error: "Thiếu ảnh cá nhân của bạn. Vui lòng tải ảnh lên." }, { status: 400 });
     }
 
     // ── 1. Save PENDING record to Spring Boot backend if auth token present ────
@@ -261,32 +285,36 @@ export async function POST(req: NextRequest) {
 
     // ── 4. Fallback: OpenAI Image Edit ─────────────────────────────────────────
     if (OPENAI_API_KEY) {
-      const resultUrl = await handleOpenAiTryOn({
-        personImageFile,
-        garmentImageUrl,
-        productName,
-        origin,
-      });
+      try {
+        const resultUrl = await handleOpenAiTryOn({
+          personImageFile,
+          garmentImageUrl,
+          productName,
+          origin,
+        });
 
-      if (historyId && authToken && resultUrl) {
-        await updateBackendRecord(historyId, authToken, resultUrl, "COMPLETED", null, BACKEND_URL);
+        if (historyId && authToken && resultUrl) {
+          await updateBackendRecord(historyId, authToken, resultUrl, "COMPLETED", null, BACKEND_URL);
+        }
+
+        return NextResponse.json({
+          status: "succeeded",
+          resultUrl,
+          historyId,
+        });
+      } catch (openAiErr) {
+        console.warn("[TryOn] OpenAI fallback failed:", openAiErr);
       }
-
-      return NextResponse.json({
-        status: "succeeded",
-        resultUrl,
-        historyId,
-      });
     }
 
     return NextResponse.json(
-      { error: "Chưa cấu hình API Key AI (Vui lòng thiết lập REPLICATE_API_TOKEN hoặc kết nối Backend)." },
-      { status: 500 }
+      { error: "Không thể khởi chạy xử lý thử đồ ảo. Vui lòng kiểm tra lại ảnh hoặc kết nối mạng." },
+      { status: 400 }
     );
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Lỗi không xác định khi ghép đồ";
     console.error("[TryOn] API error:", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: formatFriendlyAiError(msg) }, { status: 500 });
   }
 }
 
@@ -299,10 +327,12 @@ async function fetchImageBuffer(urlOrPath: string, origin: string): Promise<Buff
     return Buffer.from(base64Data, "base64");
   }
 
+  const cleanPath = urlOrPath.split("?")[0];
+
   // 1. Try reading local public directory if relative path
-  if (urlOrPath.startsWith("/")) {
+  if (cleanPath.startsWith("/")) {
     try {
-      const localPath = path.join(process.cwd(), "public", urlOrPath);
+      const localPath = path.join(process.cwd(), "public", cleanPath);
       if (fs.existsSync(localPath)) {
         return fs.readFileSync(localPath);
       }
@@ -396,7 +426,9 @@ interface PreparedHuman extends HumanMetadata {
 async function prepareHumanImage(file: File): Promise<PreparedHuman> {
   const arrayBuf = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuf);
-  const metadata = await sharp(buffer).metadata();
+  // Auto-rotate based on smartphone EXIF orientation tag
+  const rotatedBuffer = await sharp(buffer).rotate().toBuffer();
+  const metadata = await sharp(rotatedBuffer).metadata();
   const origWidth = metadata.width || 768;
   const origHeight = metadata.height || 1024;
   const origRatio = origWidth / origHeight;
@@ -417,7 +449,7 @@ async function prepareHumanImage(file: File): Promise<PreparedHuman> {
     padY = Math.floor((1024 - contentHeight) / 2);
   }
 
-  const paddedBuffer = await sharp(buffer)
+  const paddedBuffer = await sharp(rotatedBuffer)
     .resize(768, 1024, {
       fit: "contain",
       background: { r: 240, g: 240, b: 240, alpha: 1 },
@@ -446,11 +478,23 @@ async function prepareGarmentImage(
 ): Promise<string> {
   let garmentBuf: Buffer | null = null;
 
-  if (garmentFile) {
-    const arrayBuf = await garmentFile.arrayBuffer();
-    garmentBuf = Buffer.from(arrayBuf);
-  } else if (garmentImageUrl && garmentImageUrl.trim() !== "") {
-    garmentBuf = await fetchImageBuffer(garmentImageUrl, origin);
+  if (garmentFile && garmentFile.size > 0) {
+    try {
+      const arrayBuf = await garmentFile.arrayBuffer();
+      if (arrayBuf.byteLength > 0) {
+        garmentBuf = Buffer.from(arrayBuf);
+      }
+    } catch (e) {
+      console.warn("[prepareGarmentImage] Reading garmentFile failed:", e);
+    }
+  }
+
+  if ((!garmentBuf || garmentBuf.length === 0) && garmentImageUrl && garmentImageUrl.trim() !== "") {
+    try {
+      garmentBuf = await fetchImageBuffer(garmentImageUrl, origin);
+    } catch (e) {
+      console.warn("[prepareGarmentImage] fetchImageBuffer failed:", e);
+    }
   }
 
   if (!garmentBuf || garmentBuf.length === 0) {
@@ -458,6 +502,7 @@ async function prepareGarmentImage(
   }
 
   const processedBuf = await sharp(garmentBuf)
+    .rotate()
     .resize(768, 1024, {
       fit: "contain",
       background: { r: 255, g: 255, b: 255, alpha: 1 },
@@ -522,7 +567,7 @@ async function forwardToBackend({
 }): Promise<string> {
   const beFormData = new FormData();
   beFormData.append("personImage", personImageFile, personImageFile.name || "person.jpg");
-  if (garmentImageFile) {
+  if (garmentImageFile && garmentImageFile.size > 0) {
     beFormData.append("garmentImage", garmentImageFile, garmentImageFile.name || "garment.jpg");
   }
   if (garmentImageUrl) {

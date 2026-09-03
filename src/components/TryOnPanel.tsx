@@ -145,18 +145,21 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
 
   const handleTryOn = async () => {
     if (!personFile) return;
-    setStep("processing"); setError("");
+    setStep("processing");
+    setError("");
     try {
       let garmentFile: File | null = null;
-      if (productImageUrl) {
+      if (productImageUrl && !productImageUrl.startsWith("data:")) {
         try {
           const res = await fetch(productImageUrl);
           if (res.ok) {
             const blob = await res.blob();
-            garmentFile = new File([blob], "garment.jpg", { type: blob.type || "image/jpeg" });
+            if (blob.size > 0) {
+              garmentFile = new File([blob], "garment.jpg", { type: blob.type || "image/jpeg" });
+            }
           }
         } catch (e) {
-          console.warn("[TryOnPanel] Fetching productImageUrl failed:", e);
+          console.warn("[TryOnPanel] Fetching productImageUrl failed, fallback to server fetch:", e);
         }
       }
 
@@ -165,7 +168,7 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
 
       const fd = new FormData();
       fd.append("personImage", compressedPersonFile);
-      if (garmentFile) {
+      if (garmentFile && garmentFile.size > 0) {
         fd.append("garmentImage", garmentFile);
       }
       fd.append("garmentImageUrl", productImageUrl || "");
@@ -186,7 +189,7 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
       }>(res);
 
       if (!res.ok || data.error) {
-        setError(data.error || "AI xử lý thất bại");
+        setError(data.error || "AI xử lý thất bại. Vui lòng thử lại.");
         setStep("error");
         return;
       }
@@ -223,7 +226,7 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
           }
 
           if (pollData.status === "failed") {
-            setError(pollData.error || "AI xử lý thất bại. Vui lòng thử lại.");
+            setError(pollData.error || "AI xử lý thất bại. Vui lòng thử lại với ảnh khác.");
             setStep("error");
             return;
           }
@@ -234,10 +237,10 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
         return;
       }
 
-      setError("Không nhận được kết quả từ AI. Vui lòng thử lại.");
+      setError("Không nhận được phản hồi từ hệ thống AI. Vui lòng thử lại.");
       setStep("error");
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Lỗi không xác định");
+      setError(e instanceof Error ? e.message : "Lỗi không xác định khi kết nối AI");
       setStep("error");
     }
   };
