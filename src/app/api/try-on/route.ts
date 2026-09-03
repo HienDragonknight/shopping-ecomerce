@@ -1,4 +1,4 @@
-export const maxDuration = 60; // Max allowed serverless duration (seconds) for AI processing
+export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
@@ -13,9 +13,111 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "https://fashionweb.fmate
 const IDM_VTON_VERSION = "0513734a452173b8173e907e3a59d19a36266e55b48528559432bd21c7d7e985";
 const OOTDIFFUSION_VERSION = "9f8fa4956970dde99689af7488157a30aa152e23953526a605df1d77598343d7";
 
+interface HumanMetadata {
+  origWidth: number;
+  origHeight: number;
+  padX: number;
+  padY: number;
+  contentWidth: number;
+  contentHeight: number;
+}
+
+/**
+ * GET /api/try-on?predictionId=...&historyId=...&authToken=...&meta=...
+ * Async polling endpoint for checking Replicate AI prediction status.
+ * Takes ~200ms per request - completely immune to Vercel Serverless timeouts.
+ */
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const predictionId = searchParams.get("predictionId");
+    const historyIdStr = searchParams.get("historyId");
+    const authToken = searchParams.get("authToken");
+    const metaStr = searchParams.get("meta");
+
+    if (!predictionId) {
+      return NextResponse.json({ error: "Thiếu predictionId" }, { status: 400 });
+    }
+
+    if (!REPLICATE_API_TOKEN) {
+      return NextResponse.json(
+        { error: "Chưa cấu hình REPLICATE_API_TOKEN trên server" },
+        { status: 500 }
+      );
+    }
+
+    const getRes = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
+      headers: { Authorization: `Token ${REPLICATE_API_TOKEN}` },
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (!getRes.ok) {
+      const errText = await getRes.text();
+      return NextResponse.json(
+        { status: "failed", error: `Replicate error (${getRes.status}): ${errText}` },
+        { status: getRes.status }
+      );
+    }
+
+    const predData = await getRes.json();
+    const status = predData.status;
+
+    if (status === "succeeded" && predData.output) {
+      let rawResultUrl = "";
+      if (Array.isArray(predData.output) && predData.output.length > 0) {
+        rawResultUrl = predData.output[0];
+      } else if (typeof predData.output === "string") {
+        rawResultUrl = predData.output;
+      }
+
+      let finalResultUrl = rawResultUrl;
+
+      // Restore original aspect ratio if metadata was provided
+      if (metaStr && rawResultUrl) {
+        try {
+          const humanMeta: HumanMetadata = JSON.parse(decodeURIComponent(metaStr));
+          finalResultUrl = await restoreOriginalAspect(rawResultUrl, humanMeta);
+        } catch (e) {
+          console.warn("[TryOn Polling] Aspect ratio restore skipped:", e);
+        }
+      }
+
+      // Update backend record to COMPLETED
+      if (historyIdStr && authToken && finalResultUrl) {
+        const historyId = parseInt(historyIdStr, 10);
+        if (!isNaN(historyId)) {
+          await updateBackendRecord(historyId, authToken, finalResultUrl, "COMPLETED", null, BACKEND_URL);
+        }
+      }
+
+      return NextResponse.json({
+        status: "succeeded",
+        resultUrl: finalResultUrl,
+      });
+    }
+
+    if (status === "failed" || status === "canceled") {
+      const errorMsg = predData.error || "AI xử lý thất bại.";
+      if (historyIdStr && authToken) {
+        const historyId = parseInt(historyIdStr, 10);
+        if (!isNaN(historyId)) {
+          await updateBackendRecord(historyId, authToken, "", "FAILED", errorMsg, BACKEND_URL);
+        }
+      }
+      return NextResponse.json({ status: "failed", error: errorMsg }, { status: 500 });
+    }
+
+    return NextResponse.json({ status });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Lỗi khi kiểm tra tiến trình thử đồ";
+    return NextResponse.json({ status: "failed", error: msg }, { status: 500 });
+  }
+}
+
 /**
  * POST /api/try-on
- * Multi-model virtual try-on API endpoint supporting IDM-VTON, OOTDiffusion, OpenAI, and Backend Proxy.
+ * Starts the virtual try-on process.
+ * Creates prediction and returns predictionId immediately (~1-2s response time).
  */
 export async function POST(req: NextRequest) {
   try {
@@ -34,7 +136,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Thiếu ảnh cá nhân của bạn" }, { status: 400 });
     }
 
-    // ── Save PENDING record to Spring Boot backend if auth token present ──────
+    // ── 1. Save PENDING record to Spring Boot backend if auth token present ────
     let historyId: number | null = null;
     if (authToken) {
       try {
@@ -45,10 +147,11 @@ export async function POST(req: NextRequest) {
             Authorization: `Bearer ${authToken}`,
           },
           body: JSON.stringify({
-            productId: productId ? parseInt(productId) : null,
+            productId: productId ? parseInt(productId, 10) : null,
             productName: productName || null,
             originalImageUrl: garmentImageUrl || null,
           }),
+          signal: AbortSignal.timeout(5000),
         });
         if (beRes.ok) {
           const beData = await beRes.json();
@@ -59,37 +162,80 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    let resultUrl = "";
-
-    // ── 1. If REPLICATE_API_TOKEN is configured in Next.js, process directly ──
+    // ── 2. If REPLICATE_API_TOKEN is present: Create Replicate Prediction (Async) ──
     if (REPLICATE_API_TOKEN && (modelType === "IDM_VTON" || modelType === "OOTDIFFUSION")) {
       try {
-        resultUrl = await handleReplicateTryOn({
-          personImageFile,
-          garmentImageFile,
-          garmentImageUrl,
-          productName,
-          category,
-          modelType,
-          origin,
+        const humanMeta = await prepareHumanImage(personImageFile);
+        const effectiveGarmentUrl = await prepareGarmentImage(garmentImageFile, garmentImageUrl, origin);
+
+        const version = modelType === "OOTDIFFUSION" ? OOTDIFFUSION_VERSION : IDM_VTON_VERSION;
+        const resolvedCategory = resolveCategory(category, productName);
+
+        const cleanName = productName ? productName.replace(/\(.*?\)/g, "").trim() : "fashion garment";
+        const garmentDescription = `${cleanName}, high-definition authentic garment, exact color and fabric texture, clear printed logo and branding details, sharp clean neckline and seams, realistic natural fabric folds and shadows, realistic natural human skin tone`;
+
+        const input: Record<string, unknown> =
+          modelType === "OOTDIFFUSION"
+            ? {
+                model_image: humanMeta.dataUri,
+                garment_image: effectiveGarmentUrl,
+                steps: 35,
+                guidance_scale: 2.0,
+                seed: Math.floor(Math.random() * 1000000),
+              }
+            : {
+                human_img: humanMeta.dataUri,
+                garm_img: effectiveGarmentUrl,
+                garment_des: garmentDescription,
+                category: resolvedCategory,
+                crop: false,
+                steps: 30,
+                force_dc: resolvedCategory === "dresses",
+                seed: Math.floor(Math.random() * 1000000),
+              };
+
+        const predRes = await fetch("https://api.replicate.com/v1/predictions", {
+          method: "POST",
+          headers: {
+            Authorization: `Token ${REPLICATE_API_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ version, input }),
+          signal: AbortSignal.timeout(15000),
         });
-      } catch (localErr) {
-        console.warn("[TryOn] Local Replicate processing failed, trying Backend fallback:", localErr);
-        // Fallback to Backend if available
-        resultUrl = await forwardToBackend({
-          personImageFile,
-          garmentImageFile,
-          garmentImageUrl,
-          productName,
-          category,
-          modelType,
-          authToken,
+
+        if (!predRes.ok) {
+          const errText = await predRes.text();
+          console.error("[Replicate] Error starting prediction:", predRes.status, errText);
+          throw new Error(`Replicate error (${predRes.status}): ${errText}`);
+        }
+
+        const predData = await predRes.json();
+
+        // Return predictionId immediately for client polling (takes < 1.5s total!)
+        return NextResponse.json({
+          success: true,
+          predictionId: predData.id,
+          status: predData.status || "starting",
+          historyId,
+          meta: {
+            origWidth: humanMeta.origWidth,
+            origHeight: humanMeta.origHeight,
+            padX: humanMeta.padX,
+            padY: humanMeta.padY,
+            contentWidth: humanMeta.contentWidth,
+            contentHeight: humanMeta.contentHeight,
+          },
         });
+      } catch (repErr) {
+        console.warn("[TryOn] Direct Replicate start failed, trying Backend fallback:", repErr);
       }
-    } else if (!REPLICATE_API_TOKEN && BACKEND_URL) {
-      // ── 2. If no local Replicate token, forward multipart directly to Backend ──
+    }
+
+    // ── 3. Fallback: Forward multipart request directly to Backend ───────────
+    if (BACKEND_URL) {
       try {
-        resultUrl = await forwardToBackend({
+        const resultUrl = await forwardToBackend({
           personImageFile,
           garmentImageFile,
           garmentImageUrl,
@@ -97,48 +243,46 @@ export async function POST(req: NextRequest) {
           category,
           modelType,
           authToken,
+        });
+
+        if (historyId && authToken && resultUrl) {
+          await updateBackendRecord(historyId, authToken, resultUrl, "COMPLETED", null, BACKEND_URL);
+        }
+
+        return NextResponse.json({
+          status: "succeeded",
+          resultUrl,
+          historyId,
         });
       } catch (beErr) {
         console.warn("[TryOn] Backend forwarding failed:", beErr);
-        // Fallback to OpenAI if key exists
-        if (OPENAI_API_KEY) {
-          resultUrl = await handleOpenAiTryOn({
-            personImageFile,
-            garmentImageUrl,
-            productName,
-            origin,
-          });
-        } else {
-          throw new Error(
-            "Chưa cấu hình API Key AI (Vui lòng thiết lập REPLICATE_API_TOKEN trên Vercel hoặc cấu hình Backend URL)"
-          );
-        }
       }
-    } else {
-      // ── 3. Fallback to OpenAI Image Edit ──
-      if (!OPENAI_API_KEY) {
-        return NextResponse.json(
-          { error: "Chưa cấu hình API Key cho AI (REPLICATE_API_TOKEN hoặc OPENAI_API_KEY)" },
-          { status: 500 }
-        );
-      }
-      resultUrl = await handleOpenAiTryOn({
+    }
+
+    // ── 4. Fallback: OpenAI Image Edit ─────────────────────────────────────────
+    if (OPENAI_API_KEY) {
+      const resultUrl = await handleOpenAiTryOn({
         personImageFile,
         garmentImageUrl,
         productName,
         origin,
       });
+
+      if (historyId && authToken && resultUrl) {
+        await updateBackendRecord(historyId, authToken, resultUrl, "COMPLETED", null, BACKEND_URL);
+      }
+
+      return NextResponse.json({
+        status: "succeeded",
+        resultUrl,
+        historyId,
+      });
     }
 
-    // ── Update BE record to COMPLETED ─────────────────────────────────────────
-    if (historyId && authToken && resultUrl) {
-      await updateBackendRecord(historyId, authToken, resultUrl, "COMPLETED", null, BACKEND_URL);
-    }
-
-    return NextResponse.json({
-      resultUrl,
-      historyId,
-    });
+    return NextResponse.json(
+      { error: "Chưa cấu hình API Key AI (Vui lòng thiết lập REPLICATE_API_TOKEN hoặc kết nối Backend)." },
+      { status: 500 }
+    );
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Lỗi không xác định khi ghép đồ";
     console.error("[TryOn] API error:", msg);
@@ -245,14 +389,8 @@ function resolveCategory(cat: string | null, name: string | null): "upper_body" 
   return "upper_body";
 }
 
-interface PreparedHuman {
+interface PreparedHuman extends HumanMetadata {
   dataUri: string;
-  origWidth: number;
-  origHeight: number;
-  padX: number;
-  padY: number;
-  contentWidth: number;
-  contentHeight: number;
 }
 
 async function prepareHumanImage(file: File): Promise<PreparedHuman> {
@@ -319,7 +457,6 @@ async function prepareGarmentImage(
     throw new Error("Thiếu ảnh trang phục. Vui lòng chọn hoặc tải ảnh trang phục lên.");
   }
 
-  // Pre-process garment: Fit onto 768x1024 clean white canvas to avoid ANY stretching
   const processedBuf = await sharp(garmentBuf)
     .resize(768, 1024, {
       fit: "contain",
@@ -334,7 +471,7 @@ async function prepareGarmentImage(
 
 async function restoreOriginalAspect(
   resultUrl: string,
-  humanMeta: PreparedHuman
+  humanMeta: HumanMetadata
 ): Promise<string> {
   try {
     const res = await fetch(resultUrl, { signal: AbortSignal.timeout(20000) });
@@ -362,109 +499,6 @@ async function restoreOriginalAspect(
     console.warn("[restoreOriginalAspect] Error restoring framing:", err);
     return resultUrl;
   }
-}
-
-// ── Replicate API Handler ───────────────────────────────────────────────────
-
-async function handleReplicateTryOn({
-  personImageFile,
-  garmentImageFile,
-  garmentImageUrl,
-  productName,
-  category,
-  modelType,
-  origin,
-}: {
-  personImageFile: File;
-  garmentImageFile: File | null;
-  garmentImageUrl: string | null;
-  productName: string;
-  category: string;
-  modelType: string;
-  origin: string;
-}): Promise<string> {
-  const humanMeta = await prepareHumanImage(personImageFile);
-  const effectiveGarmentUrl = await prepareGarmentImage(garmentImageFile, garmentImageUrl, origin);
-
-  const version = modelType === "OOTDIFFUSION" ? OOTDIFFUSION_VERSION : IDM_VTON_VERSION;
-  const resolvedCategory = resolveCategory(category, productName);
-
-  const cleanName = productName
-    ? productName.replace(/\(.*?\)/g, "").trim()
-    : "fashion garment";
-  const garmentDescription = `${cleanName}, high-definition authentic garment, exact color and fabric texture, clear printed logo and branding details, sharp clean neckline and seams, realistic natural fabric folds and shadows, realistic natural human skin tone`;
-
-  const input: Record<string, unknown> =
-    modelType === "OOTDIFFUSION"
-      ? {
-          model_image: humanMeta.dataUri,
-          garment_image: effectiveGarmentUrl,
-          steps: 35,
-          guidance_scale: 2.0,
-          seed: Math.floor(Math.random() * 1000000),
-        }
-      : {
-          human_img: humanMeta.dataUri,
-          garm_img: effectiveGarmentUrl,
-          garment_des: garmentDescription,
-          category: resolvedCategory,
-          crop: false,
-          steps: 30,
-          force_dc: resolvedCategory === "dresses",
-          seed: Math.floor(Math.random() * 1000000),
-        };
-
-  const predRes = await fetch("https://api.replicate.com/v1/predictions", {
-    method: "POST",
-    headers: {
-      Authorization: `Token ${REPLICATE_API_TOKEN}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ version, input }),
-    signal: AbortSignal.timeout(20000),
-  });
-
-  if (!predRes.ok) {
-    const errText = await predRes.text();
-    console.error("[Replicate] Error starting prediction:", predRes.status, errText);
-    throw new Error(`Replicate AI error (${predRes.status}): ${errText}`);
-  }
-
-  const predData = await predRes.json();
-  const predictionId = predData.id;
-  let status = predData.status;
-  let resultNode = predData;
-
-  // Poll for completion (max 100s)
-  let attempts = 0;
-  while (attempts < 50 && (status === "starting" || status === "processing")) {
-    await new Promise((r) => setTimeout(r, 2000));
-    attempts++;
-
-    const getRes = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
-      headers: { Authorization: `Token ${REPLICATE_API_TOKEN}` },
-      signal: AbortSignal.timeout(10000),
-    });
-    if (getRes.ok) {
-      resultNode = await getRes.json();
-      status = resultNode.status;
-    }
-  }
-
-  if (status === "succeeded" && resultNode.output) {
-    let rawResultUrl = "";
-    if (Array.isArray(resultNode.output) && resultNode.output.length > 0) {
-      rawResultUrl = resultNode.output[0];
-    } else if (typeof resultNode.output === "string") {
-      rawResultUrl = resultNode.output;
-    }
-
-    if (rawResultUrl) {
-      return await restoreOriginalAspect(rawResultUrl, humanMeta);
-    }
-  }
-
-  throw new Error(`AI xử lý thất bại: ${resultNode.error || status}`);
 }
 
 // ── Fallback: Forward multipart request directly to Backend ─────────────────
@@ -526,7 +560,7 @@ async function forwardToBackend({
   throw new Error("Backend không trả về kết quả ảnh thử đồ");
 }
 
-// ── OpenAI API Handler ──────────────────────────────────────────────────────
+// ── Fallback: OpenAI API Handler ────────────────────────────────────────────
 
 async function handleOpenAiTryOn({
   personImageFile,
@@ -543,7 +577,7 @@ async function handleOpenAiTryOn({
   if (garmentImageUrl && garmentImageUrl.trim() !== "") {
     try {
       const buf = await fetchImageBuffer(garmentImageUrl, origin);
-      garmentFile = new File([buf], "garment.jpg", { type: "image/jpeg" });
+      garmentFile = new File([new Uint8Array(buf)], "garment.jpg", { type: "image/jpeg" });
     } catch (e) {
       console.warn("[handleOpenAiTryOn] Failed to prepare garment file:", e);
     }
@@ -626,4 +660,3 @@ async function updateBackendRecord(
     console.warn("[TryOn] Failed to update backend record:", e);
   }
 }
-

@@ -8,6 +8,7 @@ import api from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCartStore } from "@/store/useCartStore";
 import { getAccessToken } from "@/lib/auth";
+import { compressImage, safeParseJson } from "@/lib/image-utils";
 import CameraCaptureModal from "@/components/try-on/CameraCaptureModal";
 import QrCodeModal from "@/components/try-on/QrCodeModal";
 import { RippleLoader, WaveBars, RotatingTip } from "@/components/try-on/TryOnLoaders";
@@ -162,8 +163,11 @@ function TryOnContent() {
         }
       }
 
+      // Compress person image before uploading to avoid Vercel 4.5MB limits
+      const compressedPersonFile = await compressImage(personFile, 1200, 0.85);
+
       const fd = new FormData();
-      fd.append("personImage", personFile);
+      fd.append("personImage", compressedPersonFile);
       if (garmentFile) {
         fd.append("garmentImage", garmentFile);
       }
@@ -179,7 +183,14 @@ function TryOnContent() {
       if (token) fd.append("authToken", token);
 
       const res = await fetch("/api/try-on", { method: "POST", body: fd });
-      const data = await res.json();
+      const data = await safeParseJson<{
+        resultUrl?: string;
+        predictionId?: string;
+        status?: string;
+        historyId?: number;
+        meta?: unknown;
+        error?: string;
+      }>(res);
 
       if (!res.ok || data.error) {
         setError(data.error || "AI xử lý thất bại. Vui lòng thử lại.");
@@ -187,8 +198,51 @@ function TryOnContent() {
         return;
       }
 
-      setResultUrl(data.resultUrl);
-      setStep("result");
+      // If backend / sync returned result directly
+      if (data.resultUrl) {
+        setResultUrl(data.resultUrl);
+        setStep("result");
+        return;
+      }
+
+      // If prediction was queued on Replicate, poll every 2s
+      if (data.predictionId) {
+        const metaParam = data.meta ? encodeURIComponent(JSON.stringify(data.meta)) : "";
+        let pollAttempts = 0;
+        const maxPolls = 60; // 120s max
+
+        while (pollAttempts < maxPolls) {
+          await new Promise((r) => setTimeout(r, 2000));
+          pollAttempts++;
+
+          const pollUrl = `/api/try-on?predictionId=${data.predictionId}&historyId=${data.historyId || ""}&authToken=${token || ""}&meta=${metaParam}`;
+          const pollRes = await fetch(pollUrl);
+          const pollData = await safeParseJson<{
+            status?: string;
+            resultUrl?: string;
+            error?: string;
+          }>(pollRes);
+
+          if (pollData.status === "succeeded" && pollData.resultUrl) {
+            setResultUrl(pollData.resultUrl);
+            setStep("result");
+            return;
+          }
+
+          if (pollData.status === "failed") {
+            setError(pollData.error || "AI xử lý thất bại. Vui lòng thử lại.");
+            setStep("error");
+            return;
+          }
+        }
+
+        setError("Quá thời gian xử lý của AI (Timeout). Vui lòng thử lại.");
+        setStep("error");
+        return;
+      }
+
+      setError("Không nhận được kết quả từ AI. Vui lòng thử lại.");
+      setStep("error");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Lỗi không xác định khi thử đồ");
       setStep("error");

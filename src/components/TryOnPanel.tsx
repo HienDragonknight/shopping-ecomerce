@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { getAccessToken } from "@/lib/auth";
+import { compressImage, safeParseJson } from "@/lib/image-utils";
 
 const BLACK = "#1A1A1A";
 
@@ -159,8 +160,11 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
         }
       }
 
+      // Compress person image before uploading to avoid Vercel 4.5MB limits
+      const compressedPersonFile = await compressImage(personFile, 1200, 0.85);
+
       const fd = new FormData();
-      fd.append("personImage", personFile);
+      fd.append("personImage", compressedPersonFile);
       if (garmentFile) {
         fd.append("garmentImage", garmentFile);
       }
@@ -172,10 +176,66 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
       if (token) fd.append("authToken", token);
 
       const res = await fetch("/api/try-on", { method: "POST", body: fd });
-      const data = await res.json();
-      if (!res.ok || data.error) { setError(data.error || "AI xử lý thất bại"); setStep("error"); return; }
-      setResultUrl(data.resultUrl);
-      setStep("result");
+      const data = await safeParseJson<{
+        resultUrl?: string;
+        predictionId?: string;
+        status?: string;
+        historyId?: number;
+        meta?: unknown;
+        error?: string;
+      }>(res);
+
+      if (!res.ok || data.error) {
+        setError(data.error || "AI xử lý thất bại");
+        setStep("error");
+        return;
+      }
+
+      // If backend / sync returned result directly
+      if (data.resultUrl) {
+        setResultUrl(data.resultUrl);
+        setStep("result");
+        return;
+      }
+
+      // If prediction was queued on Replicate, poll every 2s
+      if (data.predictionId) {
+        const metaParam = data.meta ? encodeURIComponent(JSON.stringify(data.meta)) : "";
+        let pollAttempts = 0;
+        const maxPolls = 60; // 120s max
+
+        while (pollAttempts < maxPolls) {
+          await new Promise((r) => setTimeout(r, 2000));
+          pollAttempts++;
+
+          const pollUrl = `/api/try-on?predictionId=${data.predictionId}&historyId=${data.historyId || ""}&authToken=${token || ""}&meta=${metaParam}`;
+          const pollRes = await fetch(pollUrl);
+          const pollData = await safeParseJson<{
+            status?: string;
+            resultUrl?: string;
+            error?: string;
+          }>(pollRes);
+
+          if (pollData.status === "succeeded" && pollData.resultUrl) {
+            setResultUrl(pollData.resultUrl);
+            setStep("result");
+            return;
+          }
+
+          if (pollData.status === "failed") {
+            setError(pollData.error || "AI xử lý thất bại. Vui lòng thử lại.");
+            setStep("error");
+            return;
+          }
+        }
+
+        setError("Quá thời gian xử lý của AI (Timeout). Vui lòng thử lại.");
+        setStep("error");
+        return;
+      }
+
+      setError("Không nhận được kết quả từ AI. Vui lòng thử lại.");
+      setStep("error");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Lỗi không xác định");
       setStep("error");
