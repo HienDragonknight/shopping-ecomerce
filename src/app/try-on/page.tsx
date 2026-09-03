@@ -80,12 +80,28 @@ function TryOnContent() {
   const [modelType, setModelType] = useState<"IDM_VTON" | "OOTDIFFUSION" | "OPENAI">("IDM_VTON");
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [elapsed, setElapsed] = useState(0);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [addedToCart, setAddedToCart] = useState(false);
 
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+    if (step === "processing") {
+      setElapsed(0);
+      timer = setInterval(() => {
+        setElapsed((s) => s + 1);
+      }, 1000);
+    } else {
+      setElapsed(0);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [step]);
 
   useEffect(() => {
     if (!productId) return;
@@ -622,12 +638,35 @@ function TryOnContent() {
           {isProcessing && (
             <div className="flex flex-col items-center justify-center gap-6 rounded-2xl border border-gray-200 bg-white p-10 shadow-sm text-center">
               <RippleLoader />
-              <div className="flex flex-col items-center gap-2">
+              <div className="flex flex-col items-center gap-2 max-w-sm w-full">
                 <h3 className="font-serif text-lg font-bold text-black">Đang Tạo Kết Quả Thử Đồ AI</h3>
                 <RotatingTip />
-                <p className="text-[11px] text-gray-400 max-w-xs mt-2">
-                  Quá trình này mất khoảng 15-25 giây. Vui lòng giữ nguyên màn hình.
-                </p>
+                
+                {/* Live progress bar & seconds */}
+                <div className="w-full max-w-[240px] space-y-1.5 mt-3">
+                  <div className="flex justify-between items-center text-[11px] font-semibold text-gray-500">
+                    <span>Đang xử lý: {elapsed}s</span>
+                    <span>~20s</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full overflow-hidden bg-gray-100 p-0.5 border border-gray-200">
+                    <div
+                      className="h-full rounded-full transition-all duration-300"
+                      style={{
+                        width: `${Math.min(95, Math.max(8, Math.round((elapsed / 22) * 95)))}%`,
+                        background: `linear-gradient(90deg, #374151, ${ACCENT})`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-gray-400">
+                    {elapsed < 5
+                      ? "Đang chuẩn bị & xử lý ảnh..."
+                      : elapsed < 12
+                      ? "AI đang dò khung xương và tư thế..."
+                      : elapsed < 18
+                      ? "Đang căn chỉnh vải và đổ bóng tự nhiên..."
+                      : "Đang xuất ảnh độ nét cao..."}
+                  </p>
+                </div>
               </div>
             </div>
           )}
