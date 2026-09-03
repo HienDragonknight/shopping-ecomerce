@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN || "";
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "https://fashion-backend-production-8e3b.up.railway.app/api";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "https://fashionweb.fmate.id.vn/api";
 
 const IDM_VTON_VERSION = "0513734a452173b8173e907e3a59d19a36266e55b48528559432bd21c7d7e985";
 const OOTDIFFUSION_VERSION = "9f8fa4956970dde99689af7488157a30aa152e23953526a605df1d77598343d7";
@@ -148,27 +148,192 @@ async function ensureDataUri(urlOrPath: string | null): Promise<string> {
   return urlOrPath;
 }
 
-function resolveCategory(cat: string): "upper_body" | "lower_body" | "dresses" {
-  if (!cat) return "upper_body";
-  const lower = cat.toLowerCase();
+function resolveCategory(cat: string | null, name: string | null): "upper_body" | "lower_body" | "dresses" {
+  const combined = `${cat || ""} ${name || ""}`.toLowerCase();
+
+  // 1. Check for full dresses / gowns / suits first
   if (
-    lower.includes("dress") ||
-    lower.includes("váy") ||
-    lower.includes("đầm") ||
-    lower.includes("áo dài")
+    combined.includes("váy liền") ||
+    combined.includes("đầm") ||
+    combined.includes("áo dài") ||
+    combined.includes("dress") ||
+    combined.includes("gown") ||
+    combined.includes("jumpsuit") ||
+    combined.includes("set bộ") ||
+    combined.includes("bộ trang phục")
   ) {
     return "dresses";
   }
+
+  // 2. Check for upper body (shirts, tees, tops, jackets, polos, sweaters...)
+  // NOTE: Must check upper before lower because "quần áo" contains "quần"
   if (
-    lower.includes("lower") ||
-    lower.includes("quần") ||
-    lower.includes("pant") ||
-    lower.includes("skirt") ||
-    lower.includes("short")
+    combined.includes("áo") ||
+    combined.includes("shirt") ||
+    combined.includes("t-shirt") ||
+    combined.includes("tee") ||
+    combined.includes("polo") ||
+    combined.includes("top") ||
+    combined.includes("hoodie") ||
+    combined.includes("jacket") ||
+    combined.includes("khoác") ||
+    combined.includes("sweater") ||
+    combined.includes("cardigan") ||
+    combined.includes("blazer") ||
+    combined.includes("vest") ||
+    combined.includes("bra") ||
+    combined.includes("tank") ||
+    combined.includes("crop") ||
+    combined.includes("sơ mi") ||
+    combined.includes("thun") ||
+    combined.includes("len")
+  ) {
+    return "upper_body";
+  }
+
+  // 3. Check for lower body (pants, shorts, skirts...)
+  if (
+    combined.includes("chân váy") ||
+    combined.includes("quần") ||
+    combined.includes("pant") ||
+    combined.includes("jean") ||
+    combined.includes("short") ||
+    combined.includes("skirt") ||
+    combined.includes("trouser") ||
+    combined.includes("legging")
   ) {
     return "lower_body";
   }
+
   return "upper_body";
+}
+
+import sharp from "sharp";
+
+interface PreparedHuman {
+  dataUri: string;
+  origWidth: number;
+  origHeight: number;
+  padX: number;
+  padY: number;
+  contentWidth: number;
+  contentHeight: number;
+}
+
+async function prepareHumanImage(file: File): Promise<PreparedHuman> {
+  const arrayBuf = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuf);
+  const metadata = await sharp(buffer).metadata();
+  const origWidth = metadata.width || 768;
+  const origHeight = metadata.height || 1024;
+  const origRatio = origWidth / origHeight;
+  const targetRatio = 768 / 1024; // 0.75
+
+  let contentWidth = 768;
+  let contentHeight = 1024;
+  let padX = 0;
+  let padY = 0;
+
+  if (origRatio < targetRatio) {
+    // Narrower/taller (e.g. 9:16 mobile photo)
+    contentHeight = 1024;
+    contentWidth = Math.max(1, Math.round(1024 * origRatio));
+    padX = Math.floor((768 - contentWidth) / 2);
+  } else if (origRatio > targetRatio) {
+    // Wider (e.g. square 1:1 or 4:3)
+    contentWidth = 768;
+    contentHeight = Math.max(1, Math.round(768 / origRatio));
+    padY = Math.floor((1024 - contentHeight) / 2);
+  }
+
+  // Center fit onto 768x1024 canvas to prevent any elongation/stretching by AI
+  const paddedBuffer = await sharp(buffer)
+    .resize(768, 1024, {
+      fit: "contain",
+      background: { r: 240, g: 240, b: 240, alpha: 1 },
+      position: "center",
+    })
+    .toFormat("jpeg", { quality: 95 })
+    .toBuffer();
+
+  const dataUri = `data:image/jpeg;base64,${paddedBuffer.toString("base64")}`;
+
+  return {
+    dataUri,
+    origWidth,
+    origHeight,
+    padX,
+    padY,
+    contentWidth,
+    contentHeight,
+  };
+}
+
+async function prepareGarmentImage(
+  garmentFile: File | null,
+  garmentImageUrl: string | null
+): Promise<string> {
+  let garmentBuf: Buffer | null = null;
+
+  if (garmentFile) {
+    const arrayBuf = await garmentFile.arrayBuffer();
+    garmentBuf = Buffer.from(arrayBuf);
+  } else if (garmentImageUrl) {
+    const dataUri = await ensureDataUri(garmentImageUrl);
+    if (dataUri.startsWith("data:")) {
+      const base64Data = dataUri.split(",")[1];
+      garmentBuf = Buffer.from(base64Data, "base64");
+    }
+  }
+
+  if (!garmentBuf) {
+    throw new Error("Thiếu ảnh trang phục. Vui lòng chọn hoặc tải ảnh trang phục lên.");
+  }
+
+  // Pre-process garment: Fit onto 768x1024 clean white canvas to avoid ANY stretching of logos/text
+  const processedBuf = await sharp(garmentBuf)
+    .resize(768, 1024, {
+      fit: "contain",
+      background: { r: 255, g: 255, b: 255, alpha: 1 },
+      position: "center",
+    })
+    .toFormat("jpeg", { quality: 98 })
+    .toBuffer();
+
+  return `data:image/jpeg;base64,${processedBuf.toString("base64")}`;
+}
+
+async function restoreOriginalAspect(
+  resultUrl: string,
+  humanMeta: PreparedHuman
+): Promise<string> {
+  try {
+    const res = await fetch(resultUrl);
+    if (!res.ok) return resultUrl;
+    const arrayBuf = await res.arrayBuffer();
+    const resultBuf = Buffer.from(arrayBuf);
+
+    // If human image had padding added, crop out the padding to restore original framing
+    if (humanMeta.padX > 0 || humanMeta.padY > 0) {
+      const cropped = await sharp(resultBuf)
+        .extract({
+          left: Math.max(0, humanMeta.padX),
+          top: Math.max(0, humanMeta.padY),
+          width: Math.min(768 - humanMeta.padX, humanMeta.contentWidth),
+          height: Math.min(1024 - humanMeta.padY, humanMeta.contentHeight),
+        })
+        .resize(humanMeta.origWidth, humanMeta.origHeight, { fit: "fill" })
+        .toFormat("jpeg", { quality: 95 })
+        .toBuffer();
+
+      return `data:image/jpeg;base64,${cropped.toString("base64")}`;
+    }
+
+    return resultUrl;
+  } catch (err) {
+    console.warn("[restoreOriginalAspect] Error restoring framing:", err);
+    return resultUrl;
+  }
 }
 
 // ── Replicate API Handler ───────────────────────────────────────────────────
@@ -188,54 +353,37 @@ async function handleReplicateTryOn({
   category: string;
   modelType: string;
 }): Promise<string> {
-  // Convert person image file to Base64 data URI for Replicate input
-  const personArrayBuf = await personImageFile.arrayBuffer();
-  const personBase64 = Buffer.from(personArrayBuf).toString("base64");
-  const personDataUri = `data:${personImageFile.type || "image/jpeg"};base64,${personBase64}`;
-
-  let effectiveGarmentUrl = "";
-
-  if (garmentImageFile) {
-    const garmentBuf = await garmentImageFile.arrayBuffer();
-    const garmentBase64 = Buffer.from(garmentBuf).toString("base64");
-    effectiveGarmentUrl = `data:${garmentImageFile.type || "image/jpeg"};base64,${garmentBase64}`;
-  } else if (garmentImageUrl) {
-    effectiveGarmentUrl = await ensureDataUri(garmentImageUrl);
-  }
-
-  if (!effectiveGarmentUrl) {
-    throw new Error("Thiếu ảnh trang phục. Vui lòng chọn hoặc tải ảnh trang phục lên.");
-  }
+  // Pre-process human & garment images with sharp to guarantee exact 3:4 aspect ratio
+  const humanMeta = await prepareHumanImage(personImageFile);
+  const effectiveGarmentUrl = await prepareGarmentImage(garmentImageFile, garmentImageUrl);
 
   const version = modelType === "OOTDIFFUSION" ? OOTDIFFUSION_VERSION : IDM_VTON_VERSION;
+  const resolvedCategory = resolveCategory(category, productName);
 
-  const resolvedCategory = resolveCategory(category);
-  const descPrefix =
-    resolvedCategory === "lower_body"
-      ? "Lower body garment,"
-      : resolvedCategory === "dresses"
-      ? "Full dress garment,"
-      : "Top upper body garment,";
-
-  const garmentDescription = `Virtual try-on: replace ONLY the clothing on the person with this exact garment: ${productName}. ${descPrefix} matching exact color, fabric pattern, texture, logo, collar, and style shown in the garment image. High resolution, realistic fit.`;
+  // Clean, focused description for the model's CLIP text encoder
+  const cleanName = productName
+    ? productName.replace(/\(.*?\)/g, "").trim()
+    : "fashion garment";
+  const garmentDescription = `${cleanName}, high-definition authentic garment, exact color and fabric texture, clear printed logo and branding details, sharp clean neckline and seams, realistic natural fabric folds and shadows, realistic natural human skin tone`;
 
   const input: Record<string, unknown> =
     modelType === "OOTDIFFUSION"
       ? {
-          model_image: personDataUri,
+          model_image: humanMeta.dataUri,
           garment_image: effectiveGarmentUrl,
-          steps: 40,
+          steps: 35,
           guidance_scale: 2.0,
-          seed: 42,
+          seed: Math.floor(Math.random() * 1000000),
         }
       : {
-          human_img: personDataUri,
+          human_img: humanMeta.dataUri,
           garm_img: effectiveGarmentUrl,
           garment_des: garmentDescription,
           category: resolvedCategory,
-          crop: true,
-          steps: 40,
-          seed: 42,
+          crop: false, // CRITICAL: false prevents AI from zooming/distorting the human framing
+          steps: 30,   // 30 steps is optimal for crisp texture and logo preservation
+          force_dc: resolvedCategory === "dresses",
+          seed: Math.floor(Math.random() * 1000000),
         };
 
   const predRes = await fetch("https://api.replicate.com/v1/predictions", {
@@ -274,10 +422,16 @@ async function handleReplicateTryOn({
   }
 
   if (status === "succeeded" && resultNode.output) {
+    let rawResultUrl = "";
     if (Array.isArray(resultNode.output) && resultNode.output.length > 0) {
-      return resultNode.output[0];
+      rawResultUrl = resultNode.output[0];
     } else if (typeof resultNode.output === "string") {
-      return resultNode.output;
+      rawResultUrl = resultNode.output;
+    }
+
+    if (rawResultUrl) {
+      // Restore the exact original aspect ratio & framing of the user's photo
+      return await restoreOriginalAspect(rawResultUrl, humanMeta);
     }
   }
 

@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 // Backend URL: use env var (set on Vercel dashboard), fallback to localhost for dev
-const BACKEND_URL = process.env.BACKEND_URL ?? "https://fashion-backend-production-8e3b.up.railway.app";
+const BACKEND_URL = process.env.BACKEND_URL ?? "https://fashionweb.fmate.id.vn";
 
 const nextConfig: NextConfig = {
   // NOTE: Remove "standalone" for Vercel deployment (it's only for Docker/self-hosting)
@@ -19,6 +19,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "res.cloudinary.com" },
       { protocol: "http", hostname: "localhost" },
+      { protocol: "https", hostname: "fashionweb.fmate.id.vn" },
       { protocol: "https", hostname: "fashion-backend-production-8e3b.up.railway.app" },
       { protocol: "https", hostname: "image3.luatvietnam.vn" },
       { protocol: "https", hostname: "*.luatvietnam.vn" },

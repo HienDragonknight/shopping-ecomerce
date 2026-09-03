@@ -142,7 +142,7 @@ function TryOnContent() {
           ? selectedVariant.imageUrls[0]
           : (product.thumbnailUrl || "");
         productName = selectedVariant?.color ? `${product.name} (${selectedVariant.color})` : product.name;
-        category = product.category?.name || "dresses";
+        category = product.category?.name || "upper_body";
       } else {
         const preset = PRESET_OUTFITS.find((p) => p.id === selectedPresetId);
         if (!preset) throw new Error("Vui lòng chọn 1 trang phục");

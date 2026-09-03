@@ -167,6 +167,7 @@ export default function TryOnPanel({ productId, productName, productImageUrl }: 
       fd.append("garmentImageUrl", productImageUrl || "");
       fd.append("productId", String(productId));
       fd.append("productName", productName);
+      fd.append("category", productName);
       const token = getAccessToken();
       if (token) fd.append("authToken", token);
 
