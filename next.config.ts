@@ -1,11 +1,10 @@
 import type { NextConfig } from "next";
 
-// Backend URL: use env var (set on Vercel dashboard), fallback to localhost for dev
+// Backend URL: use env var (set on Vercel dashboard), fallback to deployed backend
 const BACKEND_URL = process.env.BACKEND_URL ?? "https://fashionweb.fmate.id.vn";
 
 const nextConfig: NextConfig = {
-  // NOTE: Remove "standalone" for Vercel deployment (it's only for Docker/self-hosting)
-  // output: "standalone",
+  serverExternalPackages: ["sharp"],
   typescript: {
     // TypeScript is checked separately via `npx tsc --noEmit` — skip the subprocess spawn in build
     ignoreBuildErrors: true,
@@ -22,18 +21,24 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "fashionweb.fmate.id.vn" },
       { protocol: "https", hostname: "fashion-backend-production-8e3b.up.railway.app" },
       { protocol: "https", hostname: "image3.luatvietnam.vn" },
+      { protocol: "https", hostname: "replicate.delivery" },
+      { protocol: "https", hostname: "*.replicate.delivery" },
       { protocol: "https", hostname: "*.luatvietnam.vn" },
     ],
     dangerouslyAllowSVG: true,
   },
-  // Proxy /api/* → Spring Boot backend (reads BACKEND_URL env var)
+  // Proxy unhandled /api/* → Spring Boot backend, while preserving local Next.js route handlers (/api/try-on, /api/analytics)
   async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${BACKEND_URL}/api/:path*`,
-      },
-    ];
+    return {
+      beforeFiles: [],
+      afterFiles: [],
+      fallback: [
+        {
+          source: "/api/:path*",
+          destination: `${BACKEND_URL}/api/:path*`,
+        },
+      ],
+    };
   },
   async headers() {
     return [
