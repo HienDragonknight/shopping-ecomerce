@@ -1,4 +1,10 @@
+export const maxDuration = 60; // Max allowed serverless duration (seconds) for AI processing
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
+import sharp from "sharp";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN || "";
@@ -9,16 +15,17 @@ const OOTDIFFUSION_VERSION = "9f8fa4956970dde99689af7488157a30aa152e23953526a605
 
 /**
  * POST /api/try-on
- * Multi-model virtual try-on API endpoint supporting IDM-VTON, OOTDiffusion, and OpenAI.
+ * Multi-model virtual try-on API endpoint supporting IDM-VTON, OOTDiffusion, OpenAI, and Backend Proxy.
  */
 export async function POST(req: NextRequest) {
   try {
+    const origin = req.nextUrl.origin || "https://fashionweb.fmate.id.vn";
     const formData = await req.formData();
     const personImageFile = formData.get("personImage") as File | null;
     const garmentImageFile = formData.get("garmentImage") as File | null;
-    const garmentImageUrl = formData.get("garmentImageUrl") as string | null;
+    const garmentImageUrl = (formData.get("garmentImageUrl") as string | null) || "";
     const productId = formData.get("productId") as string | null;
-    const productName = formData.get("productName") as string | null;
+    const productName = (formData.get("productName") as string | null) || "Trang phục";
     const category = (formData.get("category") as string | null) || "dresses";
     const modelType = (formData.get("modelType") as string | null) || "IDM_VTON";
     const authToken = formData.get("authToken") as string | null;
@@ -40,7 +47,7 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({
             productId: productId ? parseInt(productId) : null,
             productName: productName || null,
-            originalImageUrl: garmentImageUrl,
+            originalImageUrl: garmentImageUrl || null,
           }),
         });
         if (beRes.ok) {
@@ -52,22 +59,63 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ── Check if Spring Boot backend handles full try-on generation ───────────
-    // If backend is active and has /api/try-on multipart endpoint, we can forward to it.
-    // Otherwise we execute locally via Replicate or OpenAI.
     let resultUrl = "";
 
+    // ── 1. If REPLICATE_API_TOKEN is configured in Next.js, process directly ──
     if (REPLICATE_API_TOKEN && (modelType === "IDM_VTON" || modelType === "OOTDIFFUSION")) {
-      resultUrl = await handleReplicateTryOn({
-        personImageFile,
-        garmentImageFile,
-        garmentImageUrl,
-        productName: productName || "Trang phục",
-        category,
-        modelType,
-      });
+      try {
+        resultUrl = await handleReplicateTryOn({
+          personImageFile,
+          garmentImageFile,
+          garmentImageUrl,
+          productName,
+          category,
+          modelType,
+          origin,
+        });
+      } catch (localErr) {
+        console.warn("[TryOn] Local Replicate processing failed, trying Backend fallback:", localErr);
+        // Fallback to Backend if available
+        resultUrl = await forwardToBackend({
+          personImageFile,
+          garmentImageFile,
+          garmentImageUrl,
+          productName,
+          category,
+          modelType,
+          authToken,
+        });
+      }
+    } else if (!REPLICATE_API_TOKEN && BACKEND_URL) {
+      // ── 2. If no local Replicate token, forward multipart directly to Backend ──
+      try {
+        resultUrl = await forwardToBackend({
+          personImageFile,
+          garmentImageFile,
+          garmentImageUrl,
+          productName,
+          category,
+          modelType,
+          authToken,
+        });
+      } catch (beErr) {
+        console.warn("[TryOn] Backend forwarding failed:", beErr);
+        // Fallback to OpenAI if key exists
+        if (OPENAI_API_KEY) {
+          resultUrl = await handleOpenAiTryOn({
+            personImageFile,
+            garmentImageUrl,
+            productName,
+            origin,
+          });
+        } else {
+          throw new Error(
+            "Chưa cấu hình API Key AI (Vui lòng thiết lập REPLICATE_API_TOKEN trên Vercel hoặc cấu hình Backend URL)"
+          );
+        }
+      }
     } else {
-      // Fallback to OpenAI Image Edit API
+      // ── 3. Fallback to OpenAI Image Edit ──
       if (!OPENAI_API_KEY) {
         return NextResponse.json(
           { error: "Chưa cấu hình API Key cho AI (REPLICATE_API_TOKEN hoặc OPENAI_API_KEY)" },
@@ -77,12 +125,13 @@ export async function POST(req: NextRequest) {
       resultUrl = await handleOpenAiTryOn({
         personImageFile,
         garmentImageUrl,
-        productName: productName || "Trang phục",
+        productName,
+        origin,
       });
     }
 
     // ── Update BE record to COMPLETED ─────────────────────────────────────────
-    if (historyId && authToken) {
+    if (historyId && authToken && resultUrl) {
       await updateBackendRecord(historyId, authToken, resultUrl, "COMPLETED", null, BACKEND_URL);
     }
 
@@ -97,61 +146,52 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// ── Helper: Ensure image URL/Path is Base64 Data URI for external AI models ────
+// ── Helper: Download image buffer from local file, data URI, or remote URL ────
 
-import fs from "fs";
-import path from "path";
+async function fetchImageBuffer(urlOrPath: string, origin: string): Promise<Buffer> {
+  if (urlOrPath.startsWith("data:")) {
+    const commaIdx = urlOrPath.indexOf(",");
+    const base64Data = commaIdx >= 0 ? urlOrPath.substring(commaIdx + 1) : urlOrPath;
+    return Buffer.from(base64Data, "base64");
+  }
 
-async function ensureDataUri(urlOrPath: string | null): Promise<string> {
-  if (!urlOrPath) return "";
-  if (urlOrPath.startsWith("data:")) return urlOrPath;
-
-  // 1. Local relative path (e.g. /images/products/polo.jpg)
+  // 1. Try reading local public directory if relative path
   if (urlOrPath.startsWith("/")) {
     try {
       const localPath = path.join(process.cwd(), "public", urlOrPath);
       if (fs.existsSync(localPath)) {
-        const fileBuf = fs.readFileSync(localPath);
-        const ext = path.extname(localPath).toLowerCase().replace(".", "");
-        const mime = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
-        return `data:${mime};base64,${fileBuf.toString("base64")}`;
+        return fs.readFileSync(localPath);
       }
-    } catch (err) {
-      console.warn("[ensureDataUri] Error reading local file:", err);
+    } catch (e) {
+      console.warn("[fetchImageBuffer] Local fs read failed:", e);
     }
   }
 
-  // 2. Localhost or remote URL (e.g. http://localhost:3000/... or https://...)
-  try {
-    let targetUrl = urlOrPath;
-    if (urlOrPath.startsWith("/")) {
-      targetUrl = `http://localhost:3000${urlOrPath}`;
-    }
-
-    const res = await fetch(targetUrl, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; VirtualTryOn/1.0)",
-        Accept: "image/*, */*",
-      },
-    });
-
-    if (res.ok) {
-      const contentType = res.headers.get("content-type") || "image/jpeg";
-      const arrayBuf = await res.arrayBuffer();
-      const base64 = Buffer.from(arrayBuf).toString("base64");
-      return `data:${contentType};base64,${base64}`;
-    }
-  } catch (err) {
-    console.warn("[ensureDataUri] Error fetching URL:", err);
+  // 2. Fetch via HTTP(S)
+  let fetchUrl = urlOrPath;
+  if (urlOrPath.startsWith("/")) {
+    fetchUrl = `${origin.replace(/\/$/, "")}${urlOrPath}`;
   }
 
-  return urlOrPath;
+  const res = await fetch(fetchUrl, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      Accept: "image/*, */*",
+    },
+    signal: AbortSignal.timeout(15000),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Không thể tải ảnh trang phục từ URL (HTTP ${res.status}): ${fetchUrl}`);
+  }
+
+  const arrayBuf = await res.arrayBuffer();
+  return Buffer.from(arrayBuf);
 }
 
 function resolveCategory(cat: string | null, name: string | null): "upper_body" | "lower_body" | "dresses" {
   const combined = `${cat || ""} ${name || ""}`.toLowerCase();
 
-  // 1. Check for full dresses / gowns / suits first
   if (
     combined.includes("váy liền") ||
     combined.includes("đầm") ||
@@ -165,8 +205,6 @@ function resolveCategory(cat: string | null, name: string | null): "upper_body" 
     return "dresses";
   }
 
-  // 2. Check for upper body (shirts, tees, tops, jackets, polos, sweaters...)
-  // NOTE: Must check upper before lower because "quần áo" contains "quần"
   if (
     combined.includes("áo") ||
     combined.includes("shirt") ||
@@ -191,7 +229,6 @@ function resolveCategory(cat: string | null, name: string | null): "upper_body" 
     return "upper_body";
   }
 
-  // 3. Check for lower body (pants, shorts, skirts...)
   if (
     combined.includes("chân váy") ||
     combined.includes("quần") ||
@@ -207,8 +244,6 @@ function resolveCategory(cat: string | null, name: string | null): "upper_body" 
 
   return "upper_body";
 }
-
-import sharp from "sharp";
 
 interface PreparedHuman {
   dataUri: string;
@@ -235,18 +270,15 @@ async function prepareHumanImage(file: File): Promise<PreparedHuman> {
   let padY = 0;
 
   if (origRatio < targetRatio) {
-    // Narrower/taller (e.g. 9:16 mobile photo)
     contentHeight = 1024;
     contentWidth = Math.max(1, Math.round(1024 * origRatio));
     padX = Math.floor((768 - contentWidth) / 2);
   } else if (origRatio > targetRatio) {
-    // Wider (e.g. square 1:1 or 4:3)
     contentWidth = 768;
     contentHeight = Math.max(1, Math.round(768 / origRatio));
     padY = Math.floor((1024 - contentHeight) / 2);
   }
 
-  // Center fit onto 768x1024 canvas to prevent any elongation/stretching by AI
   const paddedBuffer = await sharp(buffer)
     .resize(768, 1024, {
       fit: "contain",
@@ -271,26 +303,23 @@ async function prepareHumanImage(file: File): Promise<PreparedHuman> {
 
 async function prepareGarmentImage(
   garmentFile: File | null,
-  garmentImageUrl: string | null
+  garmentImageUrl: string | null,
+  origin: string
 ): Promise<string> {
   let garmentBuf: Buffer | null = null;
 
   if (garmentFile) {
     const arrayBuf = await garmentFile.arrayBuffer();
     garmentBuf = Buffer.from(arrayBuf);
-  } else if (garmentImageUrl) {
-    const dataUri = await ensureDataUri(garmentImageUrl);
-    if (dataUri.startsWith("data:")) {
-      const base64Data = dataUri.split(",")[1];
-      garmentBuf = Buffer.from(base64Data, "base64");
-    }
+  } else if (garmentImageUrl && garmentImageUrl.trim() !== "") {
+    garmentBuf = await fetchImageBuffer(garmentImageUrl, origin);
   }
 
-  if (!garmentBuf) {
+  if (!garmentBuf || garmentBuf.length === 0) {
     throw new Error("Thiếu ảnh trang phục. Vui lòng chọn hoặc tải ảnh trang phục lên.");
   }
 
-  // Pre-process garment: Fit onto 768x1024 clean white canvas to avoid ANY stretching of logos/text
+  // Pre-process garment: Fit onto 768x1024 clean white canvas to avoid ANY stretching
   const processedBuf = await sharp(garmentBuf)
     .resize(768, 1024, {
       fit: "contain",
@@ -308,12 +337,11 @@ async function restoreOriginalAspect(
   humanMeta: PreparedHuman
 ): Promise<string> {
   try {
-    const res = await fetch(resultUrl);
+    const res = await fetch(resultUrl, { signal: AbortSignal.timeout(20000) });
     if (!res.ok) return resultUrl;
     const arrayBuf = await res.arrayBuffer();
     const resultBuf = Buffer.from(arrayBuf);
 
-    // If human image had padding added, crop out the padding to restore original framing
     if (humanMeta.padX > 0 || humanMeta.padY > 0) {
       const cropped = await sharp(resultBuf)
         .extract({
@@ -345,6 +373,7 @@ async function handleReplicateTryOn({
   productName,
   category,
   modelType,
+  origin,
 }: {
   personImageFile: File;
   garmentImageFile: File | null;
@@ -352,15 +381,14 @@ async function handleReplicateTryOn({
   productName: string;
   category: string;
   modelType: string;
+  origin: string;
 }): Promise<string> {
-  // Pre-process human & garment images with sharp to guarantee exact 3:4 aspect ratio
   const humanMeta = await prepareHumanImage(personImageFile);
-  const effectiveGarmentUrl = await prepareGarmentImage(garmentImageFile, garmentImageUrl);
+  const effectiveGarmentUrl = await prepareGarmentImage(garmentImageFile, garmentImageUrl, origin);
 
   const version = modelType === "OOTDIFFUSION" ? OOTDIFFUSION_VERSION : IDM_VTON_VERSION;
   const resolvedCategory = resolveCategory(category, productName);
 
-  // Clean, focused description for the model's CLIP text encoder
   const cleanName = productName
     ? productName.replace(/\(.*?\)/g, "").trim()
     : "fashion garment";
@@ -380,8 +408,8 @@ async function handleReplicateTryOn({
           garm_img: effectiveGarmentUrl,
           garment_des: garmentDescription,
           category: resolvedCategory,
-          crop: false, // CRITICAL: false prevents AI from zooming/distorting the human framing
-          steps: 30,   // 30 steps is optimal for crisp texture and logo preservation
+          crop: false,
+          steps: 30,
           force_dc: resolvedCategory === "dresses",
           seed: Math.floor(Math.random() * 1000000),
         };
@@ -393,6 +421,7 @@ async function handleReplicateTryOn({
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ version, input }),
+    signal: AbortSignal.timeout(20000),
   });
 
   if (!predRes.ok) {
@@ -406,14 +435,15 @@ async function handleReplicateTryOn({
   let status = predData.status;
   let resultNode = predData;
 
-  // Poll for completion (max 120s)
+  // Poll for completion (max 100s)
   let attempts = 0;
-  while (attempts < 60 && (status === "starting" || status === "processing")) {
+  while (attempts < 50 && (status === "starting" || status === "processing")) {
     await new Promise((r) => setTimeout(r, 2000));
     attempts++;
 
     const getRes = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
       headers: { Authorization: `Token ${REPLICATE_API_TOKEN}` },
+      signal: AbortSignal.timeout(10000),
     });
     if (getRes.ok) {
       resultNode = await getRes.json();
@@ -430,12 +460,70 @@ async function handleReplicateTryOn({
     }
 
     if (rawResultUrl) {
-      // Restore the exact original aspect ratio & framing of the user's photo
       return await restoreOriginalAspect(rawResultUrl, humanMeta);
     }
   }
 
   throw new Error(`AI xử lý thất bại: ${resultNode.error || status}`);
+}
+
+// ── Fallback: Forward multipart request directly to Backend ─────────────────
+
+async function forwardToBackend({
+  personImageFile,
+  garmentImageFile,
+  garmentImageUrl,
+  productName,
+  category,
+  modelType,
+  authToken,
+}: {
+  personImageFile: File;
+  garmentImageFile: File | null;
+  garmentImageUrl: string | null;
+  productName: string;
+  category: string;
+  modelType: string;
+  authToken: string | null;
+}): Promise<string> {
+  const beFormData = new FormData();
+  beFormData.append("personImage", personImageFile, personImageFile.name || "person.jpg");
+  if (garmentImageFile) {
+    beFormData.append("garmentImage", garmentImageFile, garmentImageFile.name || "garment.jpg");
+  }
+  if (garmentImageUrl) {
+    beFormData.append("garmentImageUrl", garmentImageUrl);
+  }
+  beFormData.append("productName", productName);
+  beFormData.append("category", category);
+  beFormData.append("modelType", modelType);
+
+  const headers: Record<string, string> = {};
+  if (authToken) {
+    headers["Authorization"] = `Bearer ${authToken}`;
+  }
+
+  const res = await fetch(`${BACKEND_URL}/try-on`, {
+    method: "POST",
+    headers,
+    body: beFormData,
+    signal: AbortSignal.timeout(55000),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Backend try-on error (${res.status}): ${errText}`);
+  }
+
+  const data = await res.json();
+  if (data.data?.resultUrl) {
+    return data.data.resultUrl;
+  }
+  if (data.resultUrl) {
+    return data.resultUrl;
+  }
+
+  throw new Error("Backend không trả về kết quả ảnh thử đồ");
 }
 
 // ── OpenAI API Handler ──────────────────────────────────────────────────────
@@ -444,23 +532,18 @@ async function handleOpenAiTryOn({
   personImageFile,
   garmentImageUrl,
   productName,
+  origin,
 }: {
   personImageFile: File;
   garmentImageUrl: string | null;
   productName: string;
+  origin: string;
 }): Promise<string> {
   let garmentFile: File | null = null;
   if (garmentImageUrl && garmentImageUrl.trim() !== "") {
     try {
-      const dataUri = await ensureDataUri(garmentImageUrl);
-      if (dataUri.startsWith("data:")) {
-        const commaIdx = dataUri.indexOf(",");
-        const header = dataUri.substring(0, commaIdx);
-        const base64Data = dataUri.substring(commaIdx + 1);
-        const mime = header.split(";")[0].replace("data:", "") || "image/jpeg";
-        const buf = Buffer.from(base64Data, "base64");
-        garmentFile = new File([buf], "garment.jpg", { type: mime });
-      }
+      const buf = await fetchImageBuffer(garmentImageUrl, origin);
+      garmentFile = new File([buf], "garment.jpg", { type: "image/jpeg" });
     } catch (e) {
       console.warn("[handleOpenAiTryOn] Failed to prepare garment file:", e);
     }
@@ -479,11 +562,11 @@ Output dimensions must match input photo framing.`;
     : `Virtual clothing replacement only. Replace ONLY the clothing on the person in the image with ${garmentDesc}.\n${STRICT_RULES}`;
 
   const openAIForm = new FormData();
-  openAIForm.append("model", "gpt-image-1");
+  openAIForm.append("model", "dall-e-2");
 
   if (garmentFile) {
-    openAIForm.append("image[]", personImageFile, "person.jpg");
-    openAIForm.append("image[]", garmentFile, "garment.jpg");
+    openAIForm.append("image", personImageFile, "person.jpg");
+    openAIForm.append("mask", garmentFile, "mask.jpg");
   } else {
     openAIForm.append("image", personImageFile, "person.jpg");
   }
@@ -496,12 +579,13 @@ Output dimensions must match input photo framing.`;
     method: "POST",
     headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
     body: openAIForm,
+    signal: AbortSignal.timeout(30000),
   });
 
   if (!openAIRes.ok) {
     const errText = await openAIRes.text();
     console.error("[TryOn] OpenAI error:", openAIRes.status, errText);
-    throw new Error("OpenAI AI xử lý thất bại.");
+    throw new Error(`OpenAI xử lý thất bại: ${errText}`);
   }
 
   const openAIData = await openAIRes.json();
@@ -536,8 +620,10 @@ async function updateBackendRecord(
         status,
         errorMessage,
       }),
+      signal: AbortSignal.timeout(10000),
     });
   } catch (e) {
     console.warn("[TryOn] Failed to update backend record:", e);
   }
 }
+
